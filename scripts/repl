@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Load environment variables from .env file
+export $(cat ./config/.env | grep -v "^#" | xargs)
+
+# Check if rlwrap is available
+if command -v rlwrap > /dev/null; then
+  RLWRAP_CMD="rlwrap"
+else
+  RLWRAP_CMD=""
+fi
+
+# Use RLWRAP_OPTS if available, otherwise default to empty string
+RLWRAP_OPTS=${RLWRAP_OPTS:-""}
+
+# Define the original command
+ORIGINAL_COMMAND="ARCA_CONFIG_PATH=.arca ARCA_CONFIG_FILE=config.json mix Arca.CLI repl $*"
+
+# Run the command with or without rlwrap using the default shell
+$RLWRAP_CMD $RLWRAP_OPTS $SHELL -c "$ORIGINAL_COMMAND"
