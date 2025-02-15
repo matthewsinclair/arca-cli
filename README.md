@@ -1,6 +1,6 @@
-# Arca.CLI
+# Arca CLI
 
-**TODO: Add description**
+Arca CLI is a simple CLI utility for Elixir projects
 
 ## Installation
 
