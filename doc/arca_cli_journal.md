@@ -4,6 +4,17 @@ verblock: "2024-05-02:v0.1: Matthew Sinclair - Initial version"
 
 # Arca CLI Development Journal
 
+##### 20250226
+
+Tidied up, integrated with Claude Code and added a test for - and -- flags.
+
+**Logs**
+
+* cc1d29e - (HEAD -> main, upstream/main, local/main) test: Add comprehensive flag parsing tests (89 seconds ago) <Matthew Sinclair>
+* 7d644a7 - This commit addresses a subtle bug where command name mismatches between the config atom name and module name would lead to silent failures at runtime during dispatch. (2 hours ago) <Matthew Sinclair>
+* 920397e - fix: Add compile-time validation for command naming conventions (2 hours ago) <Matthew Sinclair>
+* 3ef9ddf - Added in Claude Code (9 hours ago) <Matthew Sinclair>
+
 ##### 20250127
 
 Resuscitated to help with ICPZero.
@@ -227,7 +238,7 @@ Did a bunch of tidying up on CLI, Repl, and Cfg to make things easier to use.
 * 1b0816f Updated deps
 * 3e320c5 Updated deps
 * 995792a Updated deps
-* 5260c74 Tidied up CLI and Repl _enourmously_ by fixing output and removing bad code
+* 5260c74 Tidied up CLI and Repl *enourmously* by fixing output and removing bad code
 * f86018c Tidied up Cli to use function pattern matching for command dispatch
 * 6b8de0b Refactored Arca.CLI and Arca.CLI.Test to work with new Cfg.
 * e424025 Refactored Cfg to use get/put and get!/put! and then fixed the texts. Also updated deps.
