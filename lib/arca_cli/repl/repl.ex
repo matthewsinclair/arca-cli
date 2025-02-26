@@ -99,7 +99,7 @@ defmodule Arca.CLI.Repl do
       |> String.trim()
       |> String.split(~r/\s+/, trim: true)
     else
-      String.split(args)
+      args |> String.trim() |> String.split()
     end
     
     Optimus.parse(optimus, args_list)
