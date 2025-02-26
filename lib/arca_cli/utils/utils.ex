@@ -394,10 +394,11 @@ defmodule Arca.CLI.Utils do
   Blank lines at the end of the list or string are removed, while blank lines in the middle are left intact.
 
   ## Parameters
-  - `lines`: The list, tuple, or string to be filtered.
+  - `lines`: The list, tuple, string, map, atom, or other data type to be filtered.
 
   ## Returns
   - The filtered list, tuple, or string.
+  - For other data types, returns the original value.
 
   ## Examples
       iex> Arca.CLI.Utils.filter_blank_lines(["Line 1", "Line 2", "", ""])
@@ -405,6 +406,9 @@ defmodule Arca.CLI.Utils do
 
       iex> Arca.CLI.Utils.filter_blank_lines("Line 1\\nLine 2\\n\\n")
       "Line 1\\nLine 2\\n"
+      
+      iex> Arca.CLI.Utils.filter_blank_lines(123)
+      123
   """
   def filter_blank_lines(lines)
 
@@ -419,6 +423,10 @@ defmodule Arca.CLI.Utils do
   def filter_blank_lines(map) when is_map(map), do: map
 
   def filter_blank_lines(atom) when is_atom(atom), do: atom
+  
+  def filter_blank_lines(number) when is_number(number), do: number
+  
+  def filter_blank_lines(boolean) when is_boolean(boolean), do: boolean
 
   def filter_blank_lines(string) when is_binary(string) do
     newstr = String.replace(string, ~r/\n\n$/, "\n")
@@ -428,6 +436,9 @@ defmodule Arca.CLI.Utils do
       false -> filter_blank_lines(newstr)
     end
   end
+  
+  # Catch-all clause for any other data type
+  def filter_blank_lines(other), do: other
 
   @doc """
   Measures the execution time of a given function and returns a tuple with the duration in seconds and the function's result.
@@ -454,21 +465,21 @@ defmodule Arca.CLI.Utils do
 
   ## Examples
 
-      iex> defmodule MyModule do
+      iex> defmodule MyModule1 do
       ...>   def my_function do
       ...>     this_fn_as_string()
       ...>   end
       ...> end
-      iex> MyModule.my_function()
-      "Arca.CLI.Utils.Test.MyModule.my_function/0"
+      iex> MyModule1.my_function()
+      "Arca.CLI.Utils.Test.MyModule1.my_function/0"
 
-      iex> defmodule MyModule do
+      iex> defmodule MyModule2 do
       ...>   def my_function_with_param do
       ...>     this_fn_as_string("additional_info")
       ...>   end
       ...> end
-      iex> MyModule.my_function_with_param()
-      "Arca.CLI.Utils.Test.MyModule.my_function_with_param/0: additional_info"
+      iex> MyModule2.my_function_with_param()
+      "Arca.CLI.Utils.Test.MyModule2.my_function_with_param/0: additional_info"
 
   """
   defmacro this_fn_as_string(optional_param \\ nil) do

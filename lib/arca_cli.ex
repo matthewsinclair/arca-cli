@@ -1,6 +1,28 @@
 defmodule Arca.CLI do
   @moduledoc """
-  Documentation for `Arca.CLI`.
+  Arca.CLI is a flexible command-line interface utility for Elixir projects.
+  
+  This module serves as the main entry point for the CLI application and provides:
+  
+  1. Command dispatcher and routing functionality
+  2. Configuration and settings management
+  3. Error handling and formatting
+  4. Application lifecycle management
+  
+  The CLI follows a modular design with pluggable commands and configurators.
+  Commands are registered through configurators, which are responsible for
+  setting up the CLI environment and registering available commands.
+  
+  ## Architecture
+  
+  - Commands: Individual command implementations in `Arca.CLI.Command.*`
+  - Configurators: Setup modules in `Arca.CLI.Configurator.*` 
+  - History: Command history tracking in `Arca.CLI.History`
+  - Utils: Utility functions in `Arca.CLI.Utils`
+  
+  ## Error Handling
+  
+  The application uses {:ok, result} and {:error, reason} tuples for error handling.
   """
 
   use Application
@@ -119,6 +141,15 @@ defmodule Arca.CLI do
 
   @doc """
   Dispatch to the appropriate subcommand, if we can find one.
+  
+  ## Parameters
+    - cmd: Command name (atom)
+    - args: Command arguments
+    - settings: Application settings
+    - optimus: Optimus configuration
+    
+  ## Returns
+    - Command result or error message
   """
   def handle_subcommand(cmd, args, settings, optimus) do
     # Logger.info("#{__MODULE__}.handle_subcommand: #{inspect(cmd)}, #{inspect(args)}")
@@ -128,64 +159,121 @@ defmodule Arca.CLI do
         handle_error(cmd, "unknown command: #{cmd}")
 
       handler ->
-        handler.handle(args, settings, optimus)
+        try do
+          handler.handle(args, settings, optimus)
+        rescue
+          e ->
+            Logger.error("Error executing command #{cmd}: #{inspect(e)}")
+            handle_error(cmd, "command execution failed: #{inspect(e)}")
+        end
     end
   end
 
   @doc """
-  Handle an error nicely.
+  Handle an error nicely and return a formatted error message.
+  
+  ## Parameters
+    - cmd: Command name that caused the error (atom, string, or list)
+    - reason: Error reason (any type)
+    
+  ## Returns
+    - String containing formatted error message
   """
+  # Handle atom command
   def handle_error(cmd, reason) when is_atom(cmd) do
-    handle_error([Atom.to_string(cmd)], [inspect(reason)])
+    handle_error([Atom.to_string(cmd)], format_reason(reason))
   end
-
-  def handle_error(cmd, reason) do
-    ("error: " <> Enum.join(cmd, " ") <> ": " <> Enum.join(reason, " "))
+  
+  # Handle command with list of reasons or single reason
+  def handle_error(cmd, reason) when is_list(cmd) do
+    ("error: " <> Enum.join(cmd, " ") <> ": " <> format_reason(reason))
+    |> String.trim()
+  end
+  
+  # Handle string command with any reason
+  def handle_error(cmd, reason) when is_binary(cmd) do
+    "error: #{cmd}: #{format_reason(reason)}"
     |> String.trim()
   end
 
+  # Handle RuntimeError exception
   def handle_error(%RuntimeError{message: message}), do: handle_error(message)
 
+  # Handle list of reasons without command
   def handle_error(reasons) when is_list(reasons) do
     ("error: " <> Enum.join(reasons, " "))
     |> String.trim()
   end
 
+  # Handle string reason without command
   def handle_error(reason) when is_binary(reason) do
     "error: #{reason}"
     |> String.trim()
   end
+  
+  # Handle any other error type
+  def handle_error(reason) do
+    "error: #{inspect(reason)}"
+    |> String.trim()
+  end
+  
+  # Private helper to format error reasons consistently
+  defp format_reason(reason) when is_list(reason), do: Enum.join(reason, " ")
+  defp format_reason(reason) when is_binary(reason), do: reason
+  defp format_reason(reason), do: inspect(reason)
 
   @doc """
   Load settings from JSON config file.
+  
+  ## Returns
+    - Map with settings on success
+    - Empty map on error, with a warning logged
   """
   def load_settings() do
     case Cfg.load() do
       {:ok, settings} -> settings
-      {:error, _reason} -> %{}
+      {:error, reason} -> 
+        Logger.warning("Failed to load settings: #{inspect(reason)}")
+        %{}
     end
   end
 
   @doc """
   Get a setting by its id (and with dot notation).
+  
+  ## Parameters
+    - id: The setting identifier
+    
+  ## Returns
+    - Setting value on success
+    - {:error, reason} if setting couldn't be retrieved
   """
   def get_setting(id) do
     case Cfg.get(id) do
       {:ok, value} -> value
-      {:error, reason} -> raise "Error getting setting: #{reason}"
+      {:error, reason} -> {:error, "Error getting setting: #{reason}"}
     end
   end
 
   @doc """
   Save settings to JSON config file.
+  
+  ## Parameters
+    - new_settings: Map containing new settings to be merged with existing ones
+    
+  ## Returns
+    - {:ok, updated_settings} on success
+    - {:error, reason} on failure
   """
   def save_settings(new_settings) do
-    {:ok, current_settings} = Cfg.load()
-    updated_settings = Map.merge(current_settings, new_settings)
-
-    case Cfg.put(:settings, updated_settings) do
-      {:ok, _} -> :ok
-      {:error, reason} -> raise "Error saving settings: #{reason}"
+    with {:ok, current_settings} <- Cfg.load(),
+         updated_settings = Map.merge(current_settings, new_settings),
+         {:ok, _result} <- Cfg.put(:settings, updated_settings) do
+      {:ok, updated_settings}
+    else
+      {:error, reason} -> 
+        Logger.warning("Failed to save settings: #{inspect(reason)}")
+        {:error, "Failed to save settings: #{inspect(reason)}"}
     end
   end
 

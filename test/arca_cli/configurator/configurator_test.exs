@@ -62,7 +62,7 @@ defmodule Arca.CLI.Configurator.ConfiguratorTest do
 
     test "CommandBehaviour.config/0 (as AboutCommand)" do
       about_cmd_cfg = AboutCommand.config()
-      assert about_cmd_cfg != nil
+      assert is_list(about_cmd_cfg), "Expected config to be a list"
 
       assert about_cmd_cfg == [
                about: [
