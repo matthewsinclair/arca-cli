@@ -1,4 +1,4 @@
-defmodule Arca.CLI.Command.TestCommand1 do
+defmodule Arca.CLI.Commands.Test1Command do
   use Arca.CLI.Command.BaseCommand
 
   config :test1,
@@ -6,7 +6,7 @@ defmodule Arca.CLI.Command.TestCommand1 do
     about: "A test function for the test1 command"
 end
 
-defmodule Arca.CLI.Command.TestCommand2 do
+defmodule Arca.CLI.Commands.Test2Command do
   use Arca.CLI.Command.BaseCommand
 
   config :test2,
@@ -45,18 +45,19 @@ defmodule Arca.CLI.Command.BaseCommand.Test do
       :ok
     end
 
+
     test "Arca.CLI.Command.BaseCommand" do
       # Exists (smoke test for compilation)
       assert Arca.CLI.Command.BaseCommand
-      assert Arca.CLI.Command.TestCommand1
-      assert Arca.CLI.Command.TestCommand2
+      assert Arca.CLI.Commands.Test1Command
+      assert Arca.CLI.Commands.Test2Command
 
       # TestCommand1 functions are exported
-      assert function_exported?(Arca.CLI.Command.TestCommand1, :config, 0)
-      assert function_exported?(Arca.CLI.Command.TestCommand1, :handle, 3)
+      assert function_exported?(Arca.CLI.Commands.Test1Command, :config, 0)
+      assert function_exported?(Arca.CLI.Commands.Test1Command, :handle, 3)
 
       # TestCommand1.config/0 returns what we expect
-      assert Arca.CLI.Command.TestCommand1.config() == [
+      assert Arca.CLI.Commands.Test1Command.config() == [
                test1: [
                  name: "test1",
                  about: "A test function for the test1 command"
@@ -64,7 +65,7 @@ defmodule Arca.CLI.Command.BaseCommand.Test do
              ]
 
       # TestCommand2.config/0 returns what we expect
-      assert Arca.CLI.Command.TestCommand2.config() == [
+      assert Arca.CLI.Commands.Test2Command.config() == [
                test2: [
                  name: "test2",
                  about: "A test function for the test2 command"
@@ -72,19 +73,19 @@ defmodule Arca.CLI.Command.BaseCommand.Test do
              ]
 
       # TestCommand1.handle/3 returns what we expect for TestCommand1
-      assert {:error, _} = Arca.CLI.Command.TestCommand1.handle()
+      assert {:error, _} = Arca.CLI.Commands.Test1Command.handle()
 
       # TestCommand2.handle/3 returns what we expect for TestCommand2
-      assert {:ok, _} = Arca.CLI.Command.TestCommand2.handle()
+      assert {:ok, _} = Arca.CLI.Commands.Test2Command.handle()
 
       # Just be sure that the dft params are working for TestCommand2
-      { :ok, [a1, a2, a3] } = Arca.CLI.Command.TestCommand2.handle()
+      {:ok, [a1, a2, a3]} = Arca.CLI.Commands.Test2Command.handle()
       assert {a1, a2, a3} == {nil, nil, nil}
-      { :ok, ["one", b2, b3] } = Arca.CLI.Command.TestCommand2.handle("one")
+      {:ok, ["one", b2, b3]} = Arca.CLI.Commands.Test2Command.handle("one")
       assert {b2, b3} == {nil, nil}
-      { :ok, ["one", "two", c3] } = Arca.CLI.Command.TestCommand2.handle("one", "two")
+      {:ok, ["one", "two", c3]} = Arca.CLI.Commands.Test2Command.handle("one", "two")
       assert c3 == nil
-      { :ok, ["one", "two", "three"] } = Arca.CLI.Command.TestCommand2.handle("one", "two", "three")
+      {:ok, ["one", "two", "three"]} = Arca.CLI.Commands.Test2Command.handle("one", "two", "three")
       assert true
     end
   end
