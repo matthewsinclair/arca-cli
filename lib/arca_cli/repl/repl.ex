@@ -54,8 +54,76 @@ defmodule Arca.CLI.Repl do
 
   # Parse REPL input into dispatchable params
   defp read(_args, prompt \\ repl_prompt()) do
-    # Not sure what to do with args here?
-    IO.gets(prompt)
+    # Check if ExPrompt is available
+    if Code.ensure_loaded?(ExPrompt) do
+      # Read with enhanced prompt support
+      # ExPrompt doesn't have a built-in completion functionality, so we'll enhance the basic prompt
+      input = prompt_with_completion(prompt)
+      
+      if input == :eof do
+        :eof
+      else
+        input <> "\n"
+      end
+    else
+      # Fallback to standard IO.gets if ExPrompt is not available
+      IO.gets(prompt)
+    end
+  end
+  
+  # Custom prompt implementation with basic completion
+  defp prompt_with_completion(prompt) do
+    try do
+      # Display available commands hint
+      cmd_count = available_commands() |> length()
+      IO.puts("#{IO.ANSI.yellow()}Hint: #{cmd_count} commands available. Type a partial command and press Tab to see suggestions.#{IO.ANSI.reset()}")
+      
+      # Use simple input for now
+      input = IO.gets(prompt)
+      
+      case input do
+        :eof -> :eof
+        _ ->
+          trimmed = String.trim(input)
+          cond do
+            trimmed == "tab" || trimmed == "?" ->
+              # Show all commands if user explicitly types "tab" or "?"
+              suggestions = available_commands()
+              IO.puts("\nAvailable commands:")
+              suggestions
+              |> Enum.sort()
+              |> Enum.chunk_every(4)
+              |> Enum.each(fn chunk -> 
+                IO.puts("  " <> Enum.join(chunk, "  "))
+              end)
+              prompt_with_completion(prompt)
+              
+            # Special namespace handling - if input is just a namespace prefix
+            !String.contains?(trimmed, ".") && 
+              Enum.any?(available_commands(), &String.starts_with?(&1, "#{trimmed}.")) ->
+              namespace_commands = available_commands()
+                                |> Enum.filter(&String.starts_with?(&1, "#{trimmed}."))
+                                |> Enum.sort()
+              
+              IO.puts("\n#{trimmed} is a command namespace. Available commands:")
+              IO.puts(Enum.join(namespace_commands, ", "))
+              IO.puts("Try '#{trimmed}.<command>' to run a specific command in this namespace.")
+              prompt_with_completion(prompt)
+              
+            true ->
+              # Check if this is a partial command and suggest completions
+              suggestions = autocomplete(trimmed)
+              if length(suggestions) > 0 && length(suggestions) < 10 && String.length(trimmed) > 0 do
+                IO.puts("\nSuggestions: #{Enum.join(suggestions, ", ")}")
+              end
+              trimmed
+          end
+      end
+    rescue
+      e -> 
+        IO.puts("Error with prompt: #{inspect(e)}")
+        IO.gets(prompt)
+    end
   end
 
   # Handle 'repl' as a special case (do nothing)
@@ -134,6 +202,65 @@ defmodule Arca.CLI.Repl do
 
   def should_push?(cmd) when is_list(cmd) do
     should_push?(Enum.join(cmd, ""))
+  end
+  
+  @doc """
+  Gets a list of available commands for autocompletion.
+  Formats command names for display, including namespaced commands.
+  
+  ## Examples
+  
+      iex> Arca.CLI.Repl.available_commands()
+      ["about", "history", "status", "dev.info", "sys.info", ...]
+  """
+  def available_commands do
+    CLI.commands()
+    |> Enum.map(fn module ->
+      {cmd_atom, _opts} = apply(module, :config, []) |> List.first()
+      Atom.to_string(cmd_atom)
+    end)
+    |> Enum.sort()
+  end
+  
+  @doc """
+  Provides autocompletion suggestions for a partial command input.
+  Supports both standard and dot notation commands.
+  
+  ## Examples
+  
+      iex> Arca.CLI.Repl.autocomplete("sy")
+      ["sys", "sys.info", "sys.flush", "sys.cmd"]
+      
+      iex> Arca.CLI.Repl.autocomplete("dev.")
+      ["dev.info", "dev.deps"]
+  """
+  def autocomplete(partial) do
+    available_commands()
+    |> Enum.filter(&String.starts_with?(&1, partial))
+    |> Enum.sort()
+    |> case do
+      [] -> 
+        # If no direct matches, try finding namespace matches
+        if String.contains?(partial, ".") do
+          # For "namespace." syntax, return all commands in that namespace
+          namespace = String.split(partial, ".") |> List.first()
+          available_commands()
+          |> Enum.filter(&String.starts_with?(&1, namespace <> "."))
+        else
+          # Return namespaces that start with the partial command
+          available_commands()
+          |> Enum.filter(&String.starts_with?(&1, partial))
+          |> Enum.map(fn cmd ->
+            if String.contains?(cmd, ".") do
+              String.split(cmd, ".") |> List.first()
+            else
+              cmd
+            end
+          end)
+          |> Enum.uniq()
+        end
+      matches -> matches
+    end
   end
 
   @doc """

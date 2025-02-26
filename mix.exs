@@ -38,6 +38,7 @@ defmodule Arca.CLI.MixProject do
       {:pathex, "~> 2.5"},
       {:table_rex, "~> 4.0"},
       {:elixir_uuid, "~> 1.2"},
+      {:ex_prompt, "~> 0.1.3"},
       {:arca_config, path: "../config"}
     ]
   end
