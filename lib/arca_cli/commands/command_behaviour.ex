@@ -1,6 +1,6 @@
-defmodule Arca.CLI.Command.CommandBehaviour do
+defmodule Arca.Cli.Command.CommandBehaviour do
   @moduledoc """
-  `Arca.CLI.Command.CommandBehaviour` specifies all of the configuration information 
+  `Arca.Cli.Command.CommandBehaviour` specifies all of the configuration information 
   needed to assemble a command into something coherent that can be processed by the CLI setup routine.
 
   This behaviour is implemented by all command modules in the system and provides a consistent

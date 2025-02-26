@@ -1,7 +1,7 @@
-defmodule Arca.CLI.HistorySupervisor do
+defmodule Arca.Cli.HistorySupervisor do
   use Supervisor
   require Logger
-  alias Arca.CLI.History
+  alias Arca.Cli.History
 
   def start_link(init_arg) do
     # Logger.info("#{__MODULE__}.start_link: #{inspect(init_arg)}")
@@ -12,7 +12,7 @@ defmodule Arca.CLI.HistorySupervisor do
     # Logger.info("#{__MODULE__}.init: #{inspect(init_arg)}")
 
     children = [
-      {Arca.CLI.History, %History.CLIHistory{}}
+      {Arca.Cli.History, %History.CliHistory{}}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

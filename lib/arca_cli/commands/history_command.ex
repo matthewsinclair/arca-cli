@@ -1,8 +1,8 @@
-defmodule Arca.CLI.Commands.HistoryCommand do
+defmodule Arca.Cli.Commands.HistoryCommand do
   @moduledoc """
   Show history of previous commands.
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :history,
     name: "history",
@@ -11,9 +11,9 @@ defmodule Arca.CLI.Commands.HistoryCommand do
   @doc """
   Show history of previous commands.
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
-    Arca.CLI.History.history()
+    Arca.Cli.History.history()
     |> format_history_list()
   end
 

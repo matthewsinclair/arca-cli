@@ -1,26 +1,26 @@
 # ----
-# Everything required for a mimimal Arca.CLI example app.
+# Everything required for a mimimal  example app.
 # ----
 
-defmodule Eg.CLI do
+defmodule Eg.Cli do
   @moduledoc """
-  A simple example CLI that uses Arca.CLI.
+  A simple example CLI that uses .
   """
 
   @doc """
-  Entry point for command line parsing (just pass up to Arca.CLI).
+  Entry point for command line parsing (just pass up to ).
   """
   def main(argv) do
-    Arca.CLI.main(argv)
+    Arca.Cli.main(argv)
   end
 end
 
-defmodule Eg.CLI.EgCommand do
+defmodule Eg.Cli.EgCommand do
   @moduledoc """
-  A simple example command to test Arca.CLI commands.
+  A simple example command to test  commands.
   """
-  import Arca.CLI.Utils
-  use Arca.CLI.Command.BaseCommand
+  import Arca.Cli.Utils
+  use Arca.Cli.Command.BaseCommand
 
   config :eg,
     name: "eg",
@@ -29,17 +29,17 @@ defmodule Eg.CLI.EgCommand do
   @doc """
   Ech the name of the command.
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
-    Arca.CLI.Utils.this_fn_as_string()
+    Arca.Cli.Utils.this_fn_as_string()
   end
 end
 
-defmodule Eg.CLI.EgwithparamCommand do
+defmodule Eg.Cli.EgwithparamCommand do
   @moduledoc """
-  A simple example command to test Arca.CLI commands with params.
+  A simple example command to test  commands with params.
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :egwithparam,
     name: "egwithparam",
@@ -56,19 +56,19 @@ defmodule Eg.CLI.EgwithparamCommand do
   @doc """
   Return the paramater passed into the example command
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, _settings, _optimus) do
-    Arca.CLI.Utils.this_fn_as_string(args.args.p1)
+    Arca.Cli.Utils.this_fn_as_string(args.args.p1)
   end
 end
 
-defmodule Eg.CLI.EgsubCommand do
+defmodule Eg.Cli.EgsubCommand do
   @moduledoc """
-  A simple example command to test Arca.CLI nested sub-commands.
+  A simple example command to test  nested sub-commands.
   """
-  import Arca.CLI.Utils
-  use Arca.CLI.Command.BaseCommand
-  use Arca.CLI.Command.BaseSubCommand
+  import Arca.Cli.Utils
+  use Arca.Cli.Command.BaseCommand
+  use Arca.Cli.Command.BaseSubCommand
 
   config :egsub,
     name: "egsub",
@@ -88,16 +88,16 @@ defmodule Eg.CLI.EgsubCommand do
       ]
     ],
     sub_commands: [
-      Eg.CLI.EgsuboneCommand
+      Eg.Cli.EgsuboneCommand
     ]
 end
 
-defmodule Eg.CLI.EgsuboneCommand do
+defmodule Eg.Cli.EgsuboneCommand do
   @moduledoc """
-  A simple example command to test Arca.CLI sub commands.
+  A simple example command to test  sub commands.
   """
-  use Arca.CLI.Command.BaseCommand
-  import Arca.CLI.Utils
+  use Arca.Cli.Command.BaseCommand
+  import Arca.Cli.Utils
 
   config :egsubone,
     name: "egsubone",
@@ -114,23 +114,23 @@ defmodule Eg.CLI.EgsuboneCommand do
   @doc """
   SuboneCommand
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, _settings, _optimus) do
     this_fn_as_string(args.p1)
   end
 end
 
-defmodule Eg.CLI.EgConfigurator do
+defmodule Eg.Cli.EgConfigurator do
   @moduledoc """
-  `Eg.CLI.Commands.Configurator` sets up the Eg.CLI commands in a Configurator.
+  `Eg.Cli.Commands.Configurator` sets up the Eg.Cli commands in a Configurator.
   """
-  use Arca.CLI.Configurator.BaseConfigurator
+  use Arca.Cli.Configurator.BaseConfigurator
 
   config :eg_cli,
     commands: [
-      Eg.CLI.EgCommand,
-      Eg.CLI.EgwithparamCommand,
-      Eg.CLI.EgsubCommand
+      Eg.Cli.EgCommand,
+      Eg.Cli.EgwithparamCommand,
+      Eg.Cli.EgsubCommand
     ],
     author: "hello@eg.cli",
     about: "The simplest Arca CLI Example",
@@ -139,10 +139,10 @@ defmodule Eg.CLI.EgConfigurator do
 end
 
 # ----
-# Test the mimimal Arca.CLI example app.
+# Test the mimimal  example app.
 # ----
 
-defmodule Eg.CLI.Test do
+defmodule Eg.Cli.Test do
   use ExUnit.Case
   import ExUnit.CaptureIO
 
@@ -152,13 +152,13 @@ defmodule Eg.CLI.Test do
     ["egsub", "egsubone", "p1"]
   ]
 
-  describe "Eg.CLI" do
+  describe "Eg.Cli" do
     setup do
       # Get previous env var for config path and file names
       previous_configurators = Application.get_env(:arca_cli, :configurators)
 
       Application.put_env(:arca_cli, :configurators, [
-        Eg.CLI.EgConfigurator
+        Eg.Cli.EgConfigurator
       ])
 
       # Put things back how we found them
@@ -170,9 +170,9 @@ defmodule Eg.CLI.Test do
     test "eg_cli commands smoke test" do
       # Expected results for each command
       expected_output = %{
-        "eg" => "Eg.CLI.EgCommand.handle/3",
-        "egwithparam" => "Eg.CLI.EgwithparamCommand.handle/3: p1",
-        "egsub" => "Eg.CLI.EgsuboneCommand.handle/3: p1"
+        "eg" => "Eg.Cli.EgCommand.handle/3",
+        "egwithparam" => "Eg.Cli.EgwithparamCommand.handle/3: p1",
+        "egsub" => "Eg.Cli.EgsuboneCommand.handle/3: p1"
       }
 
       # Run through each command and smoke test each one
@@ -183,7 +183,7 @@ defmodule Eg.CLI.Test do
         res =
           capture_io(fn ->
             try do
-              Eg.CLI.main(cmd)
+              Eg.Cli.main(cmd)
             rescue
               e in RuntimeError ->
                 IO.puts("error: " <> e.message)

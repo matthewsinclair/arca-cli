@@ -1,6 +1,6 @@
-defmodule Arca.CLI.Configurator.BaseConfigurator do
+defmodule Arca.Cli.Configurator.BaseConfigurator do
   @moduledoc """
-  Use an `Arca.CLI.Configurator.BaseConfigurator` to quickly and easily build a new Configurator for the CLI.
+  Use an `Arca.Cli.Configurator.BaseConfigurator` to quickly and easily build a new Configurator for the CLI.
   """
   require Logger
 
@@ -11,10 +11,10 @@ defmodule Arca.CLI.Configurator.BaseConfigurator do
     quote do
       import unquote(__MODULE__), only: [config: 2]
 
-      alias Arca.CLI.Utils
-      alias Arca.CLI.Configurator.BaseConfigurator
+      alias Arca.Cli.Utils
+      alias Arca.Cli.Configurator.BaseConfigurator
       require Logger
-      @behaviour Arca.CLI.Configurator.ConfiguratorBehaviour
+      @behaviour Arca.Cli.Configurator.ConfiguratorBehaviour
 
       Module.register_attribute(__MODULE__, :app_name, accumulate: false)
       Module.register_attribute(__MODULE__, :commands, accumulate: false)
@@ -97,56 +97,56 @@ defmodule Arca.CLI.Configurator.BaseConfigurator do
       end
 
       @doc """
-      Returns the default list of `Command`s for base functionality for `Arca.CLI`.
+      Returns the default list of `Command`s for base functionality for `Arca.Cli`.
       """
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def commands do
         unquote(commands)
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def name do
         unquote(app_name) |> to_string()
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def setup do
         create_base_config()
         |> inject_subcommands()
         |> Optimus.new!()
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def author do
         unquote(author) |> to_string()
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def about do
         unquote(about) |> to_string()
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def description do
         unquote(description) |> to_string()
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def version do
         unquote(version) |> to_string()
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def allow_unknown_args do
         unquote(allow_unknown_args)
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def parse_double_dash do
         unquote(parse_double_dash)
       end
 
-      @impl Arca.CLI.Configurator.ConfiguratorBehaviour
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def create_base_config do
         [
           name: name(),

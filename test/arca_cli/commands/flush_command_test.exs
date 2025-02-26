@@ -1,11 +1,11 @@
-defmodule Arca.CLI.Command.BaseCommands.FlushCommand.Test do
+defmodule Arca.Cli.Command.BaseCommands.FlushCommand.Test do
   use ExUnit.Case
   # import ExUnit.CaptureIO
-  alias Arca.CLI.Commands.FlushCommand
-  alias Arca.CLI.Test.Support
-  doctest Arca.CLI.Commands.FlushCommand
+  alias Arca.Cli.Commands.FlushCommand
+  alias Arca.Cli.Test.Support
+  doctest Arca.Cli.Commands.FlushCommand
 
-  describe "Arca.CLI.Commands.AboutCommand" do
+  describe ".Commands.AboutCommand" do
     setup do
       # Get previous env var for config path and file names
       previous_env = System.get_env()
@@ -39,7 +39,7 @@ defmodule Arca.CLI.Command.BaseCommands.FlushCommand.Test do
     end
 
     test "FlushCommand.handle/3" do
-      assert Arca.CLI.Commands.FlushCommand.handle() == "ok"
+      assert Arca.Cli.Commands.FlushCommand.handle() == "ok"
     end
   end
 end

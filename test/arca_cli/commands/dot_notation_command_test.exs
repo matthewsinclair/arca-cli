@@ -1,20 +1,20 @@
 defmodule ArcaCliDotNotationCommandTest do
   use ExUnit.Case
   import ExUnit.CaptureIO
-  alias Arca.CLI
-  # alias Arca.CLI.Command.BaseCommand
+  alias Arca.Cli
+  # alias Arca.Cli.Command.BaseCommand
 
   describe "Dot notation commands" do
     test "handler_for_command works with dot notation" do
-      {result_type, cmd, handler} = CLI.handler_for_command(:"sys.info")
+      {result_type, cmd, handler} = Cli.handler_for_command(:"sys.info")
       assert result_type == :ok
       assert cmd == :"sys.info"
-      assert handler == Arca.CLI.Commands.SysInfoCommand
+      assert handler == Arca.Cli.Commands.SysInfoCommand
     end
 
     test "can execute dot notation command" do
       output = capture_io(fn ->
-        CLI.main(["sys.info"])
+        Cli.main(["sys.info"])
       end)
 
       assert output =~ "System Information:"
@@ -25,7 +25,7 @@ defmodule ArcaCliDotNotationCommandTest do
 
     test "dot notation appears in help" do
       output = capture_io(fn ->
-        CLI.main(["--help"])
+        Cli.main(["--help"])
       end)
 
       assert output =~ "sys.info"

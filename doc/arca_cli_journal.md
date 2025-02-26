@@ -1,10 +1,13 @@
 ---
-verblock: "2024-05-02:v0.1: Matthew Sinclair - Initial version"
+verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
+2024-05-02:v0.1: Matthew Sinclair - Initial version"
 ---
 
 # Arca CLI Development Journal
 
 ##### 20250226
+
+Standardized naming convention throughout the codebase, changing all module references from "Arca.CLI" to "Arca.Cli" for consistency with Elixir naming conventions.
 
 Implemented tab completion for rlwrap and namespace feature enhancements:
 
@@ -121,12 +124,12 @@ CLI with sub commands is now (more or less) working.
 * c9488cb Doing a bit of name refactoring to tidy up SubCommand
 * 3912743 Doing a bit of name refactoring to tidy up SubCommand
 * 335922a Subcommands are basically working, just need to refactor into a macro to reduce syntax
-* bc42f59 Added test stub in Eg.CLI for nested sub-command Eg.CLI.EgsubCommand
+* bc42f59 Added test stub in Eg.Cli for nested sub-command Eg.Cli.EgsubCommand
 * e9672ea Journal
 
 ##### 20240614
 
-Built a trivial example of a full Arca.CLI config to show how it works and dded some tests for the example.
+Built a trivial example of a full  config to show how it works and dded some tests for the example.
 Started to work on a SubCommand to allow for a similarly simple config for nested CLI commands (but that isn't working yet).
 
 **Logs**
@@ -163,25 +166,25 @@ Added in a simple Timer utility to time how long a function takes to run.
 
 ##### 20240609
 
-Continuing to make Arca.CLI work more nicely with clients. Tidied up the command handler dispatch so that it generically looks thru all registered commands to work out which command to fire.
+Continuing to make  work more nicely with clients. Tidied up the command handler dispatch so that it generically looks thru all registered commands to work out which command to fire.
 
 **Logs**
 
 * 347ce99 Journal
-* 7fe827b Fixed Arca.CLI so that it generically finds the command to execute
+* 7fe827b Fixed  so that it generically finds the command to execute
 * 5882871 Journal
-* e28fe0f First contact with someone using Arca.CLI needs a few tweaks
+* e28fe0f First contact with someone using  needs a few tweaks
 * 7138829 Now it is working.
 * 3357340 Now it is working.
 * f1a9228 Weird. A test is failing for no reason.
 
 ##### 20240608
 
-Making Arca.CLI work with clients.
+Making  work with clients.
 
 **Logs**
 
-* e28fe0f First contact with someone using Arca.CLI needs a few tweaks
+* e28fe0f First contact with someone using  needs a few tweaks
 
 ##### 20240601
 
@@ -270,11 +273,11 @@ Added in some doctests and tidied up comments.
 * 21cec74 Working on CLI.Configurator to make Commands easier and simpler to specify
 * 49dd394 Added tests to History to round out testing
 * fdb0e84 Added tests to History to round out testing
-* 36ab7d7 Refactrored Arca.CLI.State to History (because State is confusing)
+* 36ab7d7 Refactrored .State to History (because State is confusing)
 * cfe4500 Tidied up some comments in Arca.State (prior to a refactor from Agent to GenServer)
-* d15f442 Fixed start of Arca.CLI so that it shows usage when invoked with no command
+* d15f442 Fixed start of  so that it shows usage when invoked with no command
 * b808fa1 Tided up Utils.to_str and Utils.type_of
-* ab0270c Updated deps for Arca.CLI.
+* ab0270c Updated deps for .
 
 ##### 20240521
 
@@ -291,7 +294,7 @@ Did a bunch of tidying up on CLI, Repl, and Cfg to make things easier to use.
 * 995792a Updated deps
 * 5260c74 Tidied up CLI and Repl *enourmously* by fixing output and removing bad code
 * f86018c Tidied up Cli to use function pattern matching for command dispatch
-* 6b8de0b Refactored Arca.CLI and Arca.CLI.Test to work with new Cfg.
+* 6b8de0b Refactored  and .Test to work with new Cfg.
 * e424025 Refactored Cfg to use get/put and get!/put! and then fixed the texts. Also updated deps.
 
 ##### 20240517
@@ -305,7 +308,7 @@ Having a crack at making the CLI a bit simpler to work with and extend by using 
 * 0829482 Moved about and repl into *Commands
 * f111aea Be more consistent with the use of Utils.* fns
 * 31952b6 Starting to build out a behaviour-oriented command setup for CLI commands
-* 2ec5a40 Moved Arca.CLI.History into its own directory
+* 2ec5a40 Moved .History into its own directory
 * 984f0de Refactored acra-cli to use arca-config as a separate package
 * a0a90d6 Updated deps. Rebuilt. Refactoring Config, Cli, etc into separate arca-* projects
 

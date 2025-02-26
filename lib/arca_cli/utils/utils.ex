@@ -1,4 +1,4 @@
-defmodule Arca.CLI.Utils do
+defmodule Arca.Cli.Utils do
   use OK.Pipe
   require Jason
 
@@ -12,7 +12,7 @@ defmodule Arca.CLI.Utils do
   - A string in the format "key1=value1&key2=value2".
 
   ## Examples
-      iex> Arca.CLI.Utils.form_encoded_body(%{"key1" => "value1", "key2" => "value2"})
+      iex> Arca.Cli.Utils.form_encoded_body(%{"key1" => "value1", "key2" => "value2"})
       "key1=value1&key2=value2"
   """
   def form_encoded_body(params) do
@@ -33,7 +33,7 @@ defmodule Arca.CLI.Utils do
 
   ## Examples
       iex> response = %{body: ~s({"key": "value"})}
-      iex> Arca.CLI.Utils.parse_json_body(response)
+      iex> Arca.Cli.Utils.parse_json_body(response)
       {:ok, %{key: "value"}}
   """
   def parse_json_body(response) do
@@ -52,7 +52,7 @@ defmodule Arca.CLI.Utils do
   - `{:ok, x}`.
 
   ## Examples
-      iex> Arca.CLI.Utils.return("value")
+      iex> Arca.Cli.Utils.return("value")
       {:ok, "value"}
   """
   def return(x) do
@@ -72,10 +72,10 @@ defmodule Arca.CLI.Utils do
   - The original value if `x` is neither.
 
   ## Examples
-      iex> Arca.CLI.Utils.with_default({:ok, "value"}, "default")
+      iex> Arca.Cli.Utils.with_default({:ok, "value"}, "default")
       "value"
 
-      iex> Arca.CLI.Utils.with_default({:error, "error"}, "default")
+      iex> Arca.Cli.Utils.with_default({:error, "error"}, "default")
       "default"
   """
   def with_default(x, default) do
@@ -96,7 +96,7 @@ defmodule Arca.CLI.Utils do
   - A string containing the ANSI-formatted clickable link.
 
   ## Examples
-      iex> Arca.CLI.Utils.to_url_link("http://example.com")
+      iex> Arca.Cli.Utils.to_url_link("http://example.com")
       "\e[96m\e[4m\e]8;;http://example.com\ahttp://example.com\e]8;;\a\e[0m"
   """
   def to_url_link(url) do
@@ -113,7 +113,7 @@ defmodule Arca.CLI.Utils do
   - :ok
 
   ## Examples
-      iex> Arca.CLI.Utils.print(["Line 1", "", "Line 2", ""])
+      iex> Arca.Cli.Utils.print(["Line 1", "", "Line 2", ""])
       [:ok, :ok, :ok]
   """
   def print(out) do
@@ -130,7 +130,7 @@ defmodule Arca.CLI.Utils do
   - :ok
 
   ## Examples
-      iex> Arca.CLI.Utils.print_ansi(%{key: "value"})
+      iex> Arca.Cli.Utils.print_ansi(%{key: "value"})
       :ok
   """
   def print_ansi(to_print) when is_map(to_print) do
@@ -163,7 +163,7 @@ defmodule Arca.CLI.Utils do
   - :ok
 
   ## Examples
-      iex> Arca.CLI.Utils.pretty_print(%{key: "value"})
+      iex> Arca.Cli.Utils.pretty_print(%{key: "value"})
       :ok
   """
   def pretty_print(term) do
@@ -180,7 +180,7 @@ defmodule Arca.CLI.Utils do
   - :ok
 
   ## Examples
-      iex> Arca.CLI.Utils.put_lines(["Line 1", "Line 2"])
+      iex> Arca.Cli.Utils.put_lines(["Line 1", "Line 2"])
       [:ok, :ok]
   """
   def put_lines(lines) when is_list(lines) do
@@ -217,7 +217,7 @@ defmodule Arca.CLI.Utils do
   - A string representation of the term.
 
   ## Examples
-      iex> Arca.CLI.Utils.to_str(%{key: "value"})
+      iex> Arca.Cli.Utils.to_str(%{key: "value"})
       "%{key: \\"value\\"}"
   """
   def to_str(term) when is_atom(term) do
@@ -290,51 +290,51 @@ defmodule Arca.CLI.Utils do
   - The type of the term as an atom.
 
   ## Examples
-      iex> Arca.CLI.Utils.type_of(:atom)
+      iex> Arca.Cli.Utils.type_of(:atom)
       :atom
 
-      iex> Arca.CLI.Utils.type_of(true)
+      iex> Arca.Cli.Utils.type_of(true)
       :boolean
 
-      iex> Arca.CLI.Utils.type_of(false)
+      iex> Arca.Cli.Utils.type_of(false)
       :boolean
 
-      iex> Arca.CLI.Utils.type_of(fn -> dbg() end)
+      iex> Arca.Cli.Utils.type_of(fn -> dbg() end)
       :function
 
-      iex> Arca.CLI.Utils.type_of([1, 2, 3])
+      iex> Arca.Cli.Utils.type_of([1, 2, 3])
       :list
 
-      iex> Arca.CLI.Utils.type_of(%{ a: 1, b: 2 })
+      iex> Arca.Cli.Utils.type_of(%{ a: 1, b: 2 })
       :map
 
-      iex> Arca.CLI.Utils.type_of(nil)
+      iex> Arca.Cli.Utils.type_of(nil)
       :nil
 
-      iex> Arca.CLI.Utils.type_of(self())
+      iex> Arca.Cli.Utils.type_of(self())
       :pid
 
       iex> p = Port.open({:spawn, "ls"}, [:binary])
-      iex> Arca.CLI.Utils.type_of(p)
+      iex> Arca.Cli.Utils.type_of(p)
       :port
 
       iex> ref = make_ref()
-      iex> Arca.CLI.Utils.type_of(ref)
+      iex> Arca.Cli.Utils.type_of(ref)
       :reference
 
-      iex> Arca.CLI.Utils.type_of({ 1, 2 })
+      iex> Arca.Cli.Utils.type_of({ 1, 2 })
       :tuple
 
-      iex> Arca.CLI.Utils.type_of("a binary")
+      iex> Arca.Cli.Utils.type_of("a binary")
       :binary
 
-      iex> Arca.CLI.Utils.type_of(<<1::1, 0::1, 1::1>>)
+      iex> Arca.Cli.Utils.type_of(<<1::1, 0::1, 1::1>>)
       :bitstring
 
-      iex> Arca.CLI.Utils.type_of(42)
+      iex> Arca.Cli.Utils.type_of(42)
       :integer
 
-      iex> Arca.CLI.Utils.type_of(42.42)
+      iex> Arca.Cli.Utils.type_of(42.42)
       :float
   """
   def type_of(term) when is_boolean(term), do: :boolean
@@ -372,13 +372,13 @@ defmodule Arca.CLI.Utils do
   - `false` otherwise.
 
   ## Examples
-      iex> Arca.CLI.Utils.is_blank?(nil)
+      iex> Arca.Cli.Utils.is_blank?(nil)
       true
 
-      iex> Arca.CLI.Utils.is_blank?("")
+      iex> Arca.Cli.Utils.is_blank?("")
       true
 
-      iex> Arca.CLI.Utils.is_blank?(["not blank"])
+      iex> Arca.Cli.Utils.is_blank?(["not blank"])
       false
   """
   def is_blank?(data) when is_binary(data), do: data |> String.trim() |> String.length() == 0
@@ -401,13 +401,13 @@ defmodule Arca.CLI.Utils do
   - For other data types, returns the original value.
 
   ## Examples
-      iex> Arca.CLI.Utils.filter_blank_lines(["Line 1", "Line 2", "", ""])
+      iex> Arca.Cli.Utils.filter_blank_lines(["Line 1", "Line 2", "", ""])
       ["Line 1", "Line 2"]
 
-      iex> Arca.CLI.Utils.filter_blank_lines("Line 1\\nLine 2\\n\\n")
+      iex> Arca.Cli.Utils.filter_blank_lines("Line 1\\nLine 2\\n\\n")
       "Line 1\\nLine 2\\n"
-      
-      iex> Arca.CLI.Utils.filter_blank_lines(123)
+
+      iex> Arca.Cli.Utils.filter_blank_lines(123)
       123
   """
   def filter_blank_lines(lines)
@@ -442,7 +442,7 @@ defmodule Arca.CLI.Utils do
 
   @doc """
   Measures the execution time of a given function and returns a tuple with the duration in seconds and the function's result.
-  
+
   Handles graceful cleanup if the process is interrupted.
 
   ## Examples
@@ -456,7 +456,7 @@ defmodule Arca.CLI.Utils do
   """
   def timer(func) do
     start_time = DateTime.utc_now()
-    
+
     # Use try/rescue to ensure we properly handle any interruptions
     try do
       result = func.()
@@ -472,7 +472,7 @@ defmodule Arca.CLI.Utils do
           %ErlangError{original: :epipe} -> {0, :error}
           _ -> reraise e, __STACKTRACE__
         end
-      e -> 
+      e ->
         # For all other errors, re-raise them
         reraise e, __STACKTRACE__
     after
@@ -492,7 +492,7 @@ defmodule Arca.CLI.Utils do
       ...>   end
       ...> end
       iex> MyModule1.my_function()
-      "Arca.CLI.Utils.Test.MyModule1.my_function/0"
+      "Arca.Cli.Utils.Test.MyModule1.my_function/0"
 
       iex> defmodule MyModule2 do
       ...>   def my_function_with_param do
@@ -500,7 +500,7 @@ defmodule Arca.CLI.Utils do
       ...>   end
       ...> end
       iex> MyModule2.my_function_with_param()
-      "Arca.CLI.Utils.Test.MyModule2.my_function_with_param/0: additional_info"
+      "Arca.Cli.Utils.Test.MyModule2.my_function_with_param/0: additional_info"
 
   """
   defmacro this_fn_as_string(optional_param \\ nil) do

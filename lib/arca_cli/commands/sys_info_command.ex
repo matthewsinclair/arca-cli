@@ -1,15 +1,15 @@
-defmodule Arca.CLI.Commands.SysInfoCommand do
+defmodule Arca.Cli.Commands.SysInfoCommand do
   @moduledoc """
   Command to display system information.
   This is a test command for dot notation (sys.info).
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :"sys.info",
     name: "sys.info",
     about: "Display system information."
 
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
     """
     System Information:

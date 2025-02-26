@@ -1,15 +1,15 @@
-defmodule Arca.CLI.Commands.DevInfoCommand do
+defmodule Arca.Cli.Commands.DevInfoCommand do
   @moduledoc """
   Command to display development environment information.
   This is a namespaced command using dot notation (dev.info).
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :"dev.info",
     name: "dev.info",
     about: "Display development environment information."
 
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
     """
     Development Environment Information:

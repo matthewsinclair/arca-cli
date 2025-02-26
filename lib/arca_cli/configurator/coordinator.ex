@@ -1,14 +1,14 @@
-defmodule Arca.CLI.Configurator.Coordinator do
+defmodule Arca.Cli.Configurator.Coordinator do
   @moduledoc """
-  The `Arca.CLI.Configurator.Coordinator` is responsible for coordinating all of the configuration necessary to get an Arca.CLI up and running.
+  The `Arca.Cli.Configurator.Coordinator` is responsible for coordinating all of the configuration necessary to get an Arca.Cli up and running.
   """
 
-  alias Arca.CLI.Configurator.DftConfigurator
+  alias Arca.Cli.Configurator.DftConfigurator
   require Logger
 
   @doc """
-  Coordinate setup of the CLI. If no configuration type is passed in, default to `Arca.CLI.Configurator.DftConfigurator`.
-  Accepts either a single module or a list of modules that implement the `Arca.CLI.Configurator.ConfiguratorBehaviour` protocol.
+  Coordinate setup of the CLI. If no configuration type is passed in, default to `Arca.Cli.Configurator.DftConfigurator`.
+  Accepts either a single module or a list of modules that implement the `Arca.Cli.Configurator.ConfiguratorBehaviour` protocol.
   """
   def setup(cfg8r \\ DftConfigurator)
 

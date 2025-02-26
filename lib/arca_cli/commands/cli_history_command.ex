@@ -1,9 +1,9 @@
-defmodule Arca.CLI.Commands.CliHistoryCommand do
+defmodule Arca.Cli.Commands.CliHistoryCommand do
   @moduledoc """
   Arca CLI command to list command history.
   """
-  alias Arca.CLI.History
-  use Arca.CLI.Command.BaseCommand
+  alias Arca.Cli.History
+  use Arca.Cli.Command.BaseCommand
 
   config :"cli.history",
     name: "cli.history",
@@ -12,7 +12,7 @@ defmodule Arca.CLI.Commands.CliHistoryCommand do
   @doc """
   List the history of commands
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
     case History.history() do
       [] -> "No command history."

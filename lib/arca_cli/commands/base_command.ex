@@ -1,6 +1,6 @@
-defmodule Arca.CLI.Command.BaseCommand do
+defmodule Arca.Cli.Command.BaseCommand do
   @moduledoc """
-  Use an `Arca.CLI.Command.BaseCommand` to quickly and easily build a new CLI command.
+  Use an `Arca.Cli.Command.BaseCommand` to quickly and easily build a new CLI command.
 
   ## Command Naming Convention
 
@@ -15,8 +15,8 @@ defmodule Arca.CLI.Command.BaseCommand do
   ## Example
 
   ```elixir
-  defmodule MyApp.CLI.Commands.HelloCommand do
-    use Arca.CLI.Command.BaseCommand
+  defmodule MyApp.Cli.Commands.HelloCommand do
+    use Arca.Cli.Command.BaseCommand
     
     # Correct: module is HelloCommand, command name is :hello
     config :hello,
@@ -39,17 +39,17 @@ defmodule Arca.CLI.Command.BaseCommand do
     quote do
       import unquote(__MODULE__), only: [config: 2]
 
-      alias Arca.CLI.Command.BaseCommand
-      import Arca.CLI.Utils
+      alias Arca.Cli.Command.BaseCommand
+      import Arca.Cli.Utils
       require Logger
-      @behaviour Arca.CLI.Command.CommandBehaviour
+      @behaviour Arca.Cli.Command.CommandBehaviour
 
       Module.register_attribute(__MODULE__, :cmdcfg, accumulate: false)
 
       @doc """
       Note: Early definition of the function in Command macro to account for default values.
       """
-      @impl Arca.CLI.Command.CommandBehaviour
+      @impl Arca.Cli.Command.CommandBehaviour
       def handle(_args \\ nil, _settings \\ nil, _optimus \\ nil)
 
       @before_compile unquote(__MODULE__)
@@ -68,7 +68,7 @@ defmodule Arca.CLI.Command.BaseCommand do
   ## Examples
 
   ```elixir
-  # In a module named MyApp.CLI.Commands.HelloCommand:
+  # In a module named MyApp.Cli.Commands.HelloCommand:
   config :hello,
     name: "hello",
     about: "Say hello to the user"
@@ -92,7 +92,7 @@ defmodule Arca.CLI.Command.BaseCommand do
   ### What's Fixed
 
   This validation resolves a subtle bug where mismatched command names would be registered
-  but fail silently at runtime during dispatch. The dispatch process in `Arca.CLI.handler_for_command/2`
+  but fail silently at runtime during dispatch. The dispatch process in `Arca.Cli.handler_for_command/2`
   expects command names to follow this convention, and will now be validated at compile time.
   """
   defmacro config(cmd, opts) do
@@ -155,7 +155,7 @@ defmodule Arca.CLI.Command.BaseCommand do
       @doc """
       Provide the Optimus config for the command.
       """
-      @impl Arca.CLI.Command.CommandBehaviour
+      @impl Arca.Cli.Command.CommandBehaviour
       def config() do
         @cmdcfg
       end
@@ -163,7 +163,7 @@ defmodule Arca.CLI.Command.BaseCommand do
       @doc """
       Default handler for the command.
       """
-      @impl Arca.CLI.Command.CommandBehaviour
+      @impl Arca.Cli.Command.CommandBehaviour
       def handle(_args, _settings, _optimus) do
         this_function_is_not_implemented()
         {:error, :not_implemented}

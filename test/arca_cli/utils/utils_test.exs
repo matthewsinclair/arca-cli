@@ -1,8 +1,8 @@
-defmodule Arca.CLI.Utils.Test do
+defmodule Arca.Cli.Utils.Test do
   use ExUnit.Case, async: false
-  import Arca.CLI.Utils
+  import Arca.Cli.Utils
 
-  doctest Arca.CLI.Utils
+  doctest Arca.Cli.Utils
 
   @a_atom :atom123
   @a_boolean true
@@ -17,7 +17,7 @@ defmodule Arca.CLI.Utils.Test do
   @a_number 102_030
   @a_string "a string"
 
-  describe "Arca.CLI.Utils" do
+  describe "Arca.Cli.Utils" do
     test "know all of the types" do
       assert type_of(@a_atom) == :atom
       assert type_of(@a_boolean) == :boolean

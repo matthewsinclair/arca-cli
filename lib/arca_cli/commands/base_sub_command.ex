@@ -1,17 +1,17 @@
-defmodule Arca.CLI.Command.BaseSubCommand do
+defmodule Arca.Cli.Command.BaseSubCommand do
   defmacro __using__(_) do
     quote do
-      import Arca.CLI.Utils
-      @behaviour Arca.CLI.Command.SubCommandBehaviour
+      import Arca.Cli.Utils
+      @behaviour Arca.Cli.Command.SubCommandBehaviour
 
       Module.register_attribute(__MODULE__, :sub_commands, accumulate: true)
 
-      @before_compile Arca.CLI.Command.BaseSubCommand
+      @before_compile Arca.Cli.Command.BaseSubCommand
 
       @doc """
       Command handler for the subcommand. Routes to the respective handler for the subcommands.
       """
-      @impl Arca.CLI.Command.CommandBehaviour
+      @impl Arca.Cli.Command.CommandBehaviour
       def handle(args, settings, _outer_optimus) do
         argv =
           args.args
@@ -48,9 +48,9 @@ defmodule Arca.CLI.Command.BaseSubCommand do
       Dispatch to the appropriate subcommand, if we can find one.
       """
       def handle_subcommand(cmd, args, settings, optimus) do
-        case Arca.CLI.handler_for_command(cmd, sub_commands()) do
+        case Arca.Cli.handler_for_command(cmd, sub_commands()) do
           nil ->
-            Arca.CLI.handle_error([args])
+            Arca.Cli.handle_error([args])
 
           {:ok, _cmd_atom, handler} ->
             handler.handle(args, settings, optimus)

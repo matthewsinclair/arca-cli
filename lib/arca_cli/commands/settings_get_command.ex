@@ -1,9 +1,9 @@
-defmodule Arca.CLI.Commands.SettingsGetCommand do
+defmodule Arca.Cli.Commands.SettingsGetCommand do
   @moduledoc """
   Arca CLI command to get a property from settings.
   """
-  alias Arca.CLI
-  use Arca.CLI.Command.BaseCommand
+  alias Arca.Cli
+  use Arca.Cli.Command.BaseCommand
 
   config :"settings.get",
     name: "settings.get",
@@ -20,9 +20,9 @@ defmodule Arca.CLI.Commands.SettingsGetCommand do
   @doc """
   Get a settings value from settings by its id (with dot notation)
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, _settings, _optimus) do
-    case CLI.get_setting(args.args.id) do
+    case Cli.get_setting(args.args.id) do
       {:error, message} when is_binary(message) -> message
       value -> value
     end

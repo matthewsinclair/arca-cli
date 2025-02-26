@@ -1,8 +1,8 @@
-defmodule Arca.CLI.Commands.RedoCommand do
+defmodule Arca.Cli.Commands.RedoCommand do
   @moduledoc """
   Arca CLI command to redo a previous command from the command history.
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :redo,
     name: "redo",
@@ -20,16 +20,16 @@ defmodule Arca.CLI.Commands.RedoCommand do
   @doc """
   Arca CLI command to redo a previous command from the command history.
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, settings, optimus) do
-    history = Arca.CLI.History.history()
+    history = Arca.Cli.History.history()
     index = String.to_integer(args.args.params)
 
     if index < 0 or index >= length(history) do
       IO.puts("error: invalid command index: #{index}")
     else
       command = Enum.at(history, index)
-      Arca.CLI.Repl.eval_for_redo(command, settings, optimus)
+      Arca.Cli.Repl.eval_for_redo(command, settings, optimus)
     end
   end
 end
