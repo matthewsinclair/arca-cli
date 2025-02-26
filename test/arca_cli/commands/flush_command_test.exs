@@ -28,7 +28,7 @@ defmodule Arca.CLI.Command.BaseCommands.FlushCommand.Test do
 
     test "FlushCommand.config/0" do
       about_cmd_cfg = FlushCommand.config()
-      assert about_cmd_cfg != nil
+      assert is_list(about_cmd_cfg), "Expected config to be a list"
 
       assert about_cmd_cfg == [
                flush: [
