@@ -8,6 +8,8 @@ verblock: "2024-05-02:v0.1: Matthew Sinclair - Initial version"
 
 Implemented tab completion for rlwrap and namespace feature enhancements:
 
+Added support for hiding commands from help listings with 'hidden: true' flag. Commands remain functional but don't appear in help output. Fixed the '?' shortcut in REPL to properly display help and made the 'repl' command hidden in help listings. Added custom help generation that respects hidden flags.
+
 1. Tab Completion for rlwrap:
    - Created completion generator script that extracts all available commands
    - Modified scripts/repl to automatically generate completions and use them with rlwrap
