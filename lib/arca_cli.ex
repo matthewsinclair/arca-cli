@@ -68,6 +68,8 @@ defmodule Arca.CLI do
   Provide an Optimus config to drive the CLI.
   """
   def optimus_config do
+    # We need to include hidden commands in the config for execution
+    # but help display will use commands(false) to filter them
     configurators()
     |> Coordinator.setup()
   end
@@ -81,10 +83,24 @@ defmodule Arca.CLI do
 
   @doc """
   Grab the list of Commands that have been specified in config to :arca_cli.
+  
+  ## Parameters
+    - include_hidden: Whether to include commands marked with hidden: true (default: true)
   """
-  def commands() do
-    configurators()
-    |> Enum.flat_map(& &1.commands())
+  def commands(include_hidden \\ true) do
+    cmds = configurators()
+           |> Enum.flat_map(& &1.commands())
+           
+    if include_hidden do
+      cmds
+    else
+      # Filter out hidden commands for display in help
+      cmds
+      |> Enum.reject(fn module ->
+        {_cmd_atom, opts} = apply(module, :config, []) |> List.first()
+        Keyword.get(opts, :hidden, false)
+      end)
+    end
   end
 
   @doc """
@@ -128,8 +144,8 @@ defmodule Arca.CLI do
         msg
 
       {:ok, %Optimus.ParseResult{unknown: []}} ->
-        # When called with no params, just show usage
-        Optimus.Help.help(optimus, [], 80) |> Enum.drop(2)
+        # Use helper function to generate filtered help text
+        generate_filtered_help(optimus)
 
       {:ok, %Optimus.ParseResult{unknown: errors}} ->
         # When called with an unknown param(s), show an error
@@ -146,12 +162,12 @@ defmodule Arca.CLI do
         Optimus.Help.help(optimus, subcmd, 80) |> Enum.drop(2)
 
       :help ->
-        # Optimus.Help.help puts intro() and contact() on the front of this, so drop it
-        Optimus.Help.help(optimus, [], 80) |> Enum.drop(2)
+        # Use helper function to generate filtered help text
+        generate_filtered_help(optimus)
 
       _other ->
-        # Optimus.Help.help puts intro() and contact() on the front of this, so drop it
-        Optimus.Help.help(optimus, [], 80) |> Enum.drop(2)
+        # Use helper function to generate filtered help text
+        generate_filtered_help(optimus)
     end
   end
 
@@ -381,6 +397,39 @@ defmodule Arca.CLI do
 
   def version do
     Application.fetch_env!(:arca_cli, :version)
+  end
+  
+  @doc """
+  Generate filtered help text that excludes commands with hidden: true
+  """
+  def generate_filtered_help(optimus) do
+    # Get commands and filter out hidden ones
+    visible_commands = commands(false) # Only non-hidden commands
+    
+    # Format the header like Optimus.Help.help does
+    header = [
+      "USAGE:",
+      "    #{optimus.name} ...",
+      "    #{optimus.name} --version",
+      "    #{optimus.name} --help",
+      "    #{optimus.name} help subcommand",
+      "",
+      "SUBCOMMANDS:",
+      ""
+    ]
+    
+    # Format the command list
+    command_list = visible_commands
+    |> Enum.map(fn module ->
+      {cmd_atom, opts} = apply(module, :config, []) |> List.first()
+      name = Atom.to_string(cmd_atom)
+      about = Keyword.get(opts, :about, "")
+      padding = String.duplicate(" ", max(0, 20 - String.length(name)))
+      "    #{name}#{padding}#{about}"
+    end)
+    
+    # Combine header and command list
+    header ++ command_list
   end
 
   def author do

@@ -140,7 +140,7 @@ defmodule Arca.CLI.Test do
         "cli.history", 
         "cli.redo", 
         "cli.status", 
-        "repl", 
+        # "repl" is hidden now, so we don't expect it in help
         "settings.all", 
         "settings.get", 
         "sys.cmd", 

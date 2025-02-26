@@ -35,7 +35,7 @@ defmodule Arca.CLI.Repl do
   defp repl(args, settings, optimus) do
     result =
       args
-      |> read()
+      |> read(settings, optimus)
       |> eval(settings, optimus)
       |> print()
 
@@ -53,12 +53,16 @@ defmodule Arca.CLI.Repl do
   end
 
   # Parse REPL input into dispatchable params
-  defp read(_args, prompt \\ repl_prompt()) do
+  defp read(args, settings, optimus) do
+    read_with_prompt(args, settings, optimus, repl_prompt())
+  end
+  
+  defp read_with_prompt(_args, settings, optimus, prompt) do
     # Check if ExPrompt is available
     if Code.ensure_loaded?(ExPrompt) do
       # Read with enhanced prompt support
       # ExPrompt doesn't have a built-in completion functionality, so we'll enhance the basic prompt
-      input = prompt_with_completion(prompt)
+      input = prompt_with_completion(prompt, settings, optimus)
       
       if input == :eof do
         :eof
@@ -72,7 +76,7 @@ defmodule Arca.CLI.Repl do
   end
   
   # Custom prompt implementation with basic completion
-  defp prompt_with_completion(prompt) do
+  defp prompt_with_completion(prompt, settings \\ %{}, optimus \\ nil) do
     try do
       # Use simple input 
       input = IO.gets(prompt)
@@ -82,8 +86,8 @@ defmodule Arca.CLI.Repl do
         _ ->
           trimmed = String.trim(input)
           cond do
-            trimmed == "tab" || trimmed == "?" ->
-              # Show all commands if user explicitly types "tab" or "?"
+            trimmed == "tab" ->
+              # Show all commands if user explicitly types "tab"
               suggestions = available_commands()
               IO.puts("\nAvailable commands:")
               suggestions
@@ -93,6 +97,15 @@ defmodule Arca.CLI.Repl do
                 IO.puts("  " <> Enum.join(chunk, "  "))
               end)
               prompt_with_completion(prompt)
+            
+            # Handle "?" as a single character (help shortcut)  
+            trimmed == "?" ->
+              # Use the central help generation function
+              CLI.generate_filtered_help(optimus)
+              |> Enum.join("\n")
+              |> print()
+              
+              prompt_with_completion(prompt, settings, optimus)
               
             # Special namespace handling - if input is just a namespace prefix
             !String.contains?(trimmed, ".") && 
@@ -147,8 +160,10 @@ defmodule Arca.CLI.Repl do
   end
 
   # Handle 'help' as a special case
-  defp eval("help\n", settings, optimus) do
-    eval(["--help"], settings, optimus)
+  defp eval("help\n", _settings, optimus) do
+    # Use our custom help generation function
+    CLI.generate_filtered_help(optimus)
+    |> Enum.join("\n")
   end
 
   # Evaluate params and dispatch to appropriate handler
@@ -207,6 +222,7 @@ defmodule Arca.CLI.Repl do
   @doc """
   Gets a list of available commands for autocompletion.
   Formats command names for display, including namespaced commands.
+  Filters out commands with hidden: true in their configuration.
   
   ## Examples
   
@@ -214,7 +230,7 @@ defmodule Arca.CLI.Repl do
       ["about", "history", "status", "dev.info", "sys.info", ...]
   """
   def available_commands do
-    CLI.commands()
+    CLI.commands(false) # Only include non-hidden commands
     |> Enum.map(fn module ->
       {cmd_atom, _opts} = apply(module, :config, []) |> List.first()
       Atom.to_string(cmd_atom)
