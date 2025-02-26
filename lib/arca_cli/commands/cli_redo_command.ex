@@ -30,7 +30,7 @@ defmodule Arca.CLI.Commands.CliRedoCommand do
       |> Enum.at(idx)
       |> Repl.eval_for_redo(settings, optimus)
     else
-      {:error, "invalid command index: #{idx}"}
+      "error: invalid command index: #{idx}"
     end
   end
 end
