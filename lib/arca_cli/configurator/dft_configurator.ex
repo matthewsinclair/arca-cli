@@ -11,6 +11,11 @@ defmodule Arca.CLI.Configurator.DftConfigurator do
       Arca.CLI.Commands.CliHistoryCommand,   # history -> cli.history
       Arca.CLI.Commands.CliRedoCommand,      # redo -> cli.redo
       Arca.CLI.Commands.CliStatusCommand,    # status -> cli.status
+      Arca.CLI.Commands.DevInfoCommand,      # dev.info 
+      Arca.CLI.Commands.DevDepsCommand,      # dev.deps
+      Arca.CLI.Commands.ConfigListCommand,   # config.list
+      Arca.CLI.Commands.ConfigGetCommand,    # config.get
+      Arca.CLI.Commands.ConfigHelpCommand,   # config.help
       Arca.CLI.Commands.ReplCommand,         # stays the same
       Arca.CLI.Commands.SettingsAllCommand,  # settings -> settings.all
       Arca.CLI.Commands.SettingsGetCommand,  # get -> settings.get

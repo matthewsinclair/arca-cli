@@ -208,8 +208,66 @@ defmodule Arca.CLI do
 
   # Handle string command with any reason
   def handle_error(cmd, reason) when is_binary(cmd) do
-    "error: #{cmd}: #{format_reason(reason)}"
-    |> String.trim()
+    # Special case for "unknown command" errors with potential dot notation
+    message = if reason =~ "unknown command" do
+      similar_commands = similar_commands(cmd)
+      
+      # Handle namespaces more elegantly
+      cond do
+        !String.contains?(cmd, ".") && Enum.any?(similar_commands, &String.starts_with?(&1, "#{cmd}.")) ->
+          namespace_commands = similar_commands
+                              |> Enum.filter(&String.starts_with?(&1, "#{cmd}."))
+                              |> Enum.sort()
+          
+          # This is a namespace prefix, show available commands in this namespace
+          "#{cmd} is a command namespace. Available commands:\n#{Enum.join(namespace_commands, ", ")}\n" <>
+          "Try '#{cmd}.<command>' to run a specific command in this namespace."
+          
+        true ->
+          # Standard error with suggestions
+          if Enum.empty?(similar_commands) do
+            "error: #{cmd}: #{format_reason(reason)}"
+          else
+            namespaced_hint = if Enum.any?(similar_commands, &String.contains?(&1, ".")) do
+              "\nHint: Commands can use dot notation for namespaces (e.g., 'sys.info', 'dev.deps')"
+            else
+              ""
+            end
+            
+            "error: #{cmd}: #{format_reason(reason)}\nDid you mean one of these? #{Enum.join(similar_commands, ", ")}#{namespaced_hint}"
+          end
+      end
+    else
+      "error: #{cmd}: #{format_reason(reason)}"
+    end
+    
+    message |> String.trim()
+  end
+  
+  # Helper to find similar commands for better error messages
+  defp similar_commands(cmd) do
+    all_command_names = commands()
+    |> Enum.map(fn module ->
+      {cmd_atom, _opts} = apply(module, :config, []) |> List.first()
+      Atom.to_string(cmd_atom)
+    end)
+    
+    # First check if this might be a namespace reference
+    namespace_matches = all_command_names
+    |> Enum.filter(&String.starts_with?(&1, cmd <> "."))
+    
+    # Also look for commands that are similar
+    similarity_matches = all_command_names
+    |> Enum.filter(fn candidate -> 
+      String.jaro_distance(cmd, candidate) > 0.7 || 
+      (String.contains?(candidate, ".") && 
+       String.jaro_distance(cmd, String.split(candidate, ".") |> List.last()) > 0.7)
+    end)
+    
+    (namespace_matches ++ similarity_matches)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.take(5)  # Limit to reasonable number of suggestions
   end
 
   # Handle RuntimeError exception
