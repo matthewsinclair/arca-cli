@@ -11,7 +11,8 @@ cd "$(dirname "$0")/.." || exit
 # Generate completions file if it doesn't exist
 if [ ! -f "./scripts/completions/arca_completions" ]; then
   echo "Generating completions file..."
-  ./scripts/completions/generate.ex
+  # Use mix run instead of direct script execution
+  mix run scripts/completions/generate.ex
 fi
 
 # Check if rlwrap is available

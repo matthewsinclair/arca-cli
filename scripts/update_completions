@@ -4,7 +4,7 @@
 cd "$(dirname "$0")/.." || exit
 
 echo "Updating Arca CLI command completions..."
-./scripts/completions/generate.ex
+mix run scripts/completions/generate.ex
 
 echo "Done! Completions have been updated."
 echo "To use tab completion in the REPL, make sure to run './scripts/repl'"
