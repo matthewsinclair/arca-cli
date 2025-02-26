@@ -111,12 +111,34 @@ defmodule Arca.CLI.Command.BaseCommand do
           raise ArgumentError, "Command module name must end with 'Command'"
         end
 
+      # Handle dot notation commands (sys.info -> SysInfoCommand)
+      dot_cmd = if is_atom(unquote(cmd)) && String.contains?(Atom.to_string(unquote(cmd)), ".") do
+        parts = Atom.to_string(unquote(cmd)) |> String.split(".")
+        parts
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join("")
+        |> String.downcase()
+        |> String.to_atom()
+      else
+        unquote(cmd)
+      end
+      
       # Validate that the command name matches the module name
-      if expected_cmd != unquote(cmd) do
-        raise ArgumentError,
-              "Command name mismatch: config defines command as #{inspect(unquote(cmd))} " <>
-                "but module name #{inspect(__MODULE__)} expects #{inspect(expected_cmd)}. " <>
-                "The command name must match the module name (without 'Command' suffix, downcased)."
+      cond do
+        expected_cmd == unquote(cmd) -> 
+          # Standard command name matches directly
+          :ok
+          
+        expected_cmd == dot_cmd ->
+          # Dot notation command name matches after transformation
+          :ok
+          
+        true ->
+          # Command name doesn't match in any format
+          raise ArgumentError,
+                "Command name mismatch: config defines command as #{inspect(unquote(cmd))} " <>
+                  "but module name #{inspect(__MODULE__)} expects #{inspect(expected_cmd)}. " <>
+                  "The command name must match the module name (without 'Command' suffix, downcased)."
       end
 
       @cmdcfg [{unquote(cmd), unquote(opts)}]
