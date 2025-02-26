@@ -159,7 +159,30 @@ defmodule Arca.Cli do
 
       {:help, subcmd} ->
         # Optimus.Help.help puts intro() and contact() on the front of this, so drop it
-        Optimus.Help.help(optimus, subcmd, 80) |> Enum.drop(2)
+        help_lines = Optimus.Help.help(optimus, subcmd, 80) |> Enum.drop(2)
+        
+        # If we're in REPL mode, replace the app name with the prompt symbol in USAGE line
+        if Process.get(:is_repl_mode, false) do
+          help_lines
+          |> Enum.map(fn line ->
+            if String.starts_with?(line, "    #{optimus.name}") do
+              # Extract the part after the app name (command and args)
+              app_name_len = String.length(optimus.name)
+              line_len = String.length(line)
+              remaining = if line_len > app_name_len + 4 do
+                String.slice(line, (app_name_len + 4)..(line_len - 1))
+              else
+                ""
+              end
+              # Replace app name with prompt symbol
+              "    #{prompt_symbol()}#{remaining}"
+            else
+              line
+            end
+          end)
+        else
+          help_lines
+        end
 
       :help ->
         # Use helper function to generate filtered help text
@@ -406,13 +429,18 @@ defmodule Arca.Cli do
     # Get commands and filter out hidden ones
     visible_commands = commands(false) # Only non-hidden commands
     
-    # Format the header like Optimus.Help.help does
+    # Check if we're in REPL mode
+    is_repl = Process.get(:is_repl_mode, false)
+    
+    # Format the header like Optimus.Help.help does, but use prompt_symbol() when in REPL mode
+    prompt = if is_repl, do: prompt_symbol(), else: optimus.name
+    
     header = [
       "USAGE:",
-      "    #{optimus.name} ...",
-      "    #{optimus.name} --version",
-      "    #{optimus.name} --help",
-      "    #{optimus.name} help subcommand",
+      "    #{prompt} ...",
+      "    #{prompt} --version",
+      "    #{prompt} --help",
+      "    #{prompt} help subcommand",
       "",
       "SUBCOMMANDS:",
       ""
