@@ -27,6 +27,10 @@ defmodule Arca.Cli.Repl do
 
   """
   def start(args, settings, optimus) do
+    # Set a process flag to indicate we're in REPL mode
+    # This will be used by help generation to use prompt_symbol instead of app name
+    Process.put(:is_repl_mode, true)
+    
     Arca.Cli.intro(args, settings) |> Utils.put_lines()
     repl(args, settings, optimus)
   end
