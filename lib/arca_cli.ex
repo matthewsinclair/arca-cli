@@ -88,16 +88,32 @@ defmodule Arca.CLI do
   end
 
   @doc """
-  Return the command handlder for the specfied command. Look in commands if provided, and if not, default to the list of commands provided by the commands() function.
+  Return the command handler for the specfied command. Look in commands if provided, and if not, default to the list of commands provided by the commands() function.
+  
+  Supports both standard commands (e.g., `:about`) and dot notation commands (e.g., `:"sys.info"`).
   """
   def handler_for_command(cmd, commands \\ commands()) do
-    command_module_name = "#{Atom.to_string(cmd) |> String.capitalize()}Command"
+    command_string = Atom.to_string(cmd)
+    
+    # For dot notation, convert sys.info -> SysInfoCommand
+    # For standard notation, convert sys -> SysCommand
+    command_module_name = command_string
+      |> String.split(".")
+      |> Enum.map(&String.capitalize/1)
+      |> Enum.join("")
+      |> Kernel.<>("Command")
 
-    commands
+    # Find the command handler module
+    handler = commands
     |> Enum.find(fn module ->
       module_name_parts = Module.split(module)
       List.last(module_name_parts) == command_module_name
     end)
+    
+    case handler do
+      nil -> nil
+      module -> {:ok, cmd, module}
+    end
   end
 
   @doc """
@@ -158,7 +174,7 @@ defmodule Arca.CLI do
       nil ->
         handle_error(cmd, "unknown command: #{cmd}")
 
-      handler ->
+      {:ok, _cmd_atom, handler} ->
         try do
           handler.handle(args, settings, optimus)
         rescue

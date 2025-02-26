@@ -52,7 +52,7 @@ defmodule Arca.CLI.Command.BaseSubCommand do
           nil ->
             Arca.CLI.handle_error([args])
 
-          handler ->
+          {:ok, _cmd_atom, handler} ->
             handler.handle(args, settings, optimus)
         end
       end

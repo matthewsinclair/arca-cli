@@ -91,7 +91,18 @@ defmodule Arca.CLI.Repl do
   defp eval(args, settings, optimus) when is_binary(args) do
     should_push?(args) && History.push_cmd(args)
 
-    Optimus.parse(optimus, String.split(args))
+    # Special handling for dot notation commands
+    args_list = if String.contains?(args, ".") do
+      # For dot notation commands, we want to preserve the dots
+      # Split by spaces, but keep the dot notation intact
+      args
+      |> String.trim()
+      |> String.split(~r/\s+/, trim: true)
+    else
+      String.split(args)
+    end
+    
+    Optimus.parse(optimus, args_list)
     |> CLI.handle_args(settings, optimus)
   end
 

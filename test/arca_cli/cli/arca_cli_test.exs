@@ -152,6 +152,7 @@ defmodule Arca.CLI.Test do
           status          Show current CLI state.
           sys             Run an OS command from within the CLI and return the
                           results.
+          sys.info        Display system information.
       """
 
       actual_output =

@@ -6,14 +6,29 @@ verblock: "2024-05-02:v0.1: Matthew Sinclair - Initial version"
 
 ##### 20250226
 
-Tidied up, integrated with Claude Code and added a test for - and -- flags.
+Added support for dot notation commands (e.g., "sys.info") and reorganized the command structure to use a more consistent naming scheme. This makes the command hierarchy clearer and more maintainable.
+
+Command renaming:
+- about: remains unchanged
+- flush -> sys.flush
+- get -> settings.get
+- history -> cli.history
+- redo -> cli.redo
+- repl: remains unchanged
+- settings -> settings.all
+- status -> cli.status
+- sys -> sys.cmd
+- Added sys.info as a new example command
+
+Commands are now arranged alphabetically in the configurator, so related commands are grouped together (cli.*, settings.*, sys.*).
 
 **Logs**
 
-* cc1d29e - (HEAD -> main, upstream/main, local/main) test: Add comprehensive flag parsing tests (89 seconds ago) <Matthew Sinclair>
-* 7d644a7 - This commit addresses a subtle bug where command name mismatches between the config atom name and module name would lead to silent failures at runtime during dispatch. (2 hours ago) <Matthew Sinclair>
-* 920397e - fix: Add compile-time validation for command naming conventions (2 hours ago) <Matthew Sinclair>
-* 3ef9ddf - Added in Claude Code (9 hours ago) <Matthew Sinclair>
+* fde45a0 - Journal
+* cc1d29e - test: Add comprehensive flag parsing tests  
+* 7d644a7 - This commit addresses a subtle bug where command name mismatches between the config atom name and module name would lead to silent failures at runtime during dispatch.
+* 920397e - fix: Add compile-time validation for command naming conventions
+* 3ef9ddf - Added in Claude Code
 
 ##### 20250127
 
