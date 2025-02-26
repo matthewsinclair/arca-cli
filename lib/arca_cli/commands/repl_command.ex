@@ -10,6 +10,7 @@ defmodule Arca.CLI.Commands.ReplCommand do
     about: "Start the Arca REPL.",
     multiple: true,
     allow_unknown_args: true,
+    hidden: true,
     args: [
       params: [
         value_name: "PARAMS",

@@ -79,6 +79,8 @@ defmodule Arca.CLI.Configurator.Coordinator do
   end
 
   defp get_command_config(command_module) do
+    # Get command configuration and preserve any custom options
+    # (like hidden: true) that were specified in the command config
     [{cmd, config}] = command_module.config()
     {cmd, config}
   end
