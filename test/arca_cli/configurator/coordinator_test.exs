@@ -4,7 +4,7 @@ defmodule Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1 do
   config :arca_cli_testcfg8r1,
     commands: [
       Arca.CLI.Commands.AboutCommand,
-      Arca.CLI.Commands.FlushCommand,
+      Arca.CLI.Commands.FlushCommand
     ],
     author: "Arca CLI AUTHOR TestCfg8r1",
     about: "Arca CLI ABOUT TestCfg8r1",
@@ -68,36 +68,47 @@ defmodule Arca.CLI.Configurator.Coordinator.Test do
     end
 
     test "Coordinator.setup/1 handles multiple configurators" do
-      config = Coordinator.setup([
-        Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
-        Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
-      ])
+      config =
+        Coordinator.setup([
+          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
+          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
+        ])
+
       assert config.name == "arca_cli_testcfg8r2"
       assert config.author == "Arca CLI AUTHOR TestCfg8r2"
     end
 
     test "Coordinator.setup/1 rejects duplicate configurators and logs warning" do
-      log = capture_log(fn ->
-        config = Coordinator.setup([
-          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
-          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,  # duplicate
-          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
-        ])
-        assert config.name == "arca_cli_testcfg8r2"
-        assert config.author == "Arca CLI AUTHOR TestCfg8r2"
-      end)
+      log =
+        capture_log(fn ->
+          config =
+            Coordinator.setup([
+              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
+              # duplicate
+              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
+              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
+            ])
+
+          assert config.name == "arca_cli_testcfg8r2"
+          assert config.author == "Arca CLI AUTHOR TestCfg8r2"
+        end)
+
       assert log =~ "Duplicate configurators found and rejected"
     end
 
     test "Coordinator.setup/1 logs warning for duplicate subcommand names" do
-      log = capture_log(fn ->
-        config = Coordinator.setup([
-          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
-          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
-        ])
-        assert config.name == "arca_cli_testcfg8r2"
-        assert config.author == "Arca CLI AUTHOR TestCfg8r2"
-      end)
+      log =
+        capture_log(fn ->
+          config =
+            Coordinator.setup([
+              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
+              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
+            ])
+
+          assert config.name == "arca_cli_testcfg8r2"
+          assert config.author == "Arca CLI AUTHOR TestCfg8r2"
+        end)
+
       assert log =~ "Duplicate subcommand names found"
     end
   end

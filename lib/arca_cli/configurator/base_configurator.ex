@@ -33,12 +33,42 @@ defmodule Arca.CLI.Configurator.BaseConfigurator do
     quote do
       Module.put_attribute(__MODULE__, :app_name, unquote(app_name))
       Module.put_attribute(__MODULE__, :commands, Keyword.get(unquote(opts), :commands, []))
-      Module.put_attribute(__MODULE__, :author, Keyword.get(unquote(opts), :author, "Arca CLI AUTHOR"))
-      Module.put_attribute(__MODULE__, :about, Keyword.get(unquote(opts), :about, "Arca CLI ABOUT"))
-      Module.put_attribute(__MODULE__, :description, Keyword.get(unquote(opts), :description, "Arca CLI DESCRIPTION"))
-      Module.put_attribute(__MODULE__, :version, Keyword.get(unquote(opts), :version, "Arca CLI VERSION"))
-      Module.put_attribute(__MODULE__, :allow_unknown_args, Keyword.get(unquote(opts), :allow_unknown_args, true))
-      Module.put_attribute(__MODULE__, :parse_double_dash, Keyword.get(unquote(opts), :parse_double_dash, true))
+
+      Module.put_attribute(
+        __MODULE__,
+        :author,
+        Keyword.get(unquote(opts), :author, "Arca CLI AUTHOR")
+      )
+
+      Module.put_attribute(
+        __MODULE__,
+        :about,
+        Keyword.get(unquote(opts), :about, "Arca CLI ABOUT")
+      )
+
+      Module.put_attribute(
+        __MODULE__,
+        :description,
+        Keyword.get(unquote(opts), :description, "Arca CLI DESCRIPTION")
+      )
+
+      Module.put_attribute(
+        __MODULE__,
+        :version,
+        Keyword.get(unquote(opts), :version, "Arca CLI VERSION")
+      )
+
+      Module.put_attribute(
+        __MODULE__,
+        :allow_unknown_args,
+        Keyword.get(unquote(opts), :allow_unknown_args, true)
+      )
+
+      Module.put_attribute(
+        __MODULE__,
+        :parse_double_dash,
+        Keyword.get(unquote(opts), :parse_double_dash, true)
+      )
     end
   end
 

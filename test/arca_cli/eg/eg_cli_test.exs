@@ -120,7 +120,6 @@ defmodule Eg.CLI.EgsuboneCommand do
   end
 end
 
-
 defmodule Eg.CLI.EgConfigurator do
   @moduledoc """
   `Eg.CLI.Commands.Configurator` sets up the Eg.CLI commands in a Configurator.
@@ -181,15 +180,18 @@ defmodule Eg.CLI.Test do
         [cmd_string | _] = cmd
         IO.puts("\nSmoke testing example command: #{Enum.join(cmd, " ")}")
 
-        res = capture_io(fn ->
-          try do
-            Eg.CLI.main(cmd)
-          rescue
-            e in RuntimeError ->
-              IO.puts("error: " <> e.message)
-              assert false
-          end
-        end) |> String.trim()
+        res =
+          capture_io(fn ->
+            try do
+              Eg.CLI.main(cmd)
+            rescue
+              e in RuntimeError ->
+                IO.puts("error: " <> e.message)
+                assert false
+            end
+          end)
+          |> String.trim()
+
         assert Map.get(expected_output, cmd_string) =~ res
       end)
     end

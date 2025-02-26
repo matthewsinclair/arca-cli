@@ -154,10 +154,11 @@ defmodule Arca.CLI.Test do
                           results.
       """
 
-      actual_output = capture_io(fn ->
-        Arca.CLI.main(["--help"])
-      end)
-      |> String.trim()
+      actual_output =
+        capture_io(fn ->
+          Arca.CLI.main(["--help"])
+        end)
+        |> String.trim()
 
       assert normalize_output(actual_output) == normalize_output(expected_output)
     end

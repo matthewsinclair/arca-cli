@@ -5,8 +5,8 @@ defmodule Arca.CLI.Commands.FlushCommand do
   use Arca.CLI.Command.BaseCommand
 
   config :flush,
-      name: "flush",
-      about: "Flush the command history."
+    name: "flush",
+    about: "Flush the command history."
 
   @doc """
   Flush the history of previous commands.

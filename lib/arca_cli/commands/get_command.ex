@@ -6,16 +6,16 @@ defmodule Arca.CLI.Commands.GetCommand do
   use Arca.CLI.Command.BaseCommand
 
   config :get,
-      name: "get",
-      about: "Get the value of a setting.",
-      args: [
-        id: [
-          value_name: "SETTING_ID",
-          help: "Setting id",
-          required: true,
-          parser: :string
-        ]
+    name: "get",
+    about: "Get the value of a setting.",
+    args: [
+      id: [
+        value_name: "SETTING_ID",
+        help: "Setting id",
+        required: true,
+        parser: :string
       ]
+    ]
 
   @doc """
   Get a settings value from settings by its id (with dot notation)
