@@ -4,7 +4,7 @@ defmodule Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r1 do
   config :arca_cli_testcfg8r1,
     commands: [
       Arca.CLI.Commands.AboutCommand,
-      Arca.CLI.Commands.FlushCommand,
+      Arca.CLI.Commands.FlushCommand
     ],
     author: "Arca CLI AUTHOR TestCfg8r1",
     about: "Arca CLI ABOUT TestCfg8r1",

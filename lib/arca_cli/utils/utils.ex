@@ -423,9 +423,9 @@ defmodule Arca.CLI.Utils do
   def filter_blank_lines(map) when is_map(map), do: map
 
   def filter_blank_lines(atom) when is_atom(atom), do: atom
-  
+
   def filter_blank_lines(number) when is_number(number), do: number
-  
+
   def filter_blank_lines(boolean) when is_boolean(boolean), do: boolean
 
   def filter_blank_lines(string) when is_binary(string) do
@@ -436,7 +436,7 @@ defmodule Arca.CLI.Utils do
       false -> filter_blank_lines(newstr)
     end
   end
-  
+
   # Catch-all clause for any other data type
   def filter_blank_lines(other), do: other
 
@@ -503,7 +503,10 @@ defmodule Arca.CLI.Utils do
       function_name = elem(function_info, 0)
       function_arity = elem(function_info, 1)
       opt_msg = if unquote(optional_msg), do: ": #{unquote(optional_msg)}", else: ""
-      Logger.warning("#{__MODULE__} has not implemented #{function_name}/#{function_arity}#{opt_msg}")
+
+      Logger.warning(
+        "#{__MODULE__} has not implemented #{function_name}/#{function_arity}#{opt_msg}"
+      )
     end
   end
 end

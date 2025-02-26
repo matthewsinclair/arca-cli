@@ -15,6 +15,7 @@ defmodule Arca.CLI.History.Test do
           # Was already started, who cares!?
           :ok
       end
+
       {:ok, %{}}
     end
 

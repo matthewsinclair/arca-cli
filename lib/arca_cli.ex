@@ -1,27 +1,27 @@
 defmodule Arca.CLI do
   @moduledoc """
   Arca.CLI is a flexible command-line interface utility for Elixir projects.
-  
+
   This module serves as the main entry point for the CLI application and provides:
-  
+
   1. Command dispatcher and routing functionality
   2. Configuration and settings management
   3. Error handling and formatting
   4. Application lifecycle management
-  
+
   The CLI follows a modular design with pluggable commands and configurators.
   Commands are registered through configurators, which are responsible for
   setting up the CLI environment and registering available commands.
-  
+
   ## Architecture
-  
+
   - Commands: Individual command implementations in `Arca.CLI.Command.*`
   - Configurators: Setup modules in `Arca.CLI.Configurator.*` 
   - History: Command history tracking in `Arca.CLI.History`
   - Utils: Utility functions in `Arca.CLI.Utils`
-  
+
   ## Error Handling
-  
+
   The application uses {:ok, result} and {:error, reason} tuples for error handling.
   """
 
@@ -141,7 +141,7 @@ defmodule Arca.CLI do
 
   @doc """
   Dispatch to the appropriate subcommand, if we can find one.
-  
+
   ## Parameters
     - cmd: Command name (atom)
     - args: Command arguments
@@ -171,7 +171,7 @@ defmodule Arca.CLI do
 
   @doc """
   Handle an error nicely and return a formatted error message.
-  
+
   ## Parameters
     - cmd: Command name that caused the error (atom, string, or list)
     - reason: Error reason (any type)
@@ -183,13 +183,13 @@ defmodule Arca.CLI do
   def handle_error(cmd, reason) when is_atom(cmd) do
     handle_error([Atom.to_string(cmd)], format_reason(reason))
   end
-  
+
   # Handle command with list of reasons or single reason
   def handle_error(cmd, reason) when is_list(cmd) do
     ("error: " <> Enum.join(cmd, " ") <> ": " <> format_reason(reason))
     |> String.trim()
   end
-  
+
   # Handle string command with any reason
   def handle_error(cmd, reason) when is_binary(cmd) do
     "error: #{cmd}: #{format_reason(reason)}"
@@ -210,13 +210,13 @@ defmodule Arca.CLI do
     "error: #{reason}"
     |> String.trim()
   end
-  
+
   # Handle any other error type
   def handle_error(reason) do
     "error: #{inspect(reason)}"
     |> String.trim()
   end
-  
+
   # Private helper to format error reasons consistently
   defp format_reason(reason) when is_list(reason), do: Enum.join(reason, " ")
   defp format_reason(reason) when is_binary(reason), do: reason
@@ -224,15 +224,17 @@ defmodule Arca.CLI do
 
   @doc """
   Load settings from JSON config file.
-  
+
   ## Returns
     - Map with settings on success
     - Empty map on error, with a warning logged
   """
   def load_settings() do
     case Cfg.load() do
-      {:ok, settings} -> settings
-      {:error, reason} -> 
+      {:ok, settings} ->
+        settings
+
+      {:error, reason} ->
         Logger.warning("Failed to load settings: #{inspect(reason)}")
         %{}
     end
@@ -240,7 +242,7 @@ defmodule Arca.CLI do
 
   @doc """
   Get a setting by its id (and with dot notation).
-  
+
   ## Parameters
     - id: The setting identifier
     
@@ -257,7 +259,7 @@ defmodule Arca.CLI do
 
   @doc """
   Save settings to JSON config file.
-  
+
   ## Parameters
     - new_settings: Map containing new settings to be merged with existing ones
     
@@ -271,7 +273,7 @@ defmodule Arca.CLI do
          {:ok, _result} <- Cfg.put(:settings, updated_settings) do
       {:ok, updated_settings}
     else
-      {:error, reason} -> 
+      {:error, reason} ->
         Logger.warning("Failed to save settings: #{inspect(reason)}")
         {:error, "Failed to save settings: #{inspect(reason)}"}
     end
