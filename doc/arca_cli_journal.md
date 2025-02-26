@@ -6,24 +6,31 @@ verblock: "2024-05-02:v0.1: Matthew Sinclair - Initial version"
 
 ##### 20250226
 
-Implemented namespace feature enhancements:
+Implemented tab completion for rlwrap and namespace feature enhancements:
 
-1. Enhanced Dot Notation Commands:
+1. Tab Completion for rlwrap:
+   - Created completion generator script that extracts all available commands
+   - Modified scripts/repl to automatically generate completions and use them with rlwrap
+   - Updated REPL module to detect when running under rlwrap and adjust accordingly
+   - Added utility script to manually update completions when adding new commands
+   - Preserved command history (up/down arrows, Ctrl-R search) while adding completions
+
+2. Enhanced Dot Notation Commands:
    - Added new namespaced commands: `dev.info`, `dev.deps`, `config.list`, `config.get`, `config.help`
    - Created a macro-based approach (`NamespaceCommandHelper`) for defining commands in the same namespace
    - Improved error handling with better messages for namespace prefixes
 
-2. REPL Improvements:
+3. REPL Improvements:
    - Added command autocompletion with namespace support
    - Implemented special handling for namespace prefixes (e.g., typing "sys" shows available commands in that namespace)
    - Enhanced tab completion with suggestions
 
-3. Documentation:
+4. Documentation:
    - Updated README with dot notation examples
    - Added detailed documentation for namespace helpers
    - Included examples of both approaches to creating namespaced commands
 
-4. Tests:
+5. Tests:
    - Updated tests to handle dynamic command lists
    - Added tests for namespace functionality
    - Fixed configurator to properly register all commands
@@ -46,6 +53,11 @@ Commands are now arranged alphabetically in the configurator, so related command
 
 **Logs**
 
+* 5fbc69a - Journal
+* ad6b6f6 - fix: Add proper string trimming in REPL command evaluation
+* c0aa6e2 - fix: Handle broken pipe errors in timer function
+* 0d90adc - fix: Update tests for dot notation commands
+* 0c3bd2e - feat: Add hierarchical dot notation command support
 * fde45a0 - Journal
 * cc1d29e - test: Add comprehensive flag parsing tests  
 * 7d644a7 - This commit addresses a subtle bug where command name mismatches between the config atom name and module name would lead to silent failures at runtime during dispatch.
