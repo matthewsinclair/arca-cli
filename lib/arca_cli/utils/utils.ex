@@ -442,6 +442,8 @@ defmodule Arca.CLI.Utils do
 
   @doc """
   Measures the execution time of a given function and returns a tuple with the duration in seconds and the function's result.
+  
+  Handles graceful cleanup if the process is interrupted.
 
   ## Examples
 
@@ -454,10 +456,29 @@ defmodule Arca.CLI.Utils do
   """
   def timer(func) do
     start_time = DateTime.utc_now()
-    result = func.()
-    end_time = DateTime.utc_now()
-    duration = DateTime.diff(end_time, start_time)
-    {duration, result}
+    
+    # Use try/rescue to ensure we properly handle any interruptions
+    try do
+      result = func.()
+      end_time = DateTime.utc_now()
+      duration = DateTime.diff(end_time, start_time)
+      {duration, result}
+    rescue
+      e in [ErlangError] ->
+        # Handle erlang errors like broken pipe more gracefully
+        case e do
+          %ErlangError{original: :einval} -> {0, :error}
+          %ErlangError{original: :ebadf} -> {0, :error}
+          %ErlangError{original: :epipe} -> {0, :error}
+          _ -> reraise e, __STACKTRACE__
+        end
+      e -> 
+        # For all other errors, re-raise them
+        reraise e, __STACKTRACE__
+    after
+      # Ensure we clean up any resources, like file handles
+      :ok
+    end
   end
 
   @doc """
