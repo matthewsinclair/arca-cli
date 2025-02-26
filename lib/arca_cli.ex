@@ -1,6 +1,6 @@
-defmodule Arca.CLI do
+defmodule Arca.Cli do
   @moduledoc """
-  Arca.CLI is a flexible command-line interface utility for Elixir projects.
+  Arca.Cli is a flexible command-line interface utility for Elixir projects.
 
   This module serves as the main entry point for the CLI application and provides:
 
@@ -15,10 +15,10 @@ defmodule Arca.CLI do
 
   ## Architecture
 
-  - Commands: Individual command implementations in `Arca.CLI.Command.*`
-  - Configurators: Setup modules in `Arca.CLI.Configurator.*` 
-  - History: Command history tracking in `Arca.CLI.History`
-  - Utils: Utility functions in `Arca.CLI.Utils`
+  - Commands: Individual command implementations in `Arca.Cli.Command.*`
+  - Configurators: Setup modules in `Arca.Cli.Configurator.*` 
+  - History: Command history tracking in `Arca.Cli.History`
+  - Utils: Utility functions in `Arca.Cli.Utils`
 
   ## Error Handling
 
@@ -29,22 +29,22 @@ defmodule Arca.CLI do
   require Logger
   require OK
   use OK.Pipe
-  import Arca.CLI.Utils
+  import Arca.Cli.Utils
   alias Arca.Config.Cfg
-  alias Arca.CLI.Configurator.Coordinator
+  alias Arca.Cli.Configurator.Coordinator
 
   @doc """
-  Handle Application functionality to start the Arca.CLI subsystem.
+  Handle Application functionality to start the Arca.Cli subsystem.
   """
   @impl true
   def start(_type, _args) do
     # Logger.info("#{__MODULE__}.start: #{inspect(args)}")
 
     children = [
-      {Arca.CLI.HistorySupervisor, []}
+      {Arca.Cli.HistorySupervisor, []}
     ]
 
-    opts = [strategy: :one_for_one, name: Arca.CLI]
+    opts = [strategy: :one_for_one, name: Arca.Cli]
     Supervisor.start_link(children, opts)
   end
 

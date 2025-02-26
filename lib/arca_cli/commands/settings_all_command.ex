@@ -1,8 +1,8 @@
-defmodule Arca.CLI.Commands.SettingsAllCommand do
+defmodule Arca.Cli.Commands.SettingsAllCommand do
   @moduledoc """
   Arca CLI command to show all settings.
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :"settings.all",
     name: "settings.all",
@@ -11,7 +11,7 @@ defmodule Arca.CLI.Commands.SettingsAllCommand do
   @doc """
   Show all settings
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, settings, _optimus) do
     inspect(settings, pretty: true)
   end

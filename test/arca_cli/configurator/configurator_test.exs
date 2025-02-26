@@ -1,10 +1,10 @@
-defmodule Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r1 do
-  use Arca.CLI.Configurator.BaseConfigurator
+defmodule Arca.Cli.Configurator.ConfiguratorTest.TestCfg8r1 do
+  use Arca.Cli.Configurator.BaseConfigurator
 
   config :arca_cli_testcfg8r1,
     commands: [
-      Arca.CLI.Commands.AboutCommand,
-      Arca.CLI.Commands.FlushCommand
+      Arca.Cli.Commands.AboutCommand,
+      Arca.Cli.Commands.FlushCommand
     ],
     author: "Arca CLI AUTHOR TestCfg8r1",
     about: "Arca CLI ABOUT TestCfg8r1",
@@ -12,14 +12,14 @@ defmodule Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r1 do
     version: "Arca CLI VERSION TestCfg8r1"
 end
 
-defmodule Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r2 do
-  use Arca.CLI.Configurator.BaseConfigurator
+defmodule Arca.Cli.Configurator.ConfiguratorTest.TestCfg8r2 do
+  use Arca.Cli.Configurator.BaseConfigurator
 
   config :arca_cli_testcfg8r2,
     commands: [
-      Arca.CLI.Commands.FlushCommand,
-      Arca.CLI.Commands.GetCommand,
-      Arca.CLI.Commands.HistoryCommand
+      Arca.Cli.Commands.FlushCommand,
+      Arca.Cli.Commands.GetCommand,
+      Arca.Cli.Commands.HistoryCommand
     ],
     author: "Arca CLI AUTHOR TestCfg8r2",
     about: "Arca CLI ABOUT TestCfg8r2",
@@ -27,19 +27,19 @@ defmodule Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r2 do
     version: "Arca CLI VERSION TestCfg8r2"
 end
 
-defmodule Arca.CLI.Configurator.ConfiguratorTest do
+defmodule Arca.Cli.Configurator.ConfiguratorTest do
   use ExUnit.Case
   import ExUnit.CaptureIO
   import ExUnit.CaptureLog
-  alias Arca.CLI.Commands.AboutCommand
-  alias Arca.CLI.Test.Support
-  alias Arca.CLI.Configurator.Coordinator
-  alias Arca.CLI.Configurator.DftConfigurator
-  doctest Arca.CLI.Configurator.ConfiguratorBehaviour
-  doctest Arca.CLI.Configurator.BaseConfigurator
-  doctest Arca.CLI.Configurator.DftConfigurator
+  alias Arca.Cli.Commands.AboutCommand
+  alias Arca.Cli.Test.Support
+  alias Arca.Cli.Configurator.Coordinator
+  alias Arca.Cli.Configurator.DftConfigurator
+  doctest Arca.Cli.Configurator.ConfiguratorBehaviour
+  doctest Arca.Cli.Configurator.BaseConfigurator
+  doctest Arca.Cli.Configurator.DftConfigurator
 
-  describe "Arca.CLI.Configurator" do
+  describe "Arca.Cli.Configurator" do
     setup do
       # Get previous env var for config path and file names
       previous_env = System.get_env()
@@ -74,7 +74,7 @@ defmodule Arca.CLI.Configurator.ConfiguratorTest do
 
     test "CommandBehaviour.handle/3 (as AboutCommand)" do
       assert capture_io(fn ->
-               Arca.CLI.Commands.AboutCommand.handle()
+               Arca.Cli.Commands.AboutCommand.handle()
              end)
              |> String.trim() ==
                """
@@ -88,20 +88,20 @@ defmodule Arca.CLI.Configurator.ConfiguratorTest do
 
     test "inject_subcommands/2 can handle addition of multiple command configurations" do
       commands1 = [
-        Arca.CLI.Commands.AboutCommand,
-        Arca.CLI.Commands.FlushCommand
+        Arca.Cli.Commands.AboutCommand,
+        Arca.Cli.Commands.FlushCommand
       ]
 
       expected_commands1 =
-        Arca.CLI.Commands.AboutCommand.config() ++ Arca.CLI.Commands.FlushCommand.config()
+        Arca.Cli.Commands.AboutCommand.config() ++ Arca.Cli.Commands.FlushCommand.config()
 
       commands2 = [
-        Arca.CLI.Commands.GetCommand,
-        Arca.CLI.Commands.HistoryCommand
+        Arca.Cli.Commands.GetCommand,
+        Arca.Cli.Commands.HistoryCommand
       ]
 
       expected_commands2 =
-        Arca.CLI.Commands.GetCommand.config() ++ Arca.CLI.Commands.HistoryCommand.config()
+        Arca.Cli.Commands.GetCommand.config() ++ Arca.Cli.Commands.HistoryCommand.config()
 
       optimus_base = [
         name: "name",
@@ -131,10 +131,10 @@ defmodule Arca.CLI.Configurator.ConfiguratorTest do
         capture_log(fn ->
           config =
             Coordinator.setup([
-              Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r1,
+              Arca.Cli.Configurator.ConfiguratorTest.TestCfg8r1,
               # duplicate
-              Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r1,
-              Arca.CLI.Configurator.ConfiguratorTest.TestCfg8r2
+              Arca.Cli.Configurator.ConfiguratorTest.TestCfg8r1,
+              Arca.Cli.Configurator.ConfiguratorTest.TestCfg8r2
             ])
 
           assert config.name == "arca_cli_testcfg8r2"

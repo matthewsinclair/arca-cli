@@ -1,10 +1,10 @@
-defmodule Arca.CLI.History.Test do
+defmodule Arca.Cli.History.Test do
   use ExUnit.Case, async: false
-  alias Arca.CLI.History, as: History
+  alias Arca.Cli.History, as: History
 
-  doctest Arca.CLI.History
+  doctest Arca.Cli.History
 
-  describe "Arca.CLI.History" do
+  describe "Arca.Cli.History" do
     setup do
       case History.start_link() do
         {:ok, _pid} ->
@@ -21,7 +21,7 @@ defmodule Arca.CLI.History.Test do
 
     test "initial state is empty after flush" do
       History.flush_history()
-      assert History.state() == %History.CLIHistory{history: []}
+      assert History.state() == %History.CliHistory{history: []}
     end
 
     test "push_cmd adds command to history" do
@@ -62,7 +62,7 @@ defmodule Arca.CLI.History.Test do
     test "state returns the current state" do
       History.flush_history()
       History.push_cmd("current state")
-      assert History.state() == %History.CLIHistory{history: [{0, "current state"}]}
+      assert History.state() == %History.CliHistory{history: [{0, "current state"}]}
     end
 
     test "push_cmd trims command strings" do

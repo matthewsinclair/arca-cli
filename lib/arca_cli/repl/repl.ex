@@ -1,6 +1,6 @@
-defmodule Arca.CLI.Repl do
+defmodule Arca.Cli.Repl do
   @moduledoc """
-  `Arca.CLI.Repl` provides a Read-Eval-Print Loop (REPL) for the Arca CLI application.
+  `Arca.Cli.Repl` provides a Read-Eval-Print Loop (REPL) for the Arca CLI application.
 
   This module manages the interactive command-line interface, allowing users to input commands,
   evaluate them, and see the results immediately. It supports various commands, including
@@ -8,13 +8,13 @@ defmodule Arca.CLI.Repl do
 
   ## Usage
 
-      iex> Arca.CLI.Repl.start([], Arca.CLI.optimus_config(), %{})
+      iex> Arca.Cli.Repl.start([], Arca.Cli.optimus_config(), %{})
       {:ok, :quit}
   """
 
-  alias Arca.CLI
-  alias Arca.CLI.History
-  alias Arca.CLI.Utils
+  alias Arca.Cli
+  alias Arca.Cli.History
+  alias Arca.Cli.Utils
   require Logger
 
   @doc """
@@ -22,12 +22,12 @@ defmodule Arca.CLI.Repl do
 
   ## Examples
 
-      iex> Arca.CLI.Repl.start([], Arca.CLI.optimus_config(), %{})
+      iex> Arca.Cli.Repl.start([], Arca.Cli.optimus_config(), %{})
       {:ok, :quit}
 
   """
   def start(args, settings, optimus) do
-    Arca.CLI.intro(args, settings) |> Utils.put_lines()
+    Arca.Cli.intro(args, settings) |> Utils.put_lines()
     repl(args, settings, optimus)
   end
 
@@ -44,7 +44,7 @@ defmodule Arca.CLI.Repl do
         {:ok, :quit}
 
       {:error, e} ->
-        CLI.handle_error(e) |> print()
+        Cli.handle_error(e) |> print()
         repl(args, settings, optimus)
 
       _result ->
@@ -101,7 +101,7 @@ defmodule Arca.CLI.Repl do
             # Handle "?" as a single character (help shortcut)  
             trimmed == "?" ->
               # Use the central help generation function
-              CLI.generate_filtered_help(optimus)
+              Cli.generate_filtered_help(optimus)
               |> Enum.join("\n")
               |> print()
               
@@ -162,7 +162,7 @@ defmodule Arca.CLI.Repl do
   # Handle 'help' as a special case
   defp eval("help\n", _settings, optimus) do
     # Use our custom help generation function
-    CLI.generate_filtered_help(optimus)
+    Cli.generate_filtered_help(optimus)
     |> Enum.join("\n")
   end
 
@@ -186,14 +186,14 @@ defmodule Arca.CLI.Repl do
     end
     
     Optimus.parse(optimus, args_list)
-    |> CLI.handle_args(settings, optimus)
+    |> Cli.handle_args(settings, optimus)
   end
 
   defp eval(args, settings, optimus) when is_list(args) do
     should_push?(args) && History.push_cmd(args)
 
     Optimus.parse(optimus, args)
-    |> CLI.handle_args(settings, optimus)
+    |> Cli.handle_args(settings, optimus)
   end
 
   # Make sure not to push these commands to the command history
@@ -204,10 +204,10 @@ defmodule Arca.CLI.Repl do
 
   ## Examples
 
-      iex> Arca.CLI.Repl.should_push?("history")
+      iex> Arca.Cli.Repl.should_push?("history")
       false
 
-      iex> Arca.CLI.Repl.should_push?("other_command")
+      iex> Arca.Cli.Repl.should_push?("other_command")
       true
 
   """
@@ -226,11 +226,11 @@ defmodule Arca.CLI.Repl do
   
   ## Examples
   
-      iex> Arca.CLI.Repl.available_commands()
+      iex> Arca.Cli.Repl.available_commands()
       ["about", "history", "status", "dev.info", "sys.info", ...]
   """
   def available_commands do
-    CLI.commands(false) # Only include non-hidden commands
+    Cli.commands(false) # Only include non-hidden commands
     |> Enum.map(fn module ->
       {cmd_atom, _opts} = apply(module, :config, []) |> List.first()
       Atom.to_string(cmd_atom)
@@ -244,10 +244,10 @@ defmodule Arca.CLI.Repl do
   
   ## Examples
   
-      iex> Arca.CLI.Repl.autocomplete("sy")
+      iex> Arca.Cli.Repl.autocomplete("sy")
       ["sys", "sys.info", "sys.flush", "sys.cmd"]
       
-      iex> Arca.CLI.Repl.autocomplete("dev.")
+      iex> Arca.Cli.Repl.autocomplete("dev.")
       ["dev.info", "dev.deps"]
   """
   def autocomplete(partial) do
@@ -284,7 +284,7 @@ defmodule Arca.CLI.Repl do
 
   ## Examples
 
-      iex> Arca.CLI.Repl.eval_for_redo({1, "about"}, Arca.CLI.optimus_config(), %{})
+      iex> Arca.Cli.Repl.eval_for_redo({1, "about"}, Arca.Cli.optimus_config(), %{})
       "📦 Arca CLI..."
 
   """
@@ -300,6 +300,6 @@ defmodule Arca.CLI.Repl do
 
   # Provide the REPL's prompt
   defp repl_prompt() do
-    "\n#{Arca.CLI.prompt_symbol()} #{History.hlen()} > "
+    "\n#{Arca.Cli.prompt_symbol()} #{History.hlen()} > "
   end
 end

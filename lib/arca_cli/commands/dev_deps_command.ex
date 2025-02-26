@@ -1,15 +1,15 @@
-defmodule Arca.CLI.Commands.DevDepsCommand do
+defmodule Arca.Cli.Commands.DevDepsCommand do
   @moduledoc """
   Command to display project dependencies.
   This is a namespaced command using dot notation (dev.deps).
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :"dev.deps",
     name: "dev.deps",
     about: "Display project dependencies."
 
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
     deps = get_deps()
     header = "Project Dependencies:\n"

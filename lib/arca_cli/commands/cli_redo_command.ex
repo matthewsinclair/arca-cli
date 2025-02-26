@@ -1,9 +1,9 @@
-defmodule Arca.CLI.Commands.CliRedoCommand do
+defmodule Arca.Cli.Commands.CliRedoCommand do
   @moduledoc """
   Redo a previous command from the command history.
   """
-  alias Arca.CLI.{Repl, History}
-  use Arca.CLI.Command.BaseCommand
+  alias Arca.Cli.{Repl, History}
+  use Arca.Cli.Command.BaseCommand
 
   config :"cli.redo",
     name: "cli.redo",
@@ -20,7 +20,7 @@ defmodule Arca.CLI.Commands.CliRedoCommand do
   @doc """
   Redo a specific command by index from History
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, settings, optimus) do
     history = History.history()
     idx = args.args.idx

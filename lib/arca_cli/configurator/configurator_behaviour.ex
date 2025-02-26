@@ -1,12 +1,12 @@
-defmodule Arca.CLI.Configurator.ConfiguratorBehaviour do
+defmodule Arca.Cli.Configurator.ConfiguratorBehaviour do
   @moduledoc """
-  Documentation for `Arca.CLI.Configurator.ConfiguratorBehaviour`.
+  Documentation for `Arca.Cli.Configurator.ConfiguratorBehaviour`.
   """
 
   alias Optimus
 
   @doc """
-  Returns a list of `Arca.CLI.Command.CommandBehaviour`s that will be used by the CLI for setup.
+  Returns a list of `Arca.Cli.Command.CommandBehaviour`s that will be used by the CLI for setup.
   """
   @callback commands() :: list()
 

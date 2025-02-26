@@ -1,9 +1,9 @@
-defmodule Arca.CLI.Test do
+defmodule Arca.Cli.Test do
   use ExUnit.Case
   import ExUnit.CaptureIO
-  alias Arca.CLI
-  alias Arca.CLI.Test.Support
-  doctest Arca.CLI
+  alias Arca.Cli
+  alias Arca.Cli.Test.Support
+  doctest Arca.Cli
 
   @cli_commands [
     ["about"],
@@ -19,7 +19,7 @@ defmodule Arca.CLI.Test do
     ["--help"]
   ]
 
-  describe "Arca.CLI" do
+  describe "Arca.Cli" do
     setup do
       # Get previous env var for config path and file names
       previous_env = System.get_env()
@@ -38,7 +38,7 @@ defmodule Arca.CLI.Test do
       on_exit(fn -> System.put_env(previous_env) end)
 
       # Make sure that the CLI State process is running
-      # {:ok, _pid} = Arca.CLI.History.start_link()
+      # {:ok, _pid} = Arca.Cli.History.start_link()
       :ok
     end
 
@@ -49,7 +49,7 @@ defmodule Arca.CLI.Test do
 
         capture_io(fn ->
           try do
-            CLI.main(cmd)
+            Cli.main(cmd)
             assert true
           rescue
             e in RuntimeError ->
@@ -62,7 +62,7 @@ defmodule Arca.CLI.Test do
 
     test "about" do
       assert capture_io(fn ->
-               Arca.CLI.main(["about"])
+               Arca.Cli.main(["about"])
              end)
              |> String.trim() ==
                """
@@ -76,7 +76,7 @@ defmodule Arca.CLI.Test do
 
     test "settings.all" do
       assert capture_io(fn ->
-               Arca.CLI.main(["settings.all"])
+               Arca.Cli.main(["settings.all"])
              end)
              |> String.trim() ==
                """
@@ -87,7 +87,7 @@ defmodule Arca.CLI.Test do
 
     test "settings.get" do
       assert capture_io(fn ->
-               Arca.CLI.main(["settings.get"])
+               Arca.Cli.main(["settings.get"])
              end)
              |> String.trim() ==
                """
@@ -98,7 +98,7 @@ defmodule Arca.CLI.Test do
 
     test "settings.get id" do
       assert capture_io(fn ->
-               Arca.CLI.main(["settings.get", "id"])
+               Arca.Cli.main(["settings.get", "id"])
              end)
              |> String.trim() ==
                """
@@ -109,7 +109,7 @@ defmodule Arca.CLI.Test do
 
     test "help" do
       assert capture_io(fn ->
-               Arca.CLI.main(["help"])
+               Arca.Cli.main(["help"])
              end)
              |> String.trim() ==
                """
@@ -120,7 +120,7 @@ defmodule Arca.CLI.Test do
 
     test "help settings.all" do
       assert capture_io(fn ->
-               Arca.CLI.main(["help", "settings.all"])
+               Arca.Cli.main(["help", "settings.all"])
              end)
              |> String.trim() ==
                """
@@ -156,7 +156,7 @@ defmodule Arca.CLI.Test do
 
       actual_output =
         capture_io(fn ->
-          Arca.CLI.main(["--help"])
+          Arca.Cli.main(["--help"])
         end)
         |> String.trim()
 
@@ -176,7 +176,7 @@ defmodule Arca.CLI.Test do
 
     test "cli.redo out of range" do
       assert capture_io(fn ->
-               Arca.CLI.main(["cli.redo", "999"])
+               Arca.Cli.main(["cli.redo", "999"])
              end)
              |> String.trim() ==
                "error: invalid command index: 999"

@@ -25,8 +25,8 @@ To manually verify this fix works as expected:
 ### Test Case 1: Valid Configuration (Should Compile)
 
 ```elixir
-defmodule Arca.CLI.Commands.TestCommand do
-  use Arca.CLI.Command.BaseCommand
+defmodule Arca.Cli.Commands.TestCommand do
+  use Arca.Cli.Command.BaseCommand
   
   # Correct: module is TestCommand, command name is :test
   config :test,
@@ -43,8 +43,8 @@ end
 ### Test Case 2: Module Name Without "Command" Suffix (Should Fail)
 
 ```elixir
-defmodule Arca.CLI.Commands.Test do
-  use Arca.CLI.Command.BaseCommand
+defmodule Arca.Cli.Commands.Test do
+  use Arca.Cli.Command.BaseCommand
   
   config :test,
     name: "test",
@@ -57,8 +57,8 @@ Expected error: `Command module name must end with 'Command'`
 ### Test Case 3: Command Name Mismatch (Should Fail)
 
 ```elixir
-defmodule Arca.CLI.Commands.TestCommand do
-  use Arca.CLI.Command.BaseCommand
+defmodule Arca.Cli.Commands.TestCommand do
+  use Arca.Cli.Command.BaseCommand
   
   # Wrong: module is TestCommand, but command name is :wrong
   config :wrong,

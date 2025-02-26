@@ -6,12 +6,12 @@ cd "$(dirname "$0")/.." || exit
 echo "Updating Arca CLI command completions..."
 
 # Run the REPL in a temporary mode to get command list
-echo "q!" | mix Arca.CLI repl > /tmp/arca_commands_temp.txt
+echo "q!" | mix  repl > /tmp/arca_commands_temp.txt
 
 # Extract command list from settings page, or use default commands
-if mix Arca.CLI settings 2>&1 | grep -q "available commands"; then
+if mix  settings 2>&1 | grep -q "available commands"; then
   # Extract from settings output
-  mix Arca.CLI settings > /tmp/arca_settings_output.txt
+  mix  settings > /tmp/arca_settings_output.txt
   grep -o '\b[a-z]\+\(\.[a-z]\+\)*\b' /tmp/arca_settings_output.txt | sort | uniq > /tmp/arca_commands.txt
   
   # Add special commands

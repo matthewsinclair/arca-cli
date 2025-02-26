@@ -1,12 +1,12 @@
-defmodule Arca.CLI.Commands.SysCommand.Test do
+defmodule Arca.Cli.Commands.SysCommand.Test do
   use ExUnit.Case
   import ExUnit.CaptureIO
-  alias Arca.CLI.Commands.SysCommand
-  alias Arca.CLI.Test.Support
+  alias Arca.Cli.Commands.SysCommand
+  alias Arca.Cli.Test.Support
 
-  doctest Arca.CLI.Commands.SysCommand
+  doctest Arca.Cli.Commands.SysCommand
 
-  describe "Arca.CLI.Commands.SysCommand" do
+  describe "Arca.Cli.Commands.SysCommand" do
     setup do
       # Get previous env var for config path and file names
       previous_env = System.get_env()

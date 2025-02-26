@@ -1,12 +1,12 @@
-defmodule Arca.CLI.Commands.NamespaceCommandHelper do
+defmodule Arca.Cli.Commands.NamespaceCommandHelper do
   @moduledoc """
   Provides helper macros to simplify creating namespaced (dot notation) commands.
   
   ## Usage Example
   
   ```elixir
-  defmodule MyApp.CLI.Commands.Dev do
-    use Arca.CLI.Commands.NamespaceCommandHelper
+  defmodule MyApp.Cli.Commands.Dev do
+    use Arca.Cli.Commands.NamespaceCommandHelper
     
     namespace_command :info, "Display development environment information" do
       \"\"\"
@@ -44,7 +44,7 @@ defmodule Arca.CLI.Commands.NamespaceCommandHelper do
   """
   defmacro __using__(_opts) do
     quote do
-      import Arca.CLI.Commands.NamespaceCommandHelper, only: [namespace_command: 3]
+      import Arca.Cli.Commands.NamespaceCommandHelper, only: [namespace_command: 3]
       
       @namespace __MODULE__
                 |> Module.split()
@@ -81,7 +81,7 @@ defmodule Arca.CLI.Commands.NamespaceCommandHelper do
       
       # Generate the command module
       module_name = Module.concat([
-        Arca.CLI.Commands,
+        Arca.Cli.Commands,
         "#{String.capitalize(namespace)}#{String.capitalize(to_string(unquote(name)))}Command"
       ])
       
@@ -91,13 +91,13 @@ defmodule Arca.CLI.Commands.NamespaceCommandHelper do
         
         #{unquote(description)}
         """
-        use Arca.CLI.Command.BaseCommand
+        use Arca.Cli.Command.BaseCommand
         
         config command_name,
           name: to_string(command_name),
           about: unquote(description)
         
-        @impl Arca.CLI.Command.CommandBehaviour
+        @impl Arca.Cli.Command.CommandBehaviour
         def handle(_args, _settings, _optimus) do
           unquote(do_block)
         end

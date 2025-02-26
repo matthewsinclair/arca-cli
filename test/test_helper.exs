@@ -1,5 +1,5 @@
 # Support functions for CLI test cases
-defmodule Arca.CLI.Test.Support do
+defmodule Arca.Cli.Test.Support do
   # Example config file
   @example_config_json_as_map %{
     "id" => "DOT_SLASH_DOT_LL_SLASH_CONFIG_DOT_JSON"

@@ -1,8 +1,8 @@
-defmodule Arca.CLI.Commands.FlushCommand do
+defmodule Arca.Cli.Commands.FlushCommand do
   @moduledoc """
   Flush the history of previous commands.
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :flush,
     name: "flush",
@@ -11,9 +11,9 @@ defmodule Arca.CLI.Commands.FlushCommand do
   @doc """
   Flush the history of previous commands.
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
-    Arca.CLI.History.flush_history()
+    Arca.Cli.History.flush_history()
     "ok"
   end
 end

@@ -1,9 +1,9 @@
-defmodule Arca.CLI.Commands.ReplCommand do
+defmodule Arca.Cli.Commands.ReplCommand do
   @moduledoc """
   Arca CLI command to start the REPL.
   """
-  alias Arca.CLI.Repl
-  use Arca.CLI.Command.BaseCommand
+  alias Arca.Cli.Repl
+  use Arca.Cli.Command.BaseCommand
 
   config :repl,
     name: "repl",
@@ -22,7 +22,7 @@ defmodule Arca.CLI.Commands.ReplCommand do
   @doc """
   Start the REPL.
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, settings, optimus) do
     Repl.start(args, settings, optimus)
     ""

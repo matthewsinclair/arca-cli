@@ -70,8 +70,8 @@ For developers extending Arca CLI, creating namespaced commands is simple:
 1. Using the standard approach:
 
 ```elixir
-defmodule YourApp.CLI.Commands.DevInfoCommand do
-  use Arca.CLI.Command.BaseCommand
+defmodule YourApp.Cli.Commands.DevInfoCommand do
+  use Arca.Cli.Command.BaseCommand
 
   config :"dev.info",
     name: "dev.info",
@@ -87,8 +87,8 @@ end
 2. Using the namespace helper macro:
 
 ```elixir
-defmodule YourApp.CLI.Commands.Dev do
-  use Arca.CLI.Commands.NamespaceCommandHelper
+defmodule YourApp.Cli.Commands.Dev do
+  use Arca.Cli.Commands.NamespaceCommandHelper
   
   namespace_command :info, "Display development information" do
     "Development info..."

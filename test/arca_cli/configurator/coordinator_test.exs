@@ -1,10 +1,10 @@
-defmodule Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1 do
-  use Arca.CLI.Configurator.BaseConfigurator
+defmodule Arca.Cli.Configurator.CoordinatorTest.TestCfg8r1 do
+  use Arca.Cli.Configurator.BaseConfigurator
 
   config :arca_cli_testcfg8r1,
     commands: [
-      Arca.CLI.Commands.AboutCommand,
-      Arca.CLI.Commands.FlushCommand
+      Arca.Cli.Commands.AboutCommand,
+      Arca.Cli.Commands.FlushCommand
     ],
     author: "Arca CLI AUTHOR TestCfg8r1",
     about: "Arca CLI ABOUT TestCfg8r1",
@@ -12,14 +12,14 @@ defmodule Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1 do
     version: "Arca CLI VERSION TestCfg8r1"
 end
 
-defmodule Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2 do
-  use Arca.CLI.Configurator.BaseConfigurator
+defmodule Arca.Cli.Configurator.CoordinatorTest.TestCfg8r2 do
+  use Arca.Cli.Configurator.BaseConfigurator
 
   config :arca_cli_testcfg8r2,
     commands: [
-      Arca.CLI.Commands.FlushCommand,
-      Arca.CLI.Commands.GetCommand,
-      Arca.CLI.Commands.HistoryCommand
+      Arca.Cli.Commands.FlushCommand,
+      Arca.Cli.Commands.GetCommand,
+      Arca.Cli.Commands.HistoryCommand
     ],
     author: "Arca CLI AUTHOR TestCfg8r2",
     about: "Arca CLI ABOUT TestCfg8r2",
@@ -27,16 +27,16 @@ defmodule Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2 do
     version: "Arca CLI VERSION TestCfg8r2"
 end
 
-defmodule Arca.CLI.Configurator.Coordinator.Test do
+defmodule Arca.Cli.Configurator.Coordinator.Test do
   use ExUnit.Case
   import ExUnit.CaptureLog
-  alias Arca.CLI.Configurator.Coordinator
-  alias Arca.CLI.Configurator.DftConfigurator
-  alias Arca.CLI.Test.Support
+  alias Arca.Cli.Configurator.Coordinator
+  alias Arca.Cli.Configurator.DftConfigurator
+  alias Arca.Cli.Test.Support
 
-  doctest Arca.CLI.Configurator.Coordinator
+  doctest Arca.Cli.Configurator.Coordinator
 
-  describe "Arca.CLI.Configurator.Coordinator" do
+  describe "Arca.Cli.Configurator.Coordinator" do
     setup do
       # Get previous env var for config path and file names
       previous_env = System.get_env()
@@ -70,8 +70,8 @@ defmodule Arca.CLI.Configurator.Coordinator.Test do
     test "Coordinator.setup/1 handles multiple configurators" do
       config =
         Coordinator.setup([
-          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
-          Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
+          Arca.Cli.Configurator.CoordinatorTest.TestCfg8r1,
+          Arca.Cli.Configurator.CoordinatorTest.TestCfg8r2
         ])
 
       assert config.name == "arca_cli_testcfg8r2"
@@ -83,10 +83,10 @@ defmodule Arca.CLI.Configurator.Coordinator.Test do
         capture_log(fn ->
           config =
             Coordinator.setup([
-              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
+              Arca.Cli.Configurator.CoordinatorTest.TestCfg8r1,
               # duplicate
-              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
-              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
+              Arca.Cli.Configurator.CoordinatorTest.TestCfg8r1,
+              Arca.Cli.Configurator.CoordinatorTest.TestCfg8r2
             ])
 
           assert config.name == "arca_cli_testcfg8r2"
@@ -101,8 +101,8 @@ defmodule Arca.CLI.Configurator.Coordinator.Test do
         capture_log(fn ->
           config =
             Coordinator.setup([
-              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r1,
-              Arca.CLI.Configurator.CoordinatorTest.TestCfg8r2
+              Arca.Cli.Configurator.CoordinatorTest.TestCfg8r1,
+              Arca.Cli.Configurator.CoordinatorTest.TestCfg8r2
             ])
 
           assert config.name == "arca_cli_testcfg8r2"

@@ -1,4 +1,4 @@
-defmodule Arca.CLI.MixProject do
+defmodule Arca.Cli.MixProject do
   use Mix.Project
 
   def project do
@@ -8,9 +8,9 @@ defmodule Arca.CLI.MixProject do
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      escript: [main_module: Arca.CLI, path: "_build/escript/arca_cli", name: "arca_cli"],
+      escript: [main_module: Arca.Cli, path: "_build/escript/arca_cli", name: "arca_cli"],
       mix_tasks: [
-        arca_cli: Mix.Tasks.Arca.CLI,
+        arca_cli: Mix.Tasks.Arca.Cli,
         comment: "📦 Arca CLI"
       ]
     ]
@@ -18,7 +18,7 @@ defmodule Arca.CLI.MixProject do
 
   def application do
     [
-      mod: {Arca.CLI, []},
+      mod: {Arca.Cli, []},
       ansi_enabled: true
     ]
   end

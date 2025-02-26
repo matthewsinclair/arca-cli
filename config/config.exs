@@ -1,7 +1,7 @@
 # General application configuration
 import Config
 
-# Configure Arca.CLI
+# Configure Arca.Cli
 config :arca_cli,
   env: config_env(),
   default_config_path: "~/.arca/",
@@ -16,7 +16,7 @@ config :arca_cli,
   url: "https://arca.io",
   prompt_symbol: "📦",
   configurators: [
-    Arca.CLI.Configurator.DftConfigurator
+    Arca.Cli.Configurator.DftConfigurator
   ]
 
 # Configures Elixir's Logger

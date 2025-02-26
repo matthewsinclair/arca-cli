@@ -1,8 +1,8 @@
-defmodule Arca.CLI.Commands.SysCmdCommand do
+defmodule Arca.Cli.Commands.SysCmdCommand do
   @moduledoc """
   Arca CLI command to execute an OS command.
   """
-  use Arca.CLI.Command.BaseCommand
+  use Arca.Cli.Command.BaseCommand
 
   config :"sys.cmd",
     name: "sys.cmd",
@@ -34,15 +34,15 @@ defmodule Arca.CLI.Commands.SysCmdCommand do
   ## Examples
 
       iex> args = %{args: %{args: "pwd"}, unknown: []}
-      ...> Arca.CLI.Command.OSCommand.handle(args, nil, nil)
+      ...> .Command.OSCommand.handle(args, nil, nil)
       {"/home/user\n", 0}
 
       iex> args = %{args: %{args: "ls"}, unknown: ["-l"]}
-      ...> Arca.CLI.Command.OSCommand.handle(args, nil, nil)
+      ...> .Command.OSCommand.handle(args, nil, nil)
       {"total 0\n-rw-r--r--  1 user  group  0 Jan  1 00:00 file.txt\n", 0}
 
   """
-  @impl Arca.CLI.Command.CommandBehaviour
+  @impl Arca.Cli.Command.CommandBehaviour
   def handle(%{args: %{args: oscmd}, unknown: oscmd_args}, _settings, _optimus) do
     oscmd_args =
       case oscmd_args do
@@ -55,7 +55,7 @@ defmodule Arca.CLI.Commands.SysCmdCommand do
         {res, 0} ->
           res
           |> String.trim()
-          |> Arca.CLI.Utils.print_ansi()
+          |> Arca.Cli.Utils.print_ansi()
 
           {res, 0}
 
@@ -63,7 +63,7 @@ defmodule Arca.CLI.Commands.SysCmdCommand do
           reason
           |> inspect()
           |> String.trim()
-          |> Arca.CLI.Utils.print_ansi()
+          |> Arca.Cli.Utils.print_ansi()
 
           {error, reason}
       end
@@ -72,12 +72,12 @@ defmodule Arca.CLI.Commands.SysCmdCommand do
         case e.original do
           :enoent ->
             error_message = "Command not found: #{oscmd}"
-            Arca.CLI.Utils.print_ansi(error_message)
+            Arca.Cli.Utils.print_ansi(error_message)
             {error_message, :enoent}
 
           _ ->
             unknown_error = "An unknown error occurred: #{inspect(e)}"
-            Arca.CLI.Utils.print_ansi(unknown_error)
+            Arca.Cli.Utils.print_ansi(unknown_error)
             {unknown_error, :unknown}
         end
     end
