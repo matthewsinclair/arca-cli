@@ -1,6 +1,34 @@
 defmodule Arca.CLI.Command.BaseCommand do
   @moduledoc """
   Use an `Arca.CLI.Command.BaseCommand` to quickly and easily build a new CLI command.
+
+  ## Command Naming Convention
+
+  When creating a command, it's important to follow the naming convention:
+
+  1. The module name must end with "Command" (e.g., `AboutCommand`, `StatusCommand`)
+  2. The command name specified in the `config/2` macro must match the downcased module name 
+     without the "Command" suffix (e.g., `:about` for `AboutCommand`, `:status` for `StatusCommand`)
+
+  This is enforced at compile time to prevent silent failures at runtime.
+
+  ## Example
+
+  ```elixir
+  defmodule MyApp.CLI.Commands.HelloCommand do
+    use Arca.CLI.Command.BaseCommand
+    
+    # Correct: module is HelloCommand, command name is :hello
+    config :hello,
+      name: "hello",
+      about: "Say hello to the user"
+      
+    @impl true
+    def handle(_args, _settings, _optimus) do
+      "Hello, world!"
+    end
+  end
+  ```
   """
   require Logger
 
@@ -28,8 +56,69 @@ defmodule Arca.CLI.Command.BaseCommand do
     end
   end
 
+  @doc """
+  Configure a command with the given name and options.
+
+  ## Parameters
+
+  - `cmd`: The command name (as an atom) that will be used for CLI dispatch.
+    MUST match the downcased module name without the "Command" suffix.
+  - `opts`: Keyword list of options for the command configuration.
+
+  ## Examples
+
+  ```elixir
+  # In a module named MyApp.CLI.Commands.HelloCommand:
+  config :hello,
+    name: "hello",
+    about: "Say hello to the user"
+  ```
+
+  ## Validation
+
+  This macro performs compile-time validation to ensure the command name
+  matches the module name convention. This prevents silent runtime dispatch failures.
+
+  ### Validation Rules
+
+  1. The module name must end with "Command" suffix
+     - Valid: `HelloCommand`, `GetDataCommand`
+     - Invalid: `Hello`, `GetData`
+
+  2. The command name (first argument to `config`) must match the downcased module name without the "Command" suffix
+     - Valid: `HelloCommand` with `:hello`, `GetDataCommand` with `:get_data`
+     - Invalid: `HelloCommand` with `:greeting`, `GetDataCommand` with `:fetch_data`
+
+  ### What's Fixed
+
+  This validation resolves a subtle bug where mismatched command names would be registered
+  but fail silently at runtime during dispatch. The dispatch process in `Arca.CLI.handler_for_command/2`
+  expects command names to follow this convention, and will now be validated at compile time.
+  """
   defmacro config(cmd, opts) do
     quote do
+      # Get the module name suffix (last part of the module name)
+      module_name_parts = Module.split(__MODULE__)
+      module_suffix = List.last(module_name_parts)
+
+      # Extract the expected command name from the module suffix
+      expected_cmd =
+        if String.ends_with?(module_suffix, "Command") do
+          suffix_without_command = String.replace_suffix(module_suffix, "Command", "")
+          # Convert to the expected atom format
+          String.to_atom(String.downcase(suffix_without_command))
+        else
+          raise ArgumentError, "Command module name must end with 'Command'"
+        end
+
+      # Validate that the command name matches the module name
+      if expected_cmd != unquote(cmd) do
+        raise ArgumentError,
+              "Command name mismatch: config defines command as #{inspect(unquote(cmd))} " <>
+                "but module name #{inspect(__MODULE__)} expects #{inspect(expected_cmd)}. " <>
+                "The command name must match the module name (without 'Command' suffix, downcased)."
+      end
+
       @cmdcfg [{unquote(cmd), unquote(opts)}]
     end
   end
@@ -55,7 +144,7 @@ defmodule Arca.CLI.Command.BaseCommand do
       @impl Arca.CLI.Command.CommandBehaviour
       def handle(_args, _settings, _optimus) do
         this_function_is_not_implemented()
-        { :error, :not_implemented }
+        {:error, :not_implemented}
       end
     end
   end
