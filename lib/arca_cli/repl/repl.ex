@@ -74,11 +74,7 @@ defmodule Arca.CLI.Repl do
   # Custom prompt implementation with basic completion
   defp prompt_with_completion(prompt) do
     try do
-      # Display available commands hint
-      cmd_count = available_commands() |> length()
-      IO.puts("#{IO.ANSI.yellow()}Hint: #{cmd_count} commands available. Type a partial command and press Tab to see suggestions.#{IO.ANSI.reset()}")
-      
-      # Use simple input for now
+      # Use simple input 
       input = IO.gets(prompt)
       
       case input do
@@ -112,9 +108,13 @@ defmodule Arca.CLI.Repl do
               
             true ->
               # Check if this is a partial command and suggest completions
-              suggestions = autocomplete(trimmed)
-              if length(suggestions) > 0 && length(suggestions) < 10 && String.length(trimmed) > 0 do
-                IO.puts("\nSuggestions: #{Enum.join(suggestions, ", ")}")
+              # We'll only show suggestions if Tab completion is not available
+              # Check if we're running under rlwrap
+              if !System.get_env("RLWRAP_COMMAND_PID") do
+                suggestions = autocomplete(trimmed)
+                if length(suggestions) > 0 && length(suggestions) < 10 && String.length(trimmed) > 0 do
+                  IO.puts("\nSuggestions: #{Enum.join(suggestions, ", ")}")
+                end
               end
               trimmed
           end
