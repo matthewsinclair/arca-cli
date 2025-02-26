@@ -6,6 +6,19 @@ verblock: "2024-05-02:v0.1: Matthew Sinclair - Initial version"
 
 ##### 20250226
 
+TODO:
+  1. Further Enhancements:
+    - Add more namespaced commands (e.g., "dev.*" for development tools)
+    - Implement command autocompletion for dot notation commands
+    - Add help categories based on command namespaces
+  2. Documentation:
+    - Update user-facing documentation to reflect new command structure
+    - Add examples of dot notation usage in READMEs
+  3. Possible Refactorings:
+    - Consider using macros to simplify creating new commands in the same namespace
+    - Improve error messages to be more specific about dot notation syntax
+    
+
 Added support for dot notation commands (e.g., "sys.info") and reorganized the command structure to use a more consistent naming scheme. This makes the command hierarchy clearer and more maintainable.
 
 Command renaming:
