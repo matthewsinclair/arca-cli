@@ -1,0 +1,177 @@
+defmodule Arca.CLI.Commands.FlagTestCommand do
+  use Arca.CLI.Command.BaseCommand
+
+  config :flagtest,
+    name: "flag_test",
+    about: "A test command for flag parsing",
+    options: [
+      short: [
+        value_name: "SHORT",
+        short: "-s",
+        long: "--short",
+        help: "A test short flag",
+        parser: :string
+      ],
+      long: [
+        value_name: "LONG",
+        long: "--long",
+        help: "A test long-only flag",
+        parser: :string
+      ]
+    ],
+    flags: [
+      boolean: [
+        short: "-b",
+        long: "--boolean",
+        help: "A boolean flag"
+      ]
+    ]
+
+  @impl true
+  def handle(args, _settings, _optimus) do
+    {:ok, args}
+  end
+end
+
+defmodule Arca.CLI.Commands.FlagCommandTest do
+  use ExUnit.Case
+  alias Arca.CLI.Test.Support
+  alias Arca.CLI.Commands.FlagTestCommand
+
+  describe "flag parsing tests" do
+    setup do
+      # Get previous env var for config path and file names
+      previous_env = System.get_env()
+
+      # Set up to load the local .arca/config.json file
+      System.put_env("ARCA_CONFIG_PATH", "./.arca")
+      System.put_env("ARCA_CONFIG_FILE", "config.json")
+
+      # Write a known config file to a known location
+      Support.write_default_config_file(
+        System.get_env("ARCA_CONFIG_FILE"),
+        System.get_env("ARCA_CONFIG_PATH")
+      )
+
+      # Put things back how we found them
+      on_exit(fn -> System.put_env(previous_env) end)
+
+      # Get the command configuration and create an Optimus instance for testing
+      [{cmd_name, cmd_config}] = FlagTestCommand.config()
+      optimus_config = [
+        name: "test_app",
+        description: "Test application",
+        version: "1.0.0",
+        allow_unknown_args: false,
+        parse_double_dash: true,
+        subcommands: [
+          {cmd_name, cmd_config}
+        ]
+      ]
+      optimus = Optimus.new!(optimus_config)
+
+      %{optimus: optimus, cmd_name: cmd_name}
+    end
+
+    test "short flag with value parsing", %{optimus: optimus} do
+      args = ["flag_test", "-s", "value"]
+      
+      # Parse the arguments directly with Optimus
+      parsed = Optimus.parse!(optimus, args)
+      
+      # Get the subcommand and the parsed arguments
+      {subcommand, parse_result} = parsed
+      assert subcommand == [:flagtest]
+      
+      # Assert the flag was correctly parsed
+      assert parse_result.options.short == "value"
+    end
+
+    test "long flag with value parsing", %{optimus: optimus} do
+      args = ["flag_test", "--short", "value"]
+      
+      # Parse the arguments directly with Optimus
+      parsed = Optimus.parse!(optimus, args)
+      
+      # Get the subcommand and the parsed arguments
+      {subcommand, parse_result} = parsed
+      assert subcommand == [:flagtest]
+      
+      # Assert the flag was correctly parsed
+      assert parse_result.options.short == "value"
+    end
+
+    test "long-only flag with value parsing", %{optimus: optimus} do
+      args = ["flag_test", "--long", "value"]
+      
+      # Parse the arguments directly with Optimus
+      parsed = Optimus.parse!(optimus, args)
+      
+      # Get the subcommand and the parsed arguments
+      {subcommand, parse_result} = parsed
+      assert subcommand == [:flagtest]
+      
+      # Assert the flag was correctly parsed
+      assert parse_result.options.long == "value"
+    end
+
+    test "boolean flag parsing (true)", %{optimus: optimus} do
+      args = ["flag_test", "--boolean"]
+      
+      # Parse the arguments directly with Optimus
+      parsed = Optimus.parse!(optimus, args)
+      
+      # Get the subcommand and the parsed arguments
+      {subcommand, parse_result} = parsed
+      assert subcommand == [:flagtest]
+      
+      # Assert the flag was correctly parsed as true
+      assert parse_result.flags.boolean == true
+    end
+
+    test "boolean flag parsing (short form)", %{optimus: optimus} do
+      args = ["flag_test", "-b"]
+      
+      # Parse the arguments directly with Optimus
+      parsed = Optimus.parse!(optimus, args)
+      
+      # Get the subcommand and the parsed arguments
+      {subcommand, parse_result} = parsed
+      assert subcommand == [:flagtest]
+      
+      # Assert the flag was correctly parsed as true
+      assert parse_result.flags.boolean == true
+    end
+
+    test "multiple flags combined", %{optimus: optimus} do
+      args = ["flag_test", "-b", "--short", "value", "--long", "another"]
+      
+      # Parse the arguments directly with Optimus
+      parsed = Optimus.parse!(optimus, args)
+      
+      # Get the subcommand and the parsed arguments
+      {subcommand, parse_result} = parsed
+      assert subcommand == [:flagtest]
+      
+      # Assert all flags were correctly parsed
+      assert parse_result.flags.boolean == true
+      assert parse_result.options.short == "value"
+      assert parse_result.options.long == "another"
+    end
+
+    test "flags with equals syntax", %{optimus: optimus} do
+      args = ["flag_test", "--short=value", "--long=another"]
+      
+      # Parse the arguments directly with Optimus
+      parsed = Optimus.parse!(optimus, args)
+      
+      # Get the subcommand and the parsed arguments
+      {subcommand, parse_result} = parsed
+      assert subcommand == [:flagtest]
+      
+      # Assert the flags were correctly parsed
+      assert parse_result.options.short == "value"
+      assert parse_result.options.long == "another"
+    end
+  end
+end
