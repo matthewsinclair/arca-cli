@@ -7,14 +7,14 @@ defmodule Arca.CLI.Test do
 
   @cli_commands [
     ["about"],
-    ["get", "id"],
-    ["help", "settings"],
-    ["history"],
-    ["redo", "0"],
-    ["flush"],
+    ["settings.get", "id"],
+    ["help", "settings.all"],
+    ["cli.history"],
+    ["cli.redo", "0"],
+    ["sys.flush"],
     # ["repl"], # doesn't work as a test as it is interactive
-    ["settings"],
-    ["status"],
+    ["settings.all"],
+    ["cli.status"],
     ["--version"],
     ["--help"]
   ]
@@ -74,9 +74,9 @@ defmodule Arca.CLI.Test do
                |> String.trim()
     end
 
-    test "settings" do
+    test "settings.all" do
       assert capture_io(fn ->
-               Arca.CLI.main(["settings"])
+               Arca.CLI.main(["settings.all"])
              end)
              |> String.trim() ==
                """
@@ -85,20 +85,20 @@ defmodule Arca.CLI.Test do
                |> String.trim()
     end
 
-    test "get" do
+    test "settings.get" do
       assert capture_io(fn ->
-               Arca.CLI.main(["get"])
+               Arca.CLI.main(["settings.get"])
              end)
              |> String.trim() ==
                """
-               error: get: missing required arguments: SETTING_ID
+               error: settings.get: missing required arguments: SETTING_ID
                """
                |> String.trim()
     end
 
-    test "get id" do
+    test "settings.get id" do
       assert capture_io(fn ->
-               Arca.CLI.main(["get", "id"])
+               Arca.CLI.main(["settings.get", "id"])
              end)
              |> String.trim() ==
                """
@@ -118,16 +118,16 @@ defmodule Arca.CLI.Test do
                |> String.trim()
     end
 
-    test "help settings" do
+    test "help settings.all" do
       assert capture_io(fn ->
-               Arca.CLI.main(["help", "settings"])
+               Arca.CLI.main(["help", "settings.all"])
              end)
              |> String.trim() ==
                """
                Display current configuration settings.
 
                USAGE:
-                   arca_cli settings
+                   arca_cli settings.all
                """
                |> String.trim()
     end
@@ -142,17 +142,17 @@ defmodule Arca.CLI.Test do
 
       SUBCOMMANDS:
 
-          about           Info about the command line interface.
-          flush           Flush the command history.
-          get             Get the value of a setting.
-          history         Show a history of recent commands.
-          redo            Redo a previous command from the history.
-          repl            Start the Arca REPL.
-          settings        Display current configuration settings.
-          status          Show current CLI state.
-          sys             Run an OS command from within the CLI and return the
-                          results.
-          sys.info        Display system information.
+          about               Info about the command line interface.
+          cli.history         Show a history of recent commands.
+          cli.redo            Redo a previous command from the history.
+          cli.status          Show current CLI state.
+          repl                Start the Arca REPL.
+          settings.all        Display current configuration settings.
+          settings.get        Get the value of a setting.
+          sys.cmd             Run an OS command from within the CLI and return the
+                              results.
+          sys.flush           Flush the command history.
+          sys.info            Display system information.
       """
 
       actual_output =
@@ -164,9 +164,9 @@ defmodule Arca.CLI.Test do
       assert normalize_output(actual_output) == normalize_output(expected_output)
     end
 
-    test "redo out of range" do
+    test "cli.redo out of range" do
       assert capture_io(fn ->
-               Arca.CLI.main(["redo", "999"])
+               Arca.CLI.main(["cli.redo", "999"])
              end)
              |> String.trim() ==
                "error: invalid command index: 999"
