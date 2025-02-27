@@ -10,6 +10,7 @@ verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
 Improved help flag handling in commands with required arguments and standardized help display.
 
 Fixed two issues:
+
 1. Commands with required parameters would show an error when using --help flag instead of showing help information
 2. Standardized how the CLI name is displayed in help texts, always showing "cli" rather than the configured CLI name
 
@@ -68,6 +69,7 @@ Added support for hiding commands from help listings with 'hidden: true' flag. C
 Added support for dot notation commands (e.g., "sys.info") and reorganized the command structure to use a more consistent naming scheme. This makes the command hierarchy clearer and more maintainable.
 
 Command renaming:
+
 * about: remains unchanged
 * flush -> sys.flush
 * get -> settings.get
