@@ -11,6 +11,16 @@ Updated deps
 
 **Logs**
 
+* 5c9dbf7 - (HEAD -> main, upstream/main, local/main) Journal (3 seconds ago) <Matthew Sinclair>
+* 1ded743 - Updated deps. (76 seconds ago) <Matthew Sinclair>
+* 9e268b0 - Updated deps. (20 hours ago) <Matthew Sinclair>
+* 23bcc55 - refactor: Standardize module naming convention from Arca.CLI to Arca.Cli (21 hours ago) <Matthew Sinclair>
+* 6fa93d6 - docs: Update journal with hidden command feature (23 hours ago) <Matthew Sinclair>
+* c4d7852 - feat: Add hidden flag for commands and fix '?' help shortcut (23 hours ago) <Matthew Sinclair>
+* 168bc18 - fix: Replace dynamic command generator with static completion (24 hours ago) <Matthew Sinclair>
+* 2823feb - fix: Improve completion generator and REPL script (24 hours ago) <Matthew Sinclair>
+* 91b5eda - feat: Add tab completion support for rlwrap (24 hours ago) <Matthew Sinclair>
+* 2dc0431 - feat: Implement namespaced commands and improved CLI organization (24 hours ago) <Matthew Sinclair>
 
 ##### 20250226
 
@@ -21,45 +31,45 @@ Implemented tab completion for rlwrap and namespace feature enhancements:
 Added support for hiding commands from help listings with 'hidden: true' flag. Commands remain functional but don't appear in help output. Fixed the '?' shortcut in REPL to properly display help and made the 'repl' command hidden in help listings. Added custom help generation that respects hidden flags.
 
 1. Tab Completion for rlwrap:
-   - Created completion generator script that extracts all available commands
-   - Modified scripts/repl to automatically generate completions and use them with rlwrap
-   - Updated REPL module to detect when running under rlwrap and adjust accordingly
-   - Added utility script to manually update completions when adding new commands
-   - Preserved command history (up/down arrows, Ctrl-R search) while adding completions
+   * Created completion generator script that extracts all available commands
+   * Modified scripts/repl to automatically generate completions and use them with rlwrap
+   * Updated REPL module to detect when running under rlwrap and adjust accordingly
+   * Added utility script to manually update completions when adding new commands
+   * Preserved command history (up/down arrows, Ctrl-R search) while adding completions
 
 2. Enhanced Dot Notation Commands:
-   - Added new namespaced commands: `dev.info`, `dev.deps`, `config.list`, `config.get`, `config.help`
-   - Created a macro-based approach (`NamespaceCommandHelper`) for defining commands in the same namespace
-   - Improved error handling with better messages for namespace prefixes
+   * Added new namespaced commands: `dev.info`, `dev.deps`, `config.list`, `config.get`, `config.help`
+   * Created a macro-based approach (`NamespaceCommandHelper`) for defining commands in the same namespace
+   * Improved error handling with better messages for namespace prefixes
 
 3. REPL Improvements:
-   - Added command autocompletion with namespace support
-   - Implemented special handling for namespace prefixes (e.g., typing "sys" shows available commands in that namespace)
-   - Enhanced tab completion with suggestions
+   * Added command autocompletion with namespace support
+   * Implemented special handling for namespace prefixes (e.g., typing "sys" shows available commands in that namespace)
+   * Enhanced tab completion with suggestions
 
 4. Documentation:
-   - Updated README with dot notation examples
-   - Added detailed documentation for namespace helpers
-   - Included examples of both approaches to creating namespaced commands
+   * Updated README with dot notation examples
+   * Added detailed documentation for namespace helpers
+   * Included examples of both approaches to creating namespaced commands
 
 5. Tests:
-   - Updated tests to handle dynamic command lists
-   - Added tests for namespace functionality
-   - Fixed configurator to properly register all commands
+   * Updated tests to handle dynamic command lists
+   * Added tests for namespace functionality
+   * Fixed configurator to properly register all commands
 
 Added support for dot notation commands (e.g., "sys.info") and reorganized the command structure to use a more consistent naming scheme. This makes the command hierarchy clearer and more maintainable.
 
 Command renaming:
-- about: remains unchanged
-- flush -> sys.flush
-- get -> settings.get
-- history -> cli.history
-- redo -> cli.redo
-- repl: remains unchanged
-- settings -> settings.all
-- status -> cli.status
-- sys -> sys.cmd
-- Added sys.info as a new example command
+* about: remains unchanged
+* flush -> sys.flush
+* get -> settings.get
+* history -> cli.history
+* redo -> cli.redo
+* repl: remains unchanged
+* settings -> settings.all
+* status -> cli.status
+* sys -> sys.cmd
+* Added sys.info as a new example command
 
 Commands are now arranged alphabetically in the configurator, so related commands are grouped together (cli.*, settings.*, sys.*).
 
