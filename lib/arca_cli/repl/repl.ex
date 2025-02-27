@@ -130,18 +130,8 @@ defmodule Arca.Cli.Repl do
               prompt_with_completion(prompt)
 
             true ->
-              # Check if this is a partial command and suggest completions
-              # We'll only show suggestions if Tab completion is not available
-              # Check if we're running under rlwrap
-              if !System.get_env("RLWRAP_COMMAND_PID") do
-                suggestions = autocomplete(trimmed)
-
-                if length(suggestions) > 0 && length(suggestions) < 10 &&
-                     String.length(trimmed) > 0 do
-                  IO.puts("\nSuggestions: #{Enum.join(suggestions, ", ")}")
-                end
-              end
-
+              # No suggestions for complete command inputs - even with arguments
+              # The REPL should not be making suggestions after the user has entered a command
               trimmed
           end
       end

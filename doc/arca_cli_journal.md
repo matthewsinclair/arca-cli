@@ -7,7 +7,13 @@ verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
 
 ##### 20250227
 
-Improved help flag handling in commands with required arguments and standardized help display.
+Fixed REPL auto-suggestion bug where suggestions were inappropriately displayed for completed commands.
+
+Addressed a bug in the REPL implementation where "Suggestions:" text would show up when executing any command. This was distracting and confusing as suggestions were showing up even for valid, fully-typed commands.
+
+The fix completely removes the suggestion display logic from the command execution path in the REPL, ensuring a cleaner user experience.
+
+Also improved help flag handling in commands with required arguments and standardized help display.
 
 Fixed two issues:
 
