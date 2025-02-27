@@ -58,10 +58,81 @@ defmodule Arca.Cli do
     settings = load_settings() |> with_default(%{})
     optimus = optimus_config()
 
-    Optimus.parse(optimus, argv)
-    |> handle_args(settings, optimus)
-    |> filter_blank_lines
-    |> put_lines
+    # Pre-check for help flag to handle it before argument validation
+    if has_help_flag?(argv) do
+      case argv do
+        ["--help"] ->
+          # Top-level help
+          generate_filtered_help(optimus)
+          |> filter_blank_lines
+          |> put_lines
+
+        [cmd | rest] when rest == ["--help"] ->
+          # Command-specific help
+          handle_command_help(cmd, optimus)
+          |> filter_blank_lines
+          |> put_lines
+
+        _ ->
+          # Normal parse for more complex cases
+          Optimus.parse(optimus, argv)
+          |> handle_args(settings, optimus)
+          |> filter_blank_lines
+          |> put_lines
+      end
+    else
+      # Normal command parsing flow
+      Optimus.parse(optimus, argv)
+      |> handle_args(settings, optimus)
+      |> filter_blank_lines
+      |> put_lines
+    end
+  end
+
+  @doc """
+  Check if the command line arguments contain a help flag
+  """
+  def has_help_flag?(argv) do
+    "--help" in argv
+  end
+
+  @doc """
+  Handle help for a specific command
+  """
+  def handle_command_help(cmd, optimus) do
+    command_atom = String.to_atom(cmd)
+
+    case handler_for_command(command_atom) do
+      {:ok, _cmd_atom, _handler} ->
+        # Found a valid command, show its help text
+        help_lines = Optimus.Help.help(optimus, [command_atom], 80) |> Enum.drop(2)
+
+        # Always replace the app name with "cli" in USAGE line for consistency
+        help_lines
+        |> Enum.map(fn line ->
+          if String.starts_with?(line, "    #{optimus.name}") do
+            # Extract the part after the app name (command and args)
+            app_name_len = String.length(optimus.name)
+            line_len = String.length(line)
+
+            remaining =
+              if line_len > app_name_len + 4 do
+                String.slice(line, (app_name_len + 4)..(line_len - 1))
+              else
+                ""
+              end
+
+            # Replace app name with "cli"
+            "    cli#{remaining}"
+          else
+            line
+          end
+        end)
+
+      nil ->
+        # Command not found
+        ["error: unknown command: #{cmd}"]
+    end
   end
 
   @doc """
@@ -83,14 +154,15 @@ defmodule Arca.Cli do
 
   @doc """
   Grab the list of Commands that have been specified in config to :arca_cli.
-  
+
   ## Parameters
     - include_hidden: Whether to include commands marked with hidden: true (default: true)
   """
   def commands(include_hidden \\ true) do
-    cmds = configurators()
-           |> Enum.flat_map(& &1.commands())
-           
+    cmds =
+      configurators()
+      |> Enum.flat_map(& &1.commands())
+
     if include_hidden do
       cmds
     else
@@ -105,27 +177,29 @@ defmodule Arca.Cli do
 
   @doc """
   Return the command handler for the specfied command. Look in commands if provided, and if not, default to the list of commands provided by the commands() function.
-  
+
   Supports both standard commands (e.g., `:about`) and dot notation commands (e.g., `:"sys.info"`).
   """
   def handler_for_command(cmd, commands \\ commands()) do
     command_string = Atom.to_string(cmd)
-    
+
     # For dot notation, convert sys.info -> SysInfoCommand
     # For standard notation, convert sys -> SysCommand
-    command_module_name = command_string
+    command_module_name =
+      command_string
       |> String.split(".")
       |> Enum.map(&String.capitalize/1)
       |> Enum.join("")
       |> Kernel.<>("Command")
 
     # Find the command handler module
-    handler = commands
-    |> Enum.find(fn module ->
-      module_name_parts = Module.split(module)
-      List.last(module_name_parts) == command_module_name
-    end)
-    
+    handler =
+      commands
+      |> Enum.find(fn module ->
+        module_name_parts = Module.split(module)
+        List.last(module_name_parts) == command_module_name
+      end)
+
     case handler do
       nil -> nil
       module -> {:ok, cmd, module}
@@ -160,29 +234,28 @@ defmodule Arca.Cli do
       {:help, subcmd} ->
         # Optimus.Help.help puts intro() and contact() on the front of this, so drop it
         help_lines = Optimus.Help.help(optimus, subcmd, 80) |> Enum.drop(2)
-        
-        # If we're in REPL mode, replace the app name with the prompt symbol in USAGE line
-        if Process.get(:is_repl_mode, false) do
-          help_lines
-          |> Enum.map(fn line ->
-            if String.starts_with?(line, "    #{optimus.name}") do
-              # Extract the part after the app name (command and args)
-              app_name_len = String.length(optimus.name)
-              line_len = String.length(line)
-              remaining = if line_len > app_name_len + 4 do
+
+        # Always replace the app name with "cli" in USAGE line for consistency
+        help_lines
+        |> Enum.map(fn line ->
+          if String.starts_with?(line, "    #{optimus.name}") do
+            # Extract the part after the app name (command and args)
+            app_name_len = String.length(optimus.name)
+            line_len = String.length(line)
+
+            remaining =
+              if line_len > app_name_len + 4 do
                 String.slice(line, (app_name_len + 4)..(line_len - 1))
               else
                 ""
               end
-              # Replace app name with prompt symbol
-              "    #{prompt_symbol()}#{remaining}"
-            else
-              line
-            end
-          end)
-        else
-          help_lines
-        end
+
+            # Replace app name with "cli"
+            "    cli#{remaining}"
+          else
+            line
+          end
+        end)
 
       :help ->
         # Use helper function to generate filtered help text
@@ -248,65 +321,73 @@ defmodule Arca.Cli do
   # Handle string command with any reason
   def handle_error(cmd, reason) when is_binary(cmd) do
     # Special case for "unknown command" errors with potential dot notation
-    message = if reason =~ "unknown command" do
-      similar_commands = similar_commands(cmd)
-      
-      # Handle namespaces more elegantly
-      cond do
-        !String.contains?(cmd, ".") && Enum.any?(similar_commands, &String.starts_with?(&1, "#{cmd}.")) ->
-          namespace_commands = similar_commands
-                              |> Enum.filter(&String.starts_with?(&1, "#{cmd}."))
-                              |> Enum.sort()
-          
-          # This is a namespace prefix, show available commands in this namespace
-          "#{cmd} is a command namespace. Available commands:\n#{Enum.join(namespace_commands, ", ")}\n" <>
-          "Try '#{cmd}.<command>' to run a specific command in this namespace."
-          
-        true ->
-          # Standard error with suggestions
-          if Enum.empty?(similar_commands) do
-            "error: #{cmd}: #{format_reason(reason)}"
-          else
-            namespaced_hint = if Enum.any?(similar_commands, &String.contains?(&1, ".")) do
-              "\nHint: Commands can use dot notation for namespaces (e.g., 'sys.info', 'dev.deps')"
+    message =
+      if reason =~ "unknown command" do
+        similar_commands = similar_commands(cmd)
+
+        # Handle namespaces more elegantly
+        cond do
+          !String.contains?(cmd, ".") &&
+              Enum.any?(similar_commands, &String.starts_with?(&1, "#{cmd}.")) ->
+            namespace_commands =
+              similar_commands
+              |> Enum.filter(&String.starts_with?(&1, "#{cmd}."))
+              |> Enum.sort()
+
+            # This is a namespace prefix, show available commands in this namespace
+            "#{cmd} is a command namespace. Available commands:\n#{Enum.join(namespace_commands, ", ")}\n" <>
+              "Try '#{cmd}.<command>' to run a specific command in this namespace."
+
+          true ->
+            # Standard error with suggestions
+            if Enum.empty?(similar_commands) do
+              "error: #{cmd}: #{format_reason(reason)}"
             else
-              ""
+              namespaced_hint =
+                if Enum.any?(similar_commands, &String.contains?(&1, ".")) do
+                  "\nHint: Commands can use dot notation for namespaces (e.g., 'sys.info', 'dev.deps')"
+                else
+                  ""
+                end
+
+              "error: #{cmd}: #{format_reason(reason)}\nDid you mean one of these? #{Enum.join(similar_commands, ", ")}#{namespaced_hint}"
             end
-            
-            "error: #{cmd}: #{format_reason(reason)}\nDid you mean one of these? #{Enum.join(similar_commands, ", ")}#{namespaced_hint}"
-          end
+        end
+      else
+        "error: #{cmd}: #{format_reason(reason)}"
       end
-    else
-      "error: #{cmd}: #{format_reason(reason)}"
-    end
-    
+
     message |> String.trim()
   end
-  
+
   # Helper to find similar commands for better error messages
   defp similar_commands(cmd) do
-    all_command_names = commands()
-    |> Enum.map(fn module ->
-      {cmd_atom, _opts} = apply(module, :config, []) |> List.first()
-      Atom.to_string(cmd_atom)
-    end)
-    
+    all_command_names =
+      commands()
+      |> Enum.map(fn module ->
+        {cmd_atom, _opts} = apply(module, :config, []) |> List.first()
+        Atom.to_string(cmd_atom)
+      end)
+
     # First check if this might be a namespace reference
-    namespace_matches = all_command_names
-    |> Enum.filter(&String.starts_with?(&1, cmd <> "."))
-    
+    namespace_matches =
+      all_command_names
+      |> Enum.filter(&String.starts_with?(&1, cmd <> "."))
+
     # Also look for commands that are similar
-    similarity_matches = all_command_names
-    |> Enum.filter(fn candidate -> 
-      String.jaro_distance(cmd, candidate) > 0.7 || 
-      (String.contains?(candidate, ".") && 
-       String.jaro_distance(cmd, String.split(candidate, ".") |> List.last()) > 0.7)
-    end)
-    
+    similarity_matches =
+      all_command_names
+      |> Enum.filter(fn candidate ->
+        String.jaro_distance(cmd, candidate) > 0.7 ||
+          (String.contains?(candidate, ".") &&
+             String.jaro_distance(cmd, String.split(candidate, ".") |> List.last()) > 0.7)
+      end)
+
     (namespace_matches ++ similarity_matches)
     |> Enum.uniq()
     |> Enum.sort()
-    |> Enum.take(5)  # Limit to reasonable number of suggestions
+    # Limit to reasonable number of suggestions
+    |> Enum.take(5)
   end
 
   # Handle RuntimeError exception
@@ -421,41 +502,39 @@ defmodule Arca.Cli do
   def version do
     Application.fetch_env!(:arca_cli, :version)
   end
-  
+
   @doc """
   Generate filtered help text that excludes commands with hidden: true
   """
-  def generate_filtered_help(optimus) do
+  def generate_filtered_help(_optimus) do
     # Get commands and filter out hidden ones
-    visible_commands = commands(false) # Only non-hidden commands
-    
-    # Check if we're in REPL mode
-    is_repl = Process.get(:is_repl_mode, false)
-    
-    # Format the header like Optimus.Help.help does, but use prompt_symbol() when in REPL mode
-    prompt = if is_repl, do: prompt_symbol(), else: optimus.name
-    
+    # Only non-hidden commands
+    visible_commands = commands(false)
+
+    # Format the header like Optimus.Help.help does, but use "cli" for the name
+    # This provides consistency in the USAGE section
     header = [
       "USAGE:",
-      "    #{prompt} ...",
-      "    #{prompt} --version",
-      "    #{prompt} --help",
-      "    #{prompt} help subcommand",
+      "    cli ...",
+      "    cli --version",
+      "    cli --help",
+      "    cli help subcommand",
       "",
       "SUBCOMMANDS:",
       ""
     ]
-    
+
     # Format the command list
-    command_list = visible_commands
-    |> Enum.map(fn module ->
-      {cmd_atom, opts} = apply(module, :config, []) |> List.first()
-      name = Atom.to_string(cmd_atom)
-      about = Keyword.get(opts, :about, "")
-      padding = String.duplicate(" ", max(0, 20 - String.length(name)))
-      "    #{name}#{padding}#{about}"
-    end)
-    
+    command_list =
+      visible_commands
+      |> Enum.map(fn module ->
+        {cmd_atom, opts} = apply(module, :config, []) |> List.first()
+        name = Atom.to_string(cmd_atom)
+        about = Keyword.get(opts, :about, "")
+        padding = String.duplicate(" ", max(0, 20 - String.length(name)))
+        "    #{name}#{padding}#{about}"
+      end)
+
     # Combine header and command list
     header ++ command_list
   end

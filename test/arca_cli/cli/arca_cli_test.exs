@@ -127,7 +127,7 @@ defmodule Arca.Cli.Test do
                Display current configuration settings.
 
                USAGE:
-                   arca_cli settings.all
+                   cli settings.all
                """
                |> String.trim()
     end

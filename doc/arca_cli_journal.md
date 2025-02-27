@@ -7,20 +7,28 @@ verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
 
 ##### 20250227
 
-Updated deps
+Improved help flag handling in commands with required arguments and standardized help display.
+
+Fixed two issues:
+1. Commands with required parameters would show an error when using --help flag instead of showing help information
+2. Standardized how the CLI name is displayed in help texts, always showing "cli" rather than the configured CLI name
+
+The first issue was solved by adding early detection of --help flags in the command processing flow, before argument validation occurs. Commands can now display help information with --help regardless of their parameter requirements.
+
+The second change makes help output consistent, always showing "cli" in the USAGE section rather than displaying the actual CLI name (which could be different across installations).
 
 **Logs**
 
-* 5c9dbf7 - (HEAD -> main, upstream/main, local/main) Journal (3 seconds ago) <Matthew Sinclair>
-* 1ded743 - Updated deps. (76 seconds ago) <Matthew Sinclair>
-* 9e268b0 - Updated deps. (20 hours ago) <Matthew Sinclair>
-* 23bcc55 - refactor: Standardize module naming convention from Arca.CLI to Arca.Cli (21 hours ago) <Matthew Sinclair>
-* 6fa93d6 - docs: Update journal with hidden command feature (23 hours ago) <Matthew Sinclair>
-* c4d7852 - feat: Add hidden flag for commands and fix '?' help shortcut (23 hours ago) <Matthew Sinclair>
-* 168bc18 - fix: Replace dynamic command generator with static completion (24 hours ago) <Matthew Sinclair>
-* 2823feb - fix: Improve completion generator and REPL script (24 hours ago) <Matthew Sinclair>
-* 91b5eda - feat: Add tab completion support for rlwrap (24 hours ago) <Matthew Sinclair>
-* 2dc0431 - feat: Implement namespaced commands and improved CLI organization (24 hours ago) <Matthew Sinclair>
+* 947aaed - Updated deps. (19 hours ago) <Matthew Sinclair>
+* 648f376 - Journal (19 hours ago) <Matthew Sinclair>
+* 5c9dbf7 - Journal (20 hours ago) <Matthew Sinclair>
+* 1ded743 - Updated deps. (20 hours ago) <Matthew Sinclair>
+* 9e268b0 - Updated deps. (41 hours ago) <Matthew Sinclair>
+* 23bcc55 - refactor: Standardize module naming convention from Arca.CLI to Arca.Cli (42 hours ago) <Matthew Sinclair>
+* 6fa93d6 - docs: Update journal with hidden command feature (44 hours ago) <Matthew Sinclair>
+* c4d7852 - feat: Add hidden flag for commands and fix '?' help shortcut (44 hours ago) <Matthew Sinclair>
+* 168bc18 - fix: Replace dynamic command generator with static completion (45 hours ago) <Matthew Sinclair>
+* 2823feb - fix: Improve completion generator and REPL script (45 hours ago) <Matthew Sinclair>
 
 ##### 20250226
 
