@@ -112,27 +112,29 @@ defmodule Arca.Cli.Command.BaseCommand do
         end
 
       # Handle dot notation commands (sys.info -> SysInfoCommand)
-      dot_cmd = if is_atom(unquote(cmd)) && String.contains?(Atom.to_string(unquote(cmd)), ".") do
-        parts = Atom.to_string(unquote(cmd)) |> String.split(".")
-        parts
-        |> Enum.map(&String.capitalize/1)
-        |> Enum.join("")
-        |> String.downcase()
-        |> String.to_atom()
-      else
-        unquote(cmd)
-      end
-      
+      dot_cmd =
+        if is_atom(unquote(cmd)) && String.contains?(Atom.to_string(unquote(cmd)), ".") do
+          parts = Atom.to_string(unquote(cmd)) |> String.split(".")
+
+          parts
+          |> Enum.map(&String.capitalize/1)
+          |> Enum.join("")
+          |> String.downcase()
+          |> String.to_atom()
+        else
+          unquote(cmd)
+        end
+
       # Validate that the command name matches the module name
       cond do
-        expected_cmd == unquote(cmd) -> 
+        expected_cmd == unquote(cmd) ->
           # Standard command name matches directly
           :ok
-          
+
         expected_cmd == dot_cmd ->
           # Dot notation command name matches after transformation
           :ok
-          
+
         true ->
           # Command name doesn't match in any format
           raise ArgumentError,

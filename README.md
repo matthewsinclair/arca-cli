@@ -25,6 +25,17 @@ Arca CLI provides a robust command-line interface with:
 - Hierarchical commands using dot notation (`sys.info`, `dev.deps`)
 - Tab completion in REPL mode
 - Command history and redo capabilities
+- Automatic configuration management
+
+### Configuration Management
+
+Arca CLI uses automatic configuration detection based on the application name:
+
+- Default configuration directory: `~/.arca/`
+- Default configuration file: `arca_cli.json` (derived from application name)
+- Override with environment variables:
+  - `ARCA_CONFIG_PATH`: Custom configuration directory
+  - `ARCA_CONFIG_FILE`: Custom configuration filename
 
 ### Dot Notation Commands
 

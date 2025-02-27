@@ -472,6 +472,7 @@ defmodule Arca.Cli.Utils do
           %ErlangError{original: :epipe} -> {0, :error}
           _ -> reraise e, __STACKTRACE__
         end
+
       e ->
         # For all other errors, re-raise them
         reraise e, __STACKTRACE__

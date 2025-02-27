@@ -20,6 +20,18 @@ defmodule Arca.Cli do
   - History: Command history tracking in `Arca.Cli.History`
   - Utils: Utility functions in `Arca.Cli.Utils`
 
+  ## Configuration
+
+  Arca.Cli uses Arca.Config to manage configuration files. Configuration is automatically
+  derived based on the application name:
+
+  - Default config directory: `~/.arca/`
+  - Default config filename: `arca_cli.json` (derived from the application name)
+
+  These paths can be overridden with environment variables:
+  - `ARCA_CONFIG_PATH`: Override the configuration directory
+  - `ARCA_CONFIG_FILE`: Override the configuration filename
+
   ## Error Handling
 
   The application uses {:ok, result} and {:error, reason} tuples for error handling.
@@ -30,7 +42,6 @@ defmodule Arca.Cli do
   require OK
   use OK.Pipe
   import Arca.Cli.Utils
-  alias Arca.Config.Cfg
   alias Arca.Cli.Configurator.Coordinator
 
   @doc """
@@ -419,18 +430,50 @@ defmodule Arca.Cli do
   @doc """
   Load settings from JSON config file.
 
+  This function handles both the legacy and new configuration paths:
+  1. Tries the new automatic path (arca_cli.json)
+  2. Falls back to the previous hard-coded path (config.json) for backward compatibility
+
   ## Returns
     - Map with settings on success
     - Empty map on error, with a warning logged
   """
   def load_settings() do
-    case Cfg.load() do
-      {:ok, settings} ->
-        settings
+    # Get standard config file path
+    config_file = "~/.arca/arca_cli.json" |> Path.expand()
+    legacy_path = "~/.arca/config.json" |> Path.expand()
 
-      {:error, reason} ->
-        Logger.warning("Failed to load settings: #{inspect(reason)}")
-        %{}
+    # Try reading from the standard path first
+    case File.read(config_file) do
+      {:ok, contents} ->
+        case Jason.decode(contents) do
+          {:ok, settings} ->
+            settings
+
+          {:error, reason} ->
+            Logger.warning("Failed to decode settings: #{inspect(reason)}")
+            %{}
+        end
+
+      {:error, _} ->
+        # Fall back to legacy path for backward compatibility
+        case File.read(legacy_path) do
+          {:ok, contents} ->
+            case Jason.decode(contents) do
+              {:ok, settings} ->
+                Logger.info("Using legacy config path: #{legacy_path}")
+                settings
+
+              {:error, reason} ->
+                Logger.warning("Failed to decode legacy settings: #{inspect(reason)}")
+                %{}
+            end
+
+          {:error, _} ->
+            # No configuration files found, return empty settings
+            Logger.debug("No configuration found at standard or legacy paths")
+            %{}
+        end
     end
   end
 
@@ -445,14 +488,22 @@ defmodule Arca.Cli do
     - {:error, reason} if setting couldn't be retrieved
   """
   def get_setting(id) do
-    case Cfg.get(id) do
+    settings = load_settings()
+
+    # Convert id to string for consistency
+    key = to_string(id)
+
+    case Map.fetch(settings, key) do
       {:ok, value} -> value
-      {:error, reason} -> {:error, "Error getting setting: #{reason}"}
+      :error -> {:error, "Setting not found: #{key}"}
     end
   end
 
   @doc """
   Save settings to JSON config file.
+
+  Saves settings to the new automatically determined config file path.
+  This helps migrate users from the old config path to the new one.
 
   ## Parameters
     - new_settings: Map containing new settings to be merged with existing ones
@@ -462,14 +513,34 @@ defmodule Arca.Cli do
     - {:error, reason} on failure
   """
   def save_settings(new_settings) do
-    with {:ok, current_settings} <- Cfg.load(),
-         updated_settings = Map.merge(current_settings, new_settings),
-         {:ok, _result} <- Cfg.put(:settings, updated_settings) do
-      {:ok, updated_settings}
-    else
+    # Get config file path 
+    config_file = "~/.arca/arca_cli.json" |> Path.expand()
+
+    # Load existing settings (from either legacy or new path)
+    current_settings = load_settings()
+
+    # Merge with new settings
+    updated_settings = Map.merge(current_settings, new_settings)
+
+    # Ensure directory exists
+    File.mkdir_p!(Path.dirname(config_file))
+
+    # Direct file write for reliability
+    case Jason.encode(updated_settings, pretty: true) do
+      {:ok, json} ->
+        case File.write(config_file, json) do
+          :ok ->
+            Logger.info("Settings saved to #{config_file}")
+            {:ok, updated_settings}
+
+          {:error, reason} ->
+            Logger.warning("Failed to write config file: #{inspect(reason)}")
+            {:error, "Failed to write config file: #{inspect(reason)}"}
+        end
+
       {:error, reason} ->
-        Logger.warning("Failed to save settings: #{inspect(reason)}")
-        {:error, "Failed to save settings: #{inspect(reason)}"}
+        Logger.warning("Failed to encode settings: #{inspect(reason)}")
+        {:error, "Failed to encode settings: #{inspect(reason)}"}
     end
   end
 

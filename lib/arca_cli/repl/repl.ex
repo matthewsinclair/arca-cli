@@ -30,7 +30,7 @@ defmodule Arca.Cli.Repl do
     # Set a process flag to indicate we're in REPL mode
     # This will be used by help generation to use prompt_symbol instead of app name
     Process.put(:is_repl_mode, true)
-    
+
     Arca.Cli.intro(args, settings) |> Utils.put_lines()
     repl(args, settings, optimus)
   end
@@ -60,14 +60,14 @@ defmodule Arca.Cli.Repl do
   defp read(args, settings, optimus) do
     read_with_prompt(args, settings, optimus, repl_prompt())
   end
-  
+
   defp read_with_prompt(_args, settings, optimus, prompt) do
     # Check if ExPrompt is available
     if Code.ensure_loaded?(ExPrompt) do
       # Read with enhanced prompt support
       # ExPrompt doesn't have a built-in completion functionality, so we'll enhance the basic prompt
       input = prompt_with_completion(prompt, settings, optimus)
-      
+
       if input == :eof do
         :eof
       else
@@ -78,66 +78,75 @@ defmodule Arca.Cli.Repl do
       IO.gets(prompt)
     end
   end
-  
+
   # Custom prompt implementation with basic completion
   defp prompt_with_completion(prompt, settings \\ %{}, optimus \\ nil) do
     try do
       # Use simple input 
       input = IO.gets(prompt)
-      
+
       case input do
-        :eof -> :eof
+        :eof ->
+          :eof
+
         _ ->
           trimmed = String.trim(input)
+
           cond do
             trimmed == "tab" ->
               # Show all commands if user explicitly types "tab"
               suggestions = available_commands()
               IO.puts("\nAvailable commands:")
+
               suggestions
               |> Enum.sort()
               |> Enum.chunk_every(4)
-              |> Enum.each(fn chunk -> 
+              |> Enum.each(fn chunk ->
                 IO.puts("  " <> Enum.join(chunk, "  "))
               end)
+
               prompt_with_completion(prompt)
-            
+
             # Handle "?" as a single character (help shortcut)  
             trimmed == "?" ->
               # Use the central help generation function
               Cli.generate_filtered_help(optimus)
               |> Enum.join("\n")
               |> print()
-              
+
               prompt_with_completion(prompt, settings, optimus)
-              
+
             # Special namespace handling - if input is just a namespace prefix
-            !String.contains?(trimmed, ".") && 
-              Enum.any?(available_commands(), &String.starts_with?(&1, "#{trimmed}.")) ->
-              namespace_commands = available_commands()
-                                |> Enum.filter(&String.starts_with?(&1, "#{trimmed}."))
-                                |> Enum.sort()
-              
+            !String.contains?(trimmed, ".") &&
+                Enum.any?(available_commands(), &String.starts_with?(&1, "#{trimmed}.")) ->
+              namespace_commands =
+                available_commands()
+                |> Enum.filter(&String.starts_with?(&1, "#{trimmed}."))
+                |> Enum.sort()
+
               IO.puts("\n#{trimmed} is a command namespace. Available commands:")
               IO.puts(Enum.join(namespace_commands, ", "))
               IO.puts("Try '#{trimmed}.<command>' to run a specific command in this namespace.")
               prompt_with_completion(prompt)
-              
+
             true ->
               # Check if this is a partial command and suggest completions
               # We'll only show suggestions if Tab completion is not available
               # Check if we're running under rlwrap
               if !System.get_env("RLWRAP_COMMAND_PID") do
                 suggestions = autocomplete(trimmed)
-                if length(suggestions) > 0 && length(suggestions) < 10 && String.length(trimmed) > 0 do
+
+                if length(suggestions) > 0 && length(suggestions) < 10 &&
+                     String.length(trimmed) > 0 do
                   IO.puts("\nSuggestions: #{Enum.join(suggestions, ", ")}")
                 end
               end
+
               trimmed
           end
       end
     rescue
-      e -> 
+      e ->
         IO.puts("Error with prompt: #{inspect(e)}")
         IO.gets(prompt)
     end
@@ -179,16 +188,17 @@ defmodule Arca.Cli.Repl do
     should_push?(args) && History.push_cmd(args)
 
     # Special handling for dot notation commands
-    args_list = if String.contains?(args, ".") do
-      # For dot notation commands, we want to preserve the dots
-      # Split by spaces, but keep the dot notation intact
-      args
-      |> String.trim()
-      |> String.split(~r/\s+/, trim: true)
-    else
-      args |> String.trim() |> String.split()
-    end
-    
+    args_list =
+      if String.contains?(args, ".") do
+        # For dot notation commands, we want to preserve the dots
+        # Split by spaces, but keep the dot notation intact
+        args
+        |> String.trim()
+        |> String.split(~r/\s+/, trim: true)
+      else
+        args |> String.trim() |> String.split()
+      end
+
     Optimus.parse(optimus, args_list)
     |> Cli.handle_args(settings, optimus)
   end
@@ -222,32 +232,33 @@ defmodule Arca.Cli.Repl do
   def should_push?(cmd) when is_list(cmd) do
     should_push?(Enum.join(cmd, ""))
   end
-  
+
   @doc """
   Gets a list of available commands for autocompletion.
   Formats command names for display, including namespaced commands.
   Filters out commands with hidden: true in their configuration.
-  
+
   ## Examples
-  
+
       iex> Arca.Cli.Repl.available_commands()
       ["about", "history", "status", "dev.info", "sys.info", ...]
   """
   def available_commands do
-    Cli.commands(false) # Only include non-hidden commands
+    # Only include non-hidden commands
+    Cli.commands(false)
     |> Enum.map(fn module ->
       {cmd_atom, _opts} = apply(module, :config, []) |> List.first()
       Atom.to_string(cmd_atom)
     end)
     |> Enum.sort()
   end
-  
+
   @doc """
   Provides autocompletion suggestions for a partial command input.
   Supports both standard and dot notation commands.
-  
+
   ## Examples
-  
+
       iex> Arca.Cli.Repl.autocomplete("sy")
       ["sys", "sys.info", "sys.flush", "sys.cmd"]
       
@@ -259,11 +270,12 @@ defmodule Arca.Cli.Repl do
     |> Enum.filter(&String.starts_with?(&1, partial))
     |> Enum.sort()
     |> case do
-      [] -> 
+      [] ->
         # If no direct matches, try finding namespace matches
         if String.contains?(partial, ".") do
           # For "namespace." syntax, return all commands in that namespace
           namespace = String.split(partial, ".") |> List.first()
+
           available_commands()
           |> Enum.filter(&String.starts_with?(&1, namespace <> "."))
         else
@@ -279,7 +291,9 @@ defmodule Arca.Cli.Repl do
           end)
           |> Enum.uniq()
         end
-      matches -> matches
+
+      matches ->
+        matches
     end
   end
 
