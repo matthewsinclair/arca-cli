@@ -5,6 +5,13 @@ verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
 
 # Arca CLI Development Journal
 
+##### 20250227
+
+Updated deps
+
+**Logs**
+
+
 ##### 20250226
 
 Standardized naming convention throughout the codebase, changing all module references from "Arca.CLI" to "Arca.Cli" for consistency with Elixir naming conventions.
