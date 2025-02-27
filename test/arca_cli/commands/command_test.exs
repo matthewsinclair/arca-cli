@@ -45,7 +45,6 @@ defmodule Arca.Cli.Command.BaseCommand.Test do
       :ok
     end
 
-
     test "Arca.Cli.Command.BaseCommand" do
       # Exists (smoke test for compilation)
       assert Arca.Cli.Command.BaseCommand
@@ -85,7 +84,10 @@ defmodule Arca.Cli.Command.BaseCommand.Test do
       assert {b2, b3} == {nil, nil}
       {:ok, ["one", "two", c3]} = Arca.Cli.Commands.Test2Command.handle("one", "two")
       assert c3 == nil
-      {:ok, ["one", "two", "three"]} = Arca.Cli.Commands.Test2Command.handle("one", "two", "three")
+
+      {:ok, ["one", "two", "three"]} =
+        Arca.Cli.Commands.Test2Command.handle("one", "two", "three")
+
       assert true
     end
   end

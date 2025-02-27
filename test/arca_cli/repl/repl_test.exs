@@ -8,7 +8,8 @@ defmodule ArcaCliReplTest do
 
       # Check for some common commands that should be available
       assert Enum.member?(commands, "about")
-      assert Enum.member?(commands, "cli.status") # Changed from "status" to "cli.status"
+      # Changed from "status" to "cli.status"
+      assert Enum.member?(commands, "cli.status")
 
       # Check for namespace commands
       assert Enum.any?(commands, fn cmd -> String.starts_with?(cmd, "sys.") end)
@@ -30,6 +31,7 @@ defmodule ArcaCliReplTest do
 
       # Test with sys namespace prefix
       suggestions = Repl.autocomplete("sys")
+
       assert Enum.any?(suggestions, fn cmd -> cmd == "sys" || String.starts_with?(cmd, "sys.") end)
 
       # Test with full namespace prefix

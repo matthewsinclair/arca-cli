@@ -44,14 +44,18 @@ defmodule Arca.Cli.Configurator.ConfiguratorTest do
       # Get previous env var for config path and file names
       previous_env = System.get_env()
 
-      # Set up to load the local .arca/config.json file
-      System.put_env("ARCA_CONFIG_PATH", "./.arca")
-      System.put_env("ARCA_CONFIG_FILE", "config.json")
+      # Set up to load the local .arca/arca_cli.json file (using auto-naming)
+      test_config_path = "./.arca"
+      test_config_file = "arca_cli.json"
+
+      System.put_env("ARCA_CONFIG_PATH", test_config_path)
+      System.put_env("ARCA_CONFIG_FILE", test_config_file)
 
       # Write a known config file to a known location
+      # Use the new automatic naming convention
       Support.write_default_config_file(
-        System.get_env("ARCA_CONFIG_FILE"),
-        System.get_env("ARCA_CONFIG_PATH")
+        test_config_file,
+        test_config_path
       )
 
       # Put things back how we found them

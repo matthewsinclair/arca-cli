@@ -8,20 +8,34 @@ defmodule Arca.Cli.Configurator.DftConfigurator do
     commands: [
       # Alphabetically ordered commands
       Arca.Cli.Commands.AboutCommand,
-      Arca.Cli.Commands.CliHistoryCommand,   # history -> cli.history
-      Arca.Cli.Commands.CliRedoCommand,      # redo -> cli.redo
-      Arca.Cli.Commands.CliStatusCommand,    # status -> cli.status
-      Arca.Cli.Commands.DevInfoCommand,      # dev.info
-      Arca.Cli.Commands.DevDepsCommand,      # dev.deps
-      Arca.Cli.Commands.ConfigListCommand,   # config.list
-      Arca.Cli.Commands.ConfigGetCommand,    # config.get
-      Arca.Cli.Commands.ConfigHelpCommand,   # config.help
-      Arca.Cli.Commands.ReplCommand,         # stays the same
-      Arca.Cli.Commands.SettingsAllCommand,  # settings -> settings.all
-      Arca.Cli.Commands.SettingsGetCommand,  # get -> settings.get
-      Arca.Cli.Commands.SysCmdCommand,       # sys -> sys.cmd
-      Arca.Cli.Commands.SysFlushCommand,     # flush -> sys.flush
-      Arca.Cli.Commands.SysInfoCommand       # stays the same
+      # history -> cli.history
+      Arca.Cli.Commands.CliHistoryCommand,
+      # redo -> cli.redo
+      Arca.Cli.Commands.CliRedoCommand,
+      # status -> cli.status
+      Arca.Cli.Commands.CliStatusCommand,
+      # dev.info
+      Arca.Cli.Commands.DevInfoCommand,
+      # dev.deps
+      Arca.Cli.Commands.DevDepsCommand,
+      # config.list
+      Arca.Cli.Commands.ConfigListCommand,
+      # config.get
+      Arca.Cli.Commands.ConfigGetCommand,
+      # config.help
+      Arca.Cli.Commands.ConfigHelpCommand,
+      # stays the same
+      Arca.Cli.Commands.ReplCommand,
+      # settings -> settings.all
+      Arca.Cli.Commands.SettingsAllCommand,
+      # get -> settings.get
+      Arca.Cli.Commands.SettingsGetCommand,
+      # sys -> sys.cmd
+      Arca.Cli.Commands.SysCmdCommand,
+      # flush -> sys.flush
+      Arca.Cli.Commands.SysFlushCommand,
+      # stays the same
+      Arca.Cli.Commands.SysInfoCommand
 
       # This is just a test of a SubCommand. See Eg.Cli.Test for a better example.
       # Arca.Cli.Commands.SubCommand

@@ -58,6 +58,7 @@ defmodule Arca.Cli.Commands.FlagCommandTest do
 
       # Get the command configuration and create an Optimus instance for testing
       [{cmd_name, cmd_config}] = FlagTestCommand.config()
+
       optimus_config = [
         name: "test_app",
         description: "Test application",
@@ -68,6 +69,7 @@ defmodule Arca.Cli.Commands.FlagCommandTest do
           {cmd_name, cmd_config}
         ]
       ]
+
       optimus = Optimus.new!(optimus_config)
 
       %{optimus: optimus, cmd_name: cmd_name}

@@ -13,9 +13,10 @@ defmodule ArcaCliDotNotationCommandTest do
     end
 
     test "can execute dot notation command" do
-      output = capture_io(fn ->
-        Cli.main(["sys.info"])
-      end)
+      output =
+        capture_io(fn ->
+          Cli.main(["sys.info"])
+        end)
 
       assert output =~ "System Information:"
       assert output =~ "Elixir Version:"
@@ -24,9 +25,10 @@ defmodule ArcaCliDotNotationCommandTest do
     end
 
     test "dot notation appears in help" do
-      output = capture_io(fn ->
-        Cli.main(["--help"])
-      end)
+      output =
+        capture_io(fn ->
+          Cli.main(["--help"])
+        end)
 
       assert output =~ "sys.info"
       assert output =~ "Display system information."

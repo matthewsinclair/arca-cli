@@ -23,7 +23,7 @@ defmodule ArcaCliNamespaceCommandHelperTest do
 
     # Create a test configurator that includes our test commands
     defmodule TestConfigurator do
-      @behaviour .Configurator.ConfiguratorBehaviour
+      @behaviour.Configurator.ConfiguratorBehaviour
 
       @impl true
       def commands do
@@ -74,25 +74,28 @@ defmodule ArcaCliNamespaceCommandHelperTest do
     @tag :skip
     test "properly wires up command handling" do
       # Test command execution for first command
-      output = capture_io(fn ->
-        Cli.main(["test.test1"])
-      end)
+      output =
+        capture_io(fn ->
+          Cli.main(["test.test1"])
+        end)
 
       assert output =~ "Output from test1"
 
       # Test command execution for second command
-      output = capture_io(fn ->
-        Cli.main(["test.test2"])
-      end)
+      output =
+        capture_io(fn ->
+          Cli.main(["test.test2"])
+        end)
 
       assert output =~ "Output from test2"
     end
 
     @tag :skip
     test "appears in help output" do
-      output = capture_io(fn ->
-        Cli.main(["--help"])
-      end)
+      output =
+        capture_io(fn ->
+          Cli.main(["--help"])
+        end)
 
       assert output =~ "test.test1"
       assert output =~ "Test command 1"
