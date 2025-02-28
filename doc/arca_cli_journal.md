@@ -7,7 +7,7 @@ verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
 
 ##### 20250228
 
-Added a simple user guide. 
+Added a simple user guide.
 
 Fixed problems with quoted strings for params and added some tests for that as well.
 
@@ -24,9 +24,12 @@ These changes allow all tests to run successfully without compilation errors or 
 
 **Logs**
 
-* fd70e06 - (HEAD -> main, upstream/main, local/main) Journal (3 seconds ago) <Matthew Sinclair>
-* a6b1086 - Journal (56 seconds ago) <Matthew Sinclair>
-* 21bb79b - fix: Resolve module nesting issues in namespace command helper tests (77 seconds ago) <Matthew Sinclair>
+* 86ae45b - (HEAD -> main, upstream/main, local/main) added a user guide (9 seconds ago) <Matthew Sinclair>
+* 5208874 - docs: Add comprehensive user guide for Arca.Cli (2 minutes ago) <Matthew Sinclair>
+* f5708dc - Journal (4 minutes ago) <Matthew Sinclair>
+* fd70e06 - Journal (5 minutes ago) <Matthew Sinclair>
+* a6b1086 - Journal (6 minutes ago) <Matthew Sinclair>
+* 21bb79b - fix: Resolve module nesting issues in namespace command helper tests (6 minutes ago) <Matthew Sinclair>
 * 93b1f5a - fix: Remove REPL suggestions display for complete commands (17 hours ago) <Matthew Sinclair>
 * 28b0a88 - Journal (17 hours ago) <Matthew Sinclair>
 * 2cd025a - Journal (17 hours ago) <Matthew Sinclair>
