@@ -35,7 +35,11 @@ defmodule Arca.Cli.Configurator.DftConfigurator do
       # flush -> sys.flush
       Arca.Cli.Commands.SysFlushCommand,
       # stays the same
-      Arca.Cli.Commands.SysInfoCommand
+      Arca.Cli.Commands.SysInfoCommand,
+      # Debug command for parameter echo testing
+      Arca.Cli.Commands.DbgEchoCommand,
+      # Debug command for token analysis
+      Arca.Cli.Commands.DbgTokensCommand
 
       # This is just a test of a SubCommand. See Eg.Cli.Test for a better example.
       # Arca.Cli.Commands.SubCommand

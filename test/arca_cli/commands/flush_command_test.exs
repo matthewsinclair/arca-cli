@@ -1,4 +1,4 @@
-defmodule Arca.Cli.Command.BaseCommands.FlushCommand.Test do
+defmodule Arca.Cli.Commands.FlushCommandTest do
   use ExUnit.Case
   # import ExUnit.CaptureIO
   alias Arca.Cli.Commands.FlushCommand

@@ -18,7 +18,7 @@ defmodule Arca.Cli.Commands.Test2Command do
   end
 end
 
-defmodule Arca.Cli.Command.BaseCommand.Test do
+defmodule Arca.Cli.Command.BaseCommandTest do
   use ExUnit.Case
   # import ExUnit.CaptureIO
   alias Arca.Cli.Test.Support
