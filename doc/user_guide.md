@@ -332,18 +332,18 @@ config :hidden_command,
 
 ### Standard Commands Reference
 
-| Command           | Description                          | Arguments/Options     |
-|-------------------|--------------------------------------|----------------------|
-| about             | Show CLI information                 | None                 |
-| history           | Display command history              | None                 |
-| redo \<index\>     | Redo a command from history         | index: Command index |
-| repl              | Enter interactive mode               | None                 |
-| settings.all      | Show all settings                    | None                 |
-| settings.get \<id\> | Get specific setting                | id: Setting name     |
-| status            | Display CLI status                   | None                 |
-| sys.info          | Show system information              | None                 |
-| sys.flush         | Flush system caches                  | None                 |
-| sys.cmd \<command\> | Execute system command              | command: Command to run |
+| Command             | Description                 | Arguments/Options       |
+|---------------------|-----------------------------|-------------------------|
+| about               | Show CLI information        | None                    |
+| history             | Display command history     | None                    |
+| redo \<index\>      | Redo a command from history | index: Command index    |
+| repl                | Enter interactive mode      | None                    |
+| settings.all        | Show all settings           | None                    |
+| settings.get \<id\> | Get specific setting        | id: Setting name        |
+| status              | Display CLI status          | None                    |
+| sys.info            | Show system information     | None                    |
+| sys.flush           | Flush system caches         | None                    |
+| sys.cmd \<command\> | Execute system command      | command: Command to run |
 
 ## Further Resources
 

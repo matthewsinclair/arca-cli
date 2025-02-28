@@ -7,6 +7,8 @@ verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
 
 ##### 20250228
 
+Added a simple user guide. 
+
 Fixed problems with quoted strings for params and added some tests for that as well.
 
 Fixed test errors in namespace command helper tests.
