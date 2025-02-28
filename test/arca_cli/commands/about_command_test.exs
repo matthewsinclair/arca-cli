@@ -1,4 +1,4 @@
-defmodule Arca.Cli.Commands.AboutCommand.Test do
+defmodule Arca.Cli.Commands.AboutCommandTest do
   use ExUnit.Case
   import ExUnit.CaptureIO
   alias Arca.Cli.Commands.AboutCommand

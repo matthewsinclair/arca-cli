@@ -1,4 +1,4 @@
-defmodule Arca.Cli.Commands.SysCommand.Test do
+defmodule Arca.Cli.Commands.SysCommandTest do
   use ExUnit.Case
   import ExUnit.CaptureIO
   alias Arca.Cli.Commands.SysCommand

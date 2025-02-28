@@ -91,6 +91,9 @@ defmodule Arca.Cli.Repl do
 
         _ ->
           trimmed = String.trim(input)
+          
+          # Store the raw input for debug tools
+          Process.put(:last_repl_input, trimmed)
 
           cond do
             trimmed == "tab" ->
@@ -174,30 +177,123 @@ defmodule Arca.Cli.Repl do
     :ok
   end
 
+  # Handle string input (from REPL)
   defp eval(args, settings, optimus) when is_binary(args) do
     should_push?(args) && History.push_cmd(args)
 
-    # Special handling for dot notation commands
-    args_list =
-      if String.contains?(args, ".") do
-        # For dot notation commands, we want to preserve the dots
-        # Split by spaces, but keep the dot notation intact
-        args
-        |> String.trim()
-        |> String.split(~r/\s+/, trim: true)
-      else
-        args |> String.trim() |> String.split()
-      end
+    # Split arguments while preserving quoted strings
+    args_list = split_preserving_quotes(args)
 
     Optimus.parse(optimus, args_list)
     |> Cli.handle_args(settings, optimus)
   end
 
+  # Handle list input (from command line)
   defp eval(args, settings, optimus) when is_list(args) do
     should_push?(args) && History.push_cmd(args)
 
     Optimus.parse(optimus, args)
     |> Cli.handle_args(settings, optimus)
+  end
+
+  # Split a string into arguments while preserving quoted segments
+  defp split_preserving_quotes(input) do
+    # Trim any leading/trailing whitespace
+    trimmed = String.trim(input)
+
+    # Special cases
+    if trimmed == "" do
+      []
+    else
+      # Process the input in stages to handle special cases
+      # Stage 1: Tokenize without splitting by whitespace inside quotes
+      result = tokenize_command_line(trimmed)
+      
+      # Stage 2: Process tokens to handle quoted values
+      result
+      |> Enum.map(&process_token/1)
+    end
+  end
+  
+  # Specialized tokenizer that preserves quoted segments
+  defp tokenize_command_line(input) do
+    # First handle special case of dot notation commands
+    if String.contains?(input, ".") && !String.contains?(input, "\"") do
+      # For simple dot notation commands without quotes, use the existing approach
+      String.split(input, ~r/\s+/, trim: true)
+    else 
+      # Build tokens by scanning character by character
+      {tokens, current_token, _in_quotes, _in_option_value} = 
+        input
+        |> String.graphemes()
+        |> Enum.reduce({[], "", false, false}, &process_char/2)
+      
+      # Add the final token if not empty
+      tokens = 
+        if current_token != "" do
+          tokens ++ [current_token]
+        else
+          tokens
+        end
+        
+      tokens
+    end
+  end
+  
+  # Process each character in the input string
+  defp process_char(char, {tokens, current, in_quotes, in_option_value}) do
+    cond do
+      # Toggle quote state
+      char == "\"" && !in_quotes ->
+        {tokens, current <> char, true, in_option_value}
+        
+      char == "\"" && in_quotes ->
+        {tokens, current <> char, false, in_option_value}
+        
+      # Handle whitespace
+      char =~ ~r/\s/ && !in_quotes && !in_option_value ->
+        if current == "" do
+          {tokens, "", false, false}
+        else
+          {tokens ++ [current], "", false, false}
+        end
+        
+      # Inside quotes or option value, keep building the current token
+      in_quotes || in_option_value ->
+        {tokens, current <> char, in_quotes, in_option_value}
+        
+      # Option value with equals sign
+      char == "=" && current =~ ~r/^-{1,2}/ ->
+        {tokens, current <> char, in_quotes, true}
+        
+      # Normal character, keep building the current token
+      true ->
+        {tokens, current <> char, in_quotes, in_option_value}
+    end
+  end
+  
+  # Process individual tokens to handle quoted values
+  defp process_token(token) do
+    cond do
+      # Handle --option="value with spaces" format
+      String.match?(token, ~r/^-{1,2}[^=]+=".+"$/) ->
+        [name, value] = String.split(token, "=", parts: 2)
+        # Remove quotes from the value
+        unquoted_value = value
+          |> String.trim_leading("\"")
+          |> String.trim_trailing("\"")
+        "#{name}=#{unquoted_value}"
+        
+      # Handle normal quoted strings
+      String.starts_with?(token, "\"") && String.ends_with?(token, "\"") ->
+        token
+        |> String.trim_leading("\"")
+        |> String.trim_trailing("\"")
+        
+      # Everything else passes through unchanged
+      true ->
+        token
+    end
   end
 
   # Make sure not to push these commands to the command history

@@ -1,4 +1,4 @@
-defmodule ArcaCliDotNotationCommandTest do
+defmodule Arca.Cli.Commands.DotNotationCommandTest do
   use ExUnit.Case
   import ExUnit.CaptureIO
   alias Arca.Cli
