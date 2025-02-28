@@ -7,6 +7,8 @@ verblock: "2025-02-26:v0.2: Matthew Sinclair - Standardized naming convention
 
 ##### 20250228
 
+Fixed problems with quoted strings for params and added some tests for that as well. 
+
 Fixed test errors in namespace command helper tests.
 
 Fixed compilation errors in namespace command helper tests due to module nesting and namespace issues:
@@ -17,6 +19,14 @@ Fixed compilation errors in namespace command helper tests due to module nesting
 4. Enabled previously skipped tests now that the test setup is correct
 
 These changes allow all tests to run successfully without compilation errors or warnings.
+
+**Logs**
+
+* a6b1086 - (HEAD -> main, upstream/main, local/main) Journal (7 seconds ago) <Matthew Sinclair>
+* 21bb79b - fix: Resolve module nesting issues in namespace command helper tests (28 seconds ago) <Matthew Sinclair>
+* 93b1f5a - fix: Remove REPL suggestions display for complete commands (17 hours ago) <Matthew Sinclair>
+* 28b0a88 - Journal (17 hours ago) <Matthew Sinclair>
+* 2cd025a - Journal (17 hours ago) <Matthew Sinclair>
 
 ##### 20250227
 
