@@ -8,10 +8,14 @@ This document serves as an index of all steel threads in the project. A steel th
 
 ## Index
 
+<!-- BEGIN: STEEL_THREAD_INDEX -->
+
 | ID     | Title                              | Status      | Created   | Completed | Link                    |
 |--------|-----------------------------------|-------------|-----------|-----------|-------------------------|
 | ST0002 | REPL Tab Completion Improvements  | In Progress | 20250226  |           | [ST0002](<./ST0002.md>) |
 | ST0001 | Documentation Migration to STP    | In Progress | 20250306  |           | [ST0001](<./ST0001.md>) |
+
+<!-- END: STEEL_THREAD_INDEX -->
 
 ## Steel Thread Status Definitions
 
