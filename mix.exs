@@ -27,7 +27,7 @@ defmodule Arca.Cli.MixProject do
     [
       {:ok, "~> 2.3"},
       {:httpoison, "~> 2.1"},
-      # Update to exact known version 
+      # Update to exact known version
       {:optimus, "~> 0.5.0"},
       {:castore, "~> 1.0"},
       {:jason, "~> 1.4"},
@@ -37,7 +37,7 @@ defmodule Arca.Cli.MixProject do
       {:owl, "~> 0.12"},
       {:ucwidth, "~> 0.2"},
       {:pathex, "~> 2.5"},
-      {:table_rex, "~> 4.0"},
+      {:table_rex, "~> 4.1"},
       {:elixir_uuid, "~> 1.2"},
       {:ex_prompt, "~> 0.1.3"},
       {:arca_config, path: "../config"}
