@@ -1,10 +1,15 @@
 ---
-verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Updated with current Arca.Cli work
-06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
+verblock: "19 Mar 2025:v0.3: Claude - Added REPL Output Callback System work"
 ---
 # Work In Progress
 
 ## Current Focus
+
+**003: REPL Output Formatting Enhancements**
+
+- Implementing a callback system for customizing output formatting
+- Creating a flexible extension mechanism for external applications
+- Maintaining clean separation of concerns and avoiding circular dependencies
 
 **002: STP Documentation Integration**
 
@@ -20,8 +25,9 @@ verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Updated with current Arca.Cli wo
 
 ## Active Steel Threads
 
-- ST001: Documentation Migration to STP Framework
+- ST003: REPL Output Callback System
 - ST002: REPL Tab Completion Improvements
+- ST001: Documentation Migration to STP Framework
 
 ## Upcoming Work
 

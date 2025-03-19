@@ -13,6 +13,7 @@ defmodule Arca.Cli.Repl do
   """
 
   alias Arca.Cli
+  alias Arca.Cli.Callbacks
   alias Arca.Cli.History
   alias Arca.Cli.Utils
   require Logger
@@ -396,11 +397,22 @@ defmodule Arca.Cli.Repl do
     eval(history_cmd, settings, optimus)
   end
 
-  # Ignore tuples when printing and return what was sent in (a bit like tee)
+  # Return tuples directly without printing them
   defp print(out) when is_tuple(out), do: out
 
-  # Default print to ANSI and return what was printed (a bit like tee)
-  defp print(out), do: Utils.print(out)
+  # Print using callbacks if available, otherwise fall back to default implementation
+  defp print(out) do
+    with true <- Code.ensure_loaded?(Callbacks),
+         true <- Callbacks.has_callbacks?(:format_output) do
+      out
+      |> Callbacks.execute(:format_output)
+      |> IO.puts()
+      
+      out
+    else
+      _ -> Utils.print(out)
+    end
+  end
 
   # Provide the REPL's prompt
   defp repl_prompt() do
