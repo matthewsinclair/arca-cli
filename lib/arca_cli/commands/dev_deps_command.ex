@@ -25,7 +25,7 @@ defmodule Arca.Cli.Commands.DevDepsCommand do
   defp get_deps do
     try do
       deps = Mix.Project.config()[:deps]
-      
+
       deps
       |> Enum.map(fn
         {app, requirement} when is_binary(requirement) ->
@@ -53,7 +53,7 @@ defmodule Arca.Cli.Commands.DevDepsCommand do
       end)
       |> Enum.sort_by(fn {app, _} -> app end)
     rescue
-      _ -> 
+      _ ->
         # Fallback when Mix.Project.config() isn't available (in escript)
         [
           {:ok, "~> 2.3"},

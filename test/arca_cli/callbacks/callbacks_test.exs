@@ -18,7 +18,7 @@ defmodule Arca.Cli.CallbacksTest do
     test "registers a callback for an event" do
       callback_fn = fn x -> x <> " World" end
       assert Callbacks.register(:test_event, callback_fn) == :ok
-      
+
       callbacks = Application.get_env(:arca_cli, :callbacks, %{})
       assert Map.has_key?(callbacks, :test_event)
       assert [^callback_fn] = Map.get(callbacks, :test_event)
@@ -27,10 +27,10 @@ defmodule Arca.Cli.CallbacksTest do
     test "adds multiple callbacks in registration order" do
       callback1 = fn x -> x <> " First" end
       callback2 = fn x -> x <> " Second" end
-      
+
       Callbacks.register(:test_event, callback1)
       Callbacks.register(:test_event, callback2)
-      
+
       callbacks = Application.get_env(:arca_cli, :callbacks, %{})
       assert [^callback2, ^callback1] = Map.get(callbacks, :test_event)
     end
@@ -61,14 +61,14 @@ defmodule Arca.Cli.CallbacksTest do
     test "executes multiple callbacks in reverse registration order" do
       Callbacks.register(:test_event, fn x -> x <> " First" end)
       Callbacks.register(:test_event, fn x -> x <> " Second" end)
-      
+
       assert Callbacks.execute(:test_event, "Hello") == "Hello Second First"
     end
 
     test "supports {:cont, value} to continue the chain" do
       Callbacks.register(:test_event, fn x -> {:cont, x <> " First"} end)
       Callbacks.register(:test_event, fn x -> {:cont, x <> " Second"} end)
-      
+
       assert Callbacks.execute(:test_event, "Hello") == "Hello Second First"
     end
 
@@ -76,14 +76,14 @@ defmodule Arca.Cli.CallbacksTest do
       Callbacks.register(:test_event, fn _x -> "This will never be reached" end)
       Callbacks.register(:test_event, fn x -> {:halt, "Halted at: " <> x} end)
       Callbacks.register(:test_event, fn x -> x <> " First" end)
-      
+
       assert Callbacks.execute(:test_event, "Hello") == "Halted at: Hello First"
     end
 
     test "handles non-tagged returns as continuation" do
       Callbacks.register(:test_event, fn x -> x <> " First" end)
       Callbacks.register(:test_event, fn x -> x <> " Second" end)
-      
+
       assert Callbacks.execute(:test_event, "Hello") == "Hello Second First"
     end
   end

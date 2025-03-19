@@ -117,10 +117,10 @@ defmodule Arca.Cli.Commands.ParamParsingTest do
     test "simulated REPL handling of parameters with spaces" do
       # In the REPL, the input would be a single string like:
       repl_input = "param_test text with spaces"
-      
+
       # Then it gets split into args
       args = repl_input |> String.trim() |> String.split()
-      
+
       # Add the settings and optimus from setup
       optimus_config = [
         name: "test_app",
@@ -132,27 +132,28 @@ defmodule Arca.Cli.Commands.ParamParsingTest do
           {:paramtest, ParamTestCommand.config() |> List.first() |> elem(1)}
         ]
       ]
+
       optimus = Optimus.new!(optimus_config)
-      
+
       # Parse the arguments using Optimus
       parsed = Optimus.parse!(optimus, args)
-      
+
       # Get the parsed arguments
       {_subcommand, parse_result} = parsed
-      
+
       # This should reflect how the REPL actually handles it - words are split
       assert parse_result.args.text == "text"
       assert parse_result.args.optional == "with"
       assert parse_result.unknown == ["spaces"]
     end
-    
+
     test "simulated REPL handling with quoted parameters (current behavior)" do
       # Simulating the string direct from stdin in REPL mode
       repl_input = "param_test \"text with spaces\""
-      
+
       # The current implementation splits by whitespace, ignoring quotes
       args = repl_input |> String.trim() |> String.split()
-      
+
       # Setup the optimus object
       optimus_config = [
         name: "test_app",
@@ -164,59 +165,28 @@ defmodule Arca.Cli.Commands.ParamParsingTest do
           {:paramtest, ParamTestCommand.config() |> List.first() |> elem(1)}
         ]
       ]
+
       optimus = Optimus.new!(optimus_config)
-      
+
       # Parse the arguments using Optimus
       parsed = Optimus.parse!(optimus, args)
-      
+
       # Get the parsed arguments
       {_subcommand, parse_result} = parsed
-      
+
       # Demonstrate how quotes are currently not being respected
       assert parse_result.args.text == "\"text"
       assert parse_result.args.optional == "with"
       assert parse_result.unknown == ["spaces\""]
     end
-    
+
     test "simulated REPL handling with improved quote-respecting splitting" do
       # Simulating the string direct from stdin in REPL mode
       repl_input = "param_test \"text with spaces\""
-      
+
       # Split preserving quoted strings
       args = split_preserving_quotes(repl_input)
-      
-      # Setup the optimus object
-      optimus_config = [
-        name: "test_app",
-        description: "Test application", 
-        version: "1.0.0",
-        allow_unknown_args: true,
-        parse_double_dash: true,
-        subcommands: [
-          {:paramtest, ParamTestCommand.config() |> List.first() |> elem(1)}
-        ]
-      ]
-      optimus = Optimus.new!(optimus_config)
-      
-      # Parse the arguments using Optimus
-      parsed = Optimus.parse!(optimus, args)
-      
-      # Get the parsed arguments
-      {_subcommand, parse_result} = parsed
-      
-      # With proper quote-respecting splitting, we'd get the right result
-      assert parse_result.args.text == "text with spaces"
-      assert parse_result.args.optional == nil
-      assert parse_result.unknown == []
-    end
-    
-    test "simulated REPL with multiple quoted parameters" do
-      # Simulating command with multiple quoted parameters
-      repl_input = "param_test \"first quoted param\" \"second quoted param\""
-      
-      # Use our quote-preserving splitter
-      args = split_preserving_quotes(repl_input)
-      
+
       # Setup the optimus object
       optimus_config = [
         name: "test_app",
@@ -228,29 +198,63 @@ defmodule Arca.Cli.Commands.ParamParsingTest do
           {:paramtest, ParamTestCommand.config() |> List.first() |> elem(1)}
         ]
       ]
+
       optimus = Optimus.new!(optimus_config)
-      
+
       # Parse the arguments using Optimus
       parsed = Optimus.parse!(optimus, args)
-      
+
       # Get the parsed arguments
       {_subcommand, parse_result} = parsed
-      
+
+      # With proper quote-respecting splitting, we'd get the right result
+      assert parse_result.args.text == "text with spaces"
+      assert parse_result.args.optional == nil
+      assert parse_result.unknown == []
+    end
+
+    test "simulated REPL with multiple quoted parameters" do
+      # Simulating command with multiple quoted parameters
+      repl_input = "param_test \"first quoted param\" \"second quoted param\""
+
+      # Use our quote-preserving splitter
+      args = split_preserving_quotes(repl_input)
+
+      # Setup the optimus object
+      optimus_config = [
+        name: "test_app",
+        description: "Test application",
+        version: "1.0.0",
+        allow_unknown_args: true,
+        parse_double_dash: true,
+        subcommands: [
+          {:paramtest, ParamTestCommand.config() |> List.first() |> elem(1)}
+        ]
+      ]
+
+      optimus = Optimus.new!(optimus_config)
+
+      # Parse the arguments using Optimus
+      parsed = Optimus.parse!(optimus, args)
+
+      # Get the parsed arguments
+      {_subcommand, parse_result} = parsed
+
       # Verify our quoted parameters work as expected
       assert parse_result.args.text == "first quoted param"
       assert parse_result.args.optional == "second quoted param"
       assert parse_result.unknown == []
     end
   end
-  
+
   # Helper function for quote-preserving string splitting
   defp split_preserving_quotes(input) do
     # This is a simplified implementation to demonstrate the concept
     # In a real implementation, we'd need to handle escaping, nested quotes, etc.
-    
+
     # Trim leading/trailing whitespace
     trimmed = String.trim(input)
-    
+
     # Regular expression to match: 
     # 1. Quoted strings (preserving quotes)
     # 2. Non-whitespace sequences

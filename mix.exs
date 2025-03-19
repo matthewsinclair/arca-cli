@@ -27,7 +27,8 @@ defmodule Arca.Cli.MixProject do
     [
       {:ok, "~> 2.3"},
       {:httpoison, "~> 2.1"},
-      {:optimus, "~> 0.5.0"},  # Update to exact known version 
+      # Update to exact known version 
+      {:optimus, "~> 0.5.0"},
       {:castore, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:tesla, "~> 1.5"},

@@ -1,5 +1,6 @@
 ---
-verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Updated with comprehensive content
+verblock: "19 Mar 2025:v0.3: Claude - Updated with REPL callback system details
+06 Mar 2025:v0.2: Matthew Sinclair - Updated with comprehensive content
 06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
 ---
 # Arca.Cli User Guide
@@ -34,6 +35,7 @@ Arca.Cli is built around these fundamental concepts:
 - **Namespaced Commands**: Hierarchical organization using dot notation (e.g., `sys.info`)
 - **REPL Mode**: Interactive shell with command history and tab completion
 - **Configurators**: Modules that register commands and define CLI behavior
+- **Callbacks**: Extension system allowing customization of output formatting
 
 ## Installation
 
@@ -198,6 +200,16 @@ $ arca_cli example_command --count 5
 # Command with a flag
 $ arca_cli example_command --verbose
 ```
+
+### Customizing Output Formatting
+
+If you are developing an application that integrates with Arca.Cli, you can customize how output is formatted in the REPL using the callback system:
+
+1. Check if the Callbacks module is available
+2. Register a function for the `:format_output` event
+3. Implement your custom formatting logic
+
+This allows you to maintain separation of concerns without creating circular dependencies between your application and Arca.Cli.
 
 ## Troubleshooting
 
