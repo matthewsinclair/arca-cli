@@ -1,6 +1,5 @@
 ---
-verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Added active steel threads for documentation migration and REPL improvements
-06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
+verblock: "19 Mar 2025:v0.3: Claude - Added steel thread for REPL Output Callback System"
 ---
 # Steel Threads
 
@@ -9,12 +8,11 @@ This document serves as an index of all steel threads in the project. A steel th
 ## Index
 
 <!-- BEGIN: STEEL_THREAD_INDEX -->
-
-| ID     | Title                              | Status      | Created   | Completed | Link                    |
-|--------|-----------------------------------|-------------|-----------|-----------|-------------------------|
-| ST0002 | REPL Tab Completion Improvements  | In Progress | 20250226  |           | [ST0002](<./ST0002.md>) |
-| ST0001 | Documentation Migration to STP    | In Progress | 20250306  |           | [ST0001](<./ST0001.md>) |
-
+| ID                      | Title                            | Status      | Created  | Completed |
+|-------------------------|----------------------------------|-------------|----------|-----------|
+| [ST0003](<./ST0003.md>) | REPL Output Callback System      | In Progress | 20250319 |           |
+| [ST0002](<./ST0002.md>) | REPL Tab Completion Improvements | In Progress | 20250226 |           |
+| [ST0001](<./ST0001.md>) | Documentation Migration to STP   | In Progress | 20250306 |           |
 <!-- END: STEEL_THREAD_INDEX -->
 
 ## Steel Thread Status Definitions
