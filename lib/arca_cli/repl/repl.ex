@@ -406,9 +406,13 @@ defmodule Arca.Cli.Repl do
   defp print(out) do
     with true <- Code.ensure_loaded?(Callbacks),
          true <- Callbacks.has_callbacks?(:format_output) do
-      out
-      |> Callbacks.execute(:format_output)
-      |> IO.puts()
+      # Get formatted output from callbacks
+      formatted = Callbacks.execute(:format_output, out)
+
+      # Only print if it's not empty
+      if formatted && formatted != "" do
+        IO.puts(formatted)
+      end
 
       out
     else
