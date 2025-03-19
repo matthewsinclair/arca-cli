@@ -1,5 +1,6 @@
 ---
-verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific reference content
+verblock: "19 Mar 2025:v0.3: Claude - Added callback system documentation
+06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific reference content
 06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
 ---
 # Arca.Cli Reference Guide
@@ -338,6 +339,30 @@ Available command configuration options:
 2. Define subcommand modules that use `Arca.Cli.Command.BaseSubCommand`
 3. Register the parent command in a configurator
 
+### Customizing Output Formatting
+
+Arca.Cli includes a callback system that allows external applications to customize output formatting:
+
+1. Register a callback for `:format_output` using `Arca.Cli.Callbacks.register/2`
+2. Implement a formatting function that transforms the output
+3. Return either a formatted string, `{:cont, value}` to continue the callback chain, or `{:halt, result}` to stop the chain
+
+Example:
+
+```elixir
+# Check if the callbacks system is available
+if Code.ensure_loaded?(Arca.Cli.Callbacks) do
+  # Register a callback for format_output
+  Arca.Cli.Callbacks.register(:format_output, fn output ->
+    # Format the output as needed
+    formatted = format_result(output)
+    
+    # Stop processing and use this result
+    {:halt, formatted}
+  end)
+end
+```
+
 ## Concepts and Terminology
 
 | Term         | Definition                                                                          |
@@ -349,3 +374,5 @@ Available command configuration options:
 | NamespaceCommandHelper | A helper module for defining multiple commands in the same namespace      |
 | BaseCommand  | The base module for defining commands                                               |
 | BaseSubCommand | The base module for defining subcommands                                          |
+| Callbacks    | Extension system allowing external applications to customize behavior               |
+| Callback Chain | Multiple callbacks executed in reverse registration order (last registered, first executed) |

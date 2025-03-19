@@ -63,6 +63,7 @@ defmodule Arca.Cli.Commands.DbgEchoCommand do
       result -> result
     end
   end
+
   defp format_options(_), do: "none"
 
   # Format the flags section
@@ -75,6 +76,7 @@ defmodule Arca.Cli.Commands.DbgEchoCommand do
       result -> result
     end
   end
+
   defp format_flags(_), do: "none"
 
   # Format the args section
@@ -87,6 +89,7 @@ defmodule Arca.Cli.Commands.DbgEchoCommand do
       result -> result
     end
   end
+
   defp format_args(_), do: "none"
 
   # Format unknown args section
@@ -96,5 +99,6 @@ defmodule Arca.Cli.Commands.DbgEchoCommand do
       _ -> inspect(unknown)
     end
   end
+
   defp format_unknown_args(_), do: "none"
 end

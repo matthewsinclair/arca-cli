@@ -135,7 +135,9 @@ defmodule Arca.Cli.Commands.NamespaceCommandHelperTest do
     # Use the TestConfigurator that was defined outside this setup block
 
     # Update application config to include our test configurator
-    Application.put_env(:arca_cli, :configurators, [Arca.Cli.Commands.NamespaceCommandHelperTest.TestConfigurator | old_configurators])
+    Application.put_env(:arca_cli, :configurators, [
+      Arca.Cli.Commands.NamespaceCommandHelperTest.TestConfigurator | old_configurators
+    ])
 
     on_exit(fn ->
       # Restore original configurators

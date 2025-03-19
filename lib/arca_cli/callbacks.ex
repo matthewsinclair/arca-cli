@@ -1,20 +1,20 @@
 defmodule Arca.Cli.Callbacks do
   @moduledoc """
   Callback registry for extending Arca.CLI functionality.
-  
+
   This module allows other applications to register callbacks for various
   extension points in Arca.CLI without creating circular dependencies.
-  
+
   ## Extension Points
-  
+
   The following extension points are available:
-  
+
   * `:format_output` - Customize the formatting of output in the REPL
-  
+
   ## Usage Example
-  
+
   To integrate with Arca.CLI's output formatting:
-  
+
   ```elixir
   # Check if the callbacks system is available
   if Code.ensure_loaded?(Arca.Cli.Callbacks) do
@@ -31,35 +31,35 @@ defmodule Arca.Cli.Callbacks do
     end)
   end
   ```
-  
+
   ## Callback Chain
-  
+
   Multiple callbacks can be registered for the same event. They are executed 
   in reverse registration order (last registered, first executed). Each callback
   can either return:
-  
+
   * A raw value - treated as {:cont, value}
   * {:cont, value} - Continue the chain with this value
   * {:halt, result} - Stop the chain and use this result
-  
+
   This allows for compositional behavior where each formatter can build on the 
   previous one's output or entirely replace the formatting behavior.
   """
-  
+
   @doc """
   Register a callback function for a specific event.
-  
+
   ## Parameters
-  
+
   - `event`: The event name (atom)
   - `callback`: The callback function (function)
-  
+
   ## Returns
-  
+
   `:ok`
-  
+
   ## Examples
-  
+
       iex> Arca.Cli.Callbacks.register(:format_output, &MyApp.format_output/1)
       :ok
   """
@@ -68,29 +68,29 @@ defmodule Arca.Cli.Callbacks do
     |> Application.get_env(:callbacks, %{})
     |> Map.update(event, [callback], &[callback | &1])
     |> then(&Application.put_env(:arca_cli, :callbacks, &1))
-    
+
     :ok
   end
-  
+
   @doc """
   Execute all callbacks for a specific event.
-  
+
   Callbacks are executed in reverse registration order (last registered, first executed).
   Each callback can return {:halt, result} to stop the chain and use that result,
   or {:cont, value} to pass a value to the next callback.
-  
+
   ## Parameters
-  
+
   - `event`: The event name (atom)
   - `initial`: The initial value to pass to the first callback
-  
+
   ## Returns
-  
+
   The final result after all callbacks have been executed, or the initial value
   if no callbacks are registered.
-  
+
   ## Examples
-  
+
       iex> Arca.Cli.Callbacks.execute(:format_output, "Hello")
       "FORMATTED: Hello"
   """
@@ -110,20 +110,20 @@ defmodule Arca.Cli.Callbacks do
       result -> result
     end
   end
-  
+
   @doc """
   Check if any callbacks are registered for a specific event.
-  
+
   ## Parameters
-  
+
   - `event`: The event name (atom)
-  
+
   ## Returns
-  
+
   `true` if callbacks are registered, `false` otherwise
-  
+
   ## Examples
-  
+
       iex> Arca.Cli.Callbacks.has_callbacks?(:format_output)
       true
   """

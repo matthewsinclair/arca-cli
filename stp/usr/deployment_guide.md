@@ -1,5 +1,6 @@
 ---
-verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific deployment content
+verblock: "19 Mar 2025:v0.3: Claude - Added output formatting integration section
+06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific deployment content
 06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
 ---
 # Arca.Cli Deployment Guide
@@ -158,6 +159,49 @@ defmodule Mix.Tasks.YourApp.Cli do
   def run(args) do
     Application.ensure_all_started(:your_app)
     Arca.Cli.main(args)
+  end
+end
+```
+
+### Output Formatting Integration
+
+To customize Arca.Cli's output formatting from your application:
+
+```elixir
+defmodule YourApp.Formatter do
+  @doc """
+  Initializes the integration with Arca.Cli
+  """
+  def setup do
+    if Code.ensure_loaded?(Arca.Cli.Callbacks) do
+      Arca.Cli.Callbacks.register(:format_output, &format_output/1)
+    end
+  end
+  
+  @doc """
+  Custom formatter for Arca.Cli output
+  """
+  def format_output(output) do
+    # Apply your formatting logic here
+    formatted = YourApp.FormatContext.process(output)
+    
+    # Return formatted output and stop the callback chain
+    {:halt, formatted}
+  end
+end
+```
+
+Call the setup function when your application starts:
+
+```elixir
+defmodule YourApp.Application do
+  use Application
+  
+  def start(_type, _args) do
+    # Setup the Arca.Cli integration if available
+    YourApp.Formatter.setup()
+    
+    # ... rest of your application start function
   end
 end
 ```
