@@ -1,6 +1,5 @@
 ---
-verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Added historical journal entries
-06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
+verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Added historical journal entries"
 ---
 # Project Journal
 
