@@ -10,6 +10,7 @@ defmodule Arca.Cli.Callbacks do
   The following extension points are available:
 
   * `:format_output` - Customize the formatting of output in the REPL
+  * `:format_help` - Customize the formatting of help text
 
   ## Usage Example
 
@@ -28,6 +29,14 @@ defmodule Arca.Cli.Callbacks do
       # - {:cont, value} to explicitly pass a value to the next callback
       # - {:halt, result} to stop the chain and use this result
       {:halt, formatted}
+    end)
+    
+    # Register a callback for format_help
+    Arca.Cli.Callbacks.register(:format_help, fn help_text ->
+      # Format the help text as needed
+      formatted_help = format_help_text(help_text)
+      
+      {:halt, formatted_help}
     end)
   end
   ```

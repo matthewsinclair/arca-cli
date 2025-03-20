@@ -1,9 +1,16 @@
 ---
-verblock: "19 Mar 2025:v0.3: Claude - Added REPL Output Callback System work"
+verblock: "20 Mar 2025:v0.4: Claude - Updated Improved Help Subsystem approach"
 ---
 # Work In Progress
 
 ## Current Focus
+
+**004: Improved Help Subsystem**
+
+- Developing a more reliable and consistent help system
+- Implementing a centralized help module with pre-execution checks
+- Extending the callback system for help formatting
+- Creating comprehensive tests for all help scenarios
 
 **003: REPL Output Formatting Enhancements**
 
@@ -25,6 +32,7 @@ verblock: "19 Mar 2025:v0.3: Claude - Added REPL Output Callback System work"
 
 ## Active Steel Threads
 
+- ST004: Improved Help Subsystem
 - ST003: REPL Output Callback System
 - ST002: REPL Tab Completion Improvements
 - ST001: Documentation Migration to STP Framework
@@ -40,6 +48,8 @@ verblock: "19 Mar 2025:v0.3: Claude - Added REPL Output Callback System work"
 ## Notes
 
 The Arca.Cli project is focused on providing a robust command-line interface framework for Elixir applications. Recent work has focused on improving the organization of commands using dot notation, enhancing the REPL experience, and improving documentation. The migration to the STP framework will help better organize project documentation and development process.
+
+The new help subsystem work (ST004) will address fundamental issues with the current implementation, providing a more consistent and reliable approach to displaying help in both CLI and REPL modes. Rather than using help tuples, the revised approach uses a centralized help module with pre-execution checks, which provides a cleaner and more maintainable solution.
 
 ## Context for LLM
 
