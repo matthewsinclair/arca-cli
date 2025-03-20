@@ -172,7 +172,7 @@ defmodule Arca.Cli.Command.BaseCommand do
         this_function_is_not_implemented()
         {:error, :not_implemented}
       end
-      
+
       @doc """
       Properly handle the help atom and tuple in a type-safe way.
       This prevents the type violations by providing explicit type handling.
@@ -180,7 +180,7 @@ defmodule Arca.Cli.Command.BaseCommand do
       def handle(args, _settings, _optimus) when args == :help do
         :help
       end
-      
+
       @doc """
       Properly handle the help tuple in a type-safe way.
       """

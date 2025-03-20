@@ -13,10 +13,10 @@ defmodule Arca.Cli.Command.CommandBehaviour do
   Represents the command configuration with name, description, and options.
   """
   @type t :: [
-    {:name, String.t()} | 
-    {:about, String.t()} | 
-    {:show_help_on_empty, boolean()}
-  ]
+          {:name, String.t()}
+          | {:about, String.t()}
+          | {:show_help_on_empty, boolean()}
+        ]
 
   @typedoc """
   Arguments passed to the command handler.
@@ -37,7 +37,8 @@ defmodule Arca.Cli.Command.CommandBehaviour do
   @typedoc """
   Return value for command handlers.
   """
-  @type handle_result :: String.t() | [String.t()] | {:ok, any()} | {:error, any()} | :help | {:help, atom()}
+  @type handle_result ::
+          String.t() | [String.t()] | {:ok, any()} | {:error, any()} | :help | {:help, atom()}
 
   @doc """
   Returns Optimus-compatible config that can be used by the configurator to assemble a coherent configuration.
