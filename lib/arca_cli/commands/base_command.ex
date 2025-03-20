@@ -164,11 +164,28 @@ defmodule Arca.Cli.Command.BaseCommand do
 
       @doc """
       Default handler for the command.
+      This method is overridden by each command implementation.
       """
       @impl Arca.Cli.Command.CommandBehaviour
       def handle(_args, _settings, _optimus) do
+        # If not overridden, treat as not implemented
         this_function_is_not_implemented()
         {:error, :not_implemented}
+      end
+      
+      @doc """
+      Properly handle the help atom and tuple in a type-safe way.
+      This prevents the type violations by providing explicit type handling.
+      """
+      def handle(args, _settings, _optimus) when args == :help do
+        :help
+      end
+      
+      @doc """
+      Properly handle the help tuple in a type-safe way.
+      """
+      def handle({:help, subcmd}, _settings, _optimus) do
+        {:help, subcmd}
       end
     end
   end
