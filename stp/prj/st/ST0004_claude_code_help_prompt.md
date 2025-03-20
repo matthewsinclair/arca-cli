@@ -1,3 +1,10 @@
+---
+verblock: "20 Mar 2025:v0.1: Matthew Sinclair - Updated via STP upgrade"
+stp_version: 1.0.0
+status: Not Started
+created: 20250320
+completed: 
+---
 # Integrating with Arca.Cli's New Help System (v0.4.0+)
 
 I need to update my codebase to work with the latest version of Arca.Cli (v0.4.0+) which includes a new centralized help system. Please analyze my codebase and help me make the necessary changes to ensure compatibility.

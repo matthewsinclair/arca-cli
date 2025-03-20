@@ -8,12 +8,12 @@ This document serves as an index of all steel threads in the project. A steel th
 ## Index
 
 <!-- BEGIN: STEEL_THREAD_INDEX -->
-| ID                      | Title                            | Status      | Created  | Completed |
-|-------------------------|----------------------------------|-------------|----------|-----------|
-| [ST0004](<./ST0004.md>) | Improved Help Subsystem          | Not Started | 20250320 |           |
-| [ST0003](<./ST0003.md>) | REPL Output Callback System      | In Progress | 20250319 |           |
-| [ST0002](<./ST0002.md>) | REPL Tab Completion Improvements | In Progress | 20250226 |           |
-| [ST0001](<./ST0001.md>) | Documentation Migration to STP   | In Progress | 20250306 |           |
+| ID                      | Title                                    | Status       | Created    | Completed  |
+| ----------------------- | ---------------------------------------- | ------------ | ---------- | ---------- |
+| [ST0002](./ST0002.md)   | REPL Tab Completion Improvements         | In Progress  | 20250226   |            |
+| [ST0001](./ST0001.md)   | Documentation Migration to STP           | In Progress  | 20250306   |            |
+| [ST0004](./NOT-STARTED/ST0004.md) | Improved Help Subsystem for CLI          | Not Started  | 2025-03-20 |            |
+| [ST0003](./COMPLETED/ST0003.md) | REPL Output Callback System              | Completed    | 20250319   | 20250319   |
 <!-- END: STEEL_THREAD_INDEX -->
 
 ## Steel Thread Status Definitions
