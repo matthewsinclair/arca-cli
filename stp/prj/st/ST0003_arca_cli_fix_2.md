@@ -1,3 +1,10 @@
+---
+verblock: "20 Mar 2025:v0.1: Matthew Sinclair - Updated via STP upgrade"
+stp_version: 1.0.0
+status: Not Started
+created: 20250320
+completed: 
+---
 # Arca.Cli REPL Output Fix
 
 ## Issue Description
