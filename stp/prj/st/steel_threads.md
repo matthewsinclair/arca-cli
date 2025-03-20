@@ -1,5 +1,5 @@
 ---
-verblock: "19 Mar 2025:v0.3: Claude - Added steel thread for REPL Output Callback System"
+verblock: "20 Mar 2025:v0.4: Claude - Added steel thread for Improved Help Subsystem"
 ---
 # Steel Threads
 
@@ -10,6 +10,7 @@ This document serves as an index of all steel threads in the project. A steel th
 <!-- BEGIN: STEEL_THREAD_INDEX -->
 | ID                      | Title                            | Status      | Created  | Completed |
 |-------------------------|----------------------------------|-------------|----------|-----------|
+| [ST0004](<./ST0004.md>) | Improved Help Subsystem          | Not Started | 20250320 |           |
 | [ST0003](<./ST0003.md>) | REPL Output Callback System      | In Progress | 20250319 |           |
 | [ST0002](<./ST0002.md>) | REPL Tab Completion Improvements | In Progress | 20250226 |           |
 | [ST0001](<./ST0001.md>) | Documentation Migration to STP   | In Progress | 20250306 |           |

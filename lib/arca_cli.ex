@@ -69,77 +69,60 @@ defmodule Arca.Cli do
     settings = load_settings() |> with_default(%{})
     optimus = optimus_config()
 
-    # Pre-check for help flag to handle it before argument validation
-    if has_help_flag?(argv) do
-      case argv do
-        ["--help"] ->
-          # Top-level help
-          generate_filtered_help(optimus)
-          |> filter_blank_lines
-          |> put_lines
+    # Use the centralized help system to handle help requests
+    cond do
+      # Case 1: Top-level help with --help flag
+      argv == ["--help"] ->
+        generate_filtered_help(optimus)
+        |> filter_blank_lines
+        |> put_lines
 
-        [cmd | rest] when rest == ["--help"] ->
-          # Command-specific help
-          handle_command_help(cmd, optimus)
-          |> filter_blank_lines
-          |> put_lines
+      # Case 2: Command-specific help with --help flag
+      length(argv) > 1 && List.last(argv) == "--help" ->
+        cmd = List.first(argv)
+        handle_command_help(cmd, optimus)
+        |> filter_blank_lines
+        |> put_lines
 
-        _ ->
-          # Normal parse for more complex cases
-          Optimus.parse(optimus, argv)
-          |> handle_args(settings, optimus)
-          |> filter_blank_lines
-          |> put_lines
-      end
-    else
-      # Normal command parsing flow
-      Optimus.parse(optimus, argv)
-      |> handle_args(settings, optimus)
-      |> filter_blank_lines
-      |> put_lines
+      # Case 3: Help prefix command
+      length(argv) > 1 && List.first(argv) == "help" ->
+        cmd = Enum.at(argv, 1)
+        handle_command_help(cmd, optimus)
+        |> filter_blank_lines
+        |> put_lines
+
+      # Case 4: Normal command parsing
+      true ->
+        Optimus.parse(optimus, argv)
+        |> handle_args(settings, optimus)
+        |> filter_blank_lines
+        |> put_lines
     end
   end
 
   @doc """
   Check if the command line arguments contain a help flag
+  
+  Delegates to the Help module for consistent behavior.
   """
   def has_help_flag?(argv) do
-    "--help" in argv
+    Arca.Cli.Help.has_help_flag?(argv)
   end
 
   @doc """
   Handle help for a specific command
+  
+  Delegates to the Help module for centralized help handling.
   """
   def handle_command_help(cmd, optimus) do
-    command_atom = String.to_atom(cmd)
-
-    case handler_for_command(command_atom) do
+    # Convert cmd to atom if it's a string
+    cmd_atom = if is_binary(cmd), do: String.to_atom(cmd), else: cmd
+    
+    case handler_for_command(cmd_atom) do
       {:ok, _cmd_atom, _handler} ->
-        # Found a valid command, show its help text
-        help_lines = Optimus.Help.help(optimus, [command_atom], 80) |> Enum.drop(2)
-
-        # Always replace the app name with "cli" in USAGE line for consistency
-        help_lines
-        |> Enum.map(fn line ->
-          if String.starts_with?(line, "    #{optimus.name}") do
-            # Extract the part after the app name (command and args)
-            app_name_len = String.length(optimus.name)
-            line_len = String.length(line)
-
-            remaining =
-              if line_len > app_name_len + 4 do
-                String.slice(line, (app_name_len + 4)..(line_len - 1))
-              else
-                ""
-              end
-
-            # Replace app name with "cli"
-            "    cli#{remaining}"
-          else
-            line
-          end
-        end)
-
+        # Use the centralized help system to show command help
+        Arca.Cli.Help.show(cmd_atom, [], optimus)
+        
       nil ->
         # Command not found
         ["error: unknown command: #{cmd}"]
@@ -299,11 +282,12 @@ defmodule Arca.Cli do
 
       {:ok, _cmd_atom, handler} ->
         try do
-          # Check if this command has empty arguments and is configured to show help
-          if should_show_help_for_command?(handler, args) do
-            # Show help for this command
-            handle_command_help(Atom.to_string(cmd), optimus)
+          # Use the centralized help system to check if help should be shown
+          if Arca.Cli.Help.should_show_help?(cmd, args, handler) do
+            # Show help for this command using the centralized help system
+            Arca.Cli.Help.show(cmd, args, optimus)
           else
+            # Normal command execution
             handler.handle(args, settings, optimus)
           end
         rescue
@@ -317,6 +301,8 @@ defmodule Arca.Cli do
   @doc """
   Determines if help should be shown for a command with the given arguments.
   
+  Delegates to the centralized Help module for consistent behavior.
+  
   ## Parameters
     - handler: Command handler module
     - args: Command arguments from Optimus.parse
@@ -325,20 +311,14 @@ defmodule Arca.Cli do
     - true if help should be displayed, false otherwise
   """
   def should_show_help_for_command?(handler, args) do
-    # Extract command configuration
-    {_cmd_atom, opts} = apply(handler, :config, []) |> List.first()
-    
-    # Check if the command is configured to show help on empty arguments
-    show_help_on_empty = Keyword.get(opts, :show_help_on_empty, false)
-    
-    # Only show help if both conditions are met:
-    # 1. Command is configured to show help on empty
-    # 2. Arguments are actually empty
-    show_help_on_empty && is_empty_command_args?(args)
+    # Use the centralized help system
+    Arca.Cli.Help.should_show_help?(nil, args, handler)
   end
   
   @doc """
   Checks if command arguments are empty.
+  
+  Delegates to the centralized Help module for consistent behavior.
   
   ## Parameters
     - args: Command arguments from Optimus.parse
@@ -347,18 +327,7 @@ defmodule Arca.Cli do
     - true if arguments are empty, false otherwise
   """
   def is_empty_command_args?(args) do
-    case args do
-      # Empty map or map with only metadata
-      %{} = map when map_size(map) == 0 -> true
-      %{metadata: _} = map when map_size(map) == 1 -> true
-      
-      # Optimus ParseResult with no args, flags, or options
-      %Optimus.ParseResult{args: args, flags: flags, options: options} 
-        when args == %{} and flags == %{} and options == %{} -> true
-      
-      # Otherwise, it's not empty
-      _ -> false
-    end
+    Arca.Cli.Help.is_empty_command_args?(args)
   end
 
   @doc """
