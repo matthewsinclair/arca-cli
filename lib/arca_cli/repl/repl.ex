@@ -406,7 +406,7 @@ defmodule Arca.Cli.Repl do
   defp print(out) do
     # Detect if this is a help output that should bypass formatter callbacks
     is_help_output = is_help_text?(out)
-    
+
     cond do
       # Help output should bypass formatter to avoid display issues
       is_help_output ->
@@ -415,12 +415,13 @@ defmodule Arca.Cli.Repl do
         else
           IO.puts(out)
         end
+
         out
-      
+
       # Also handle help tuples directly
       out == :help || (is_tuple(out) && tuple_size(out) == 2 && elem(out, 0) == :help) ->
         out
-      
+
       # Normal formatter path for non-help output
       Code.ensure_loaded?(Callbacks) && Callbacks.has_callbacks?(:format_output) ->
         # Get formatted output from callbacks
@@ -432,13 +433,13 @@ defmodule Arca.Cli.Repl do
         end
 
         out
-        
+
       # Fallback to default implementation
-      true -> 
+      true ->
         Utils.print(out)
     end
   end
-  
+
   @doc """
   Determine if the given output is help text that should bypass formatter callbacks.
   """
@@ -446,10 +447,8 @@ defmodule Arca.Cli.Repl do
     cond do
       # Check for "USAGE:" in string content
       is_binary(out) && String.contains?(out, "USAGE:") -> true
-      
       # Check for "USAGE:" in any element of list
       is_list(out) && Enum.any?(out, &(is_binary(&1) && String.contains?(&1, "USAGE:"))) -> true
-      
       # Not help text
       true -> false
     end

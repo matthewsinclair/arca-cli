@@ -80,6 +80,7 @@ defmodule Arca.Cli do
       # Case 2: Command-specific help with --help flag
       length(argv) > 1 && List.last(argv) == "--help" ->
         cmd = List.first(argv)
+
         handle_command_help(cmd, optimus)
         |> filter_blank_lines
         |> put_lines
@@ -87,6 +88,7 @@ defmodule Arca.Cli do
       # Case 3: Help prefix command
       length(argv) > 1 && List.first(argv) == "help" ->
         cmd = Enum.at(argv, 1)
+
         handle_command_help(cmd, optimus)
         |> filter_blank_lines
         |> put_lines
@@ -102,7 +104,7 @@ defmodule Arca.Cli do
 
   @doc """
   Check if the command line arguments contain a help flag
-  
+
   Delegates to the Help module for consistent behavior.
   """
   def has_help_flag?(argv) do
@@ -111,18 +113,18 @@ defmodule Arca.Cli do
 
   @doc """
   Handle help for a specific command
-  
+
   Delegates to the Help module for centralized help handling.
   """
   def handle_command_help(cmd, optimus) do
     # Convert cmd to atom if it's a string
     cmd_atom = if is_binary(cmd), do: String.to_atom(cmd), else: cmd
-    
+
     case handler_for_command(cmd_atom) do
       {:ok, _cmd_atom, _handler} ->
         # Use the centralized help system to show command help
         Arca.Cli.Help.show(cmd_atom, [], optimus)
-        
+
       nil ->
         # Command not found
         ["error: unknown command: #{cmd}"]
@@ -297,16 +299,16 @@ defmodule Arca.Cli do
         end
     end
   end
-  
+
   @doc """
   Determines if help should be shown for a command with the given arguments.
-  
+
   Delegates to the centralized Help module for consistent behavior.
-  
+
   ## Parameters
     - handler: Command handler module
     - args: Command arguments from Optimus.parse
-  
+
   ## Returns
     - true if help should be displayed, false otherwise
   """
@@ -314,15 +316,15 @@ defmodule Arca.Cli do
     # Use the centralized help system
     Arca.Cli.Help.should_show_help?(nil, args, handler)
   end
-  
+
   @doc """
   Checks if command arguments are empty.
-  
+
   Delegates to the centralized Help module for consistent behavior.
-  
+
   ## Parameters
     - args: Command arguments from Optimus.parse
-  
+
   ## Returns
     - true if arguments are empty, false otherwise
   """

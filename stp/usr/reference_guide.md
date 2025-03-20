@@ -1,5 +1,6 @@
 ---
-verblock: "19 Mar 2025:v0.3: Claude - Added callback system documentation
+verblock: "20 Mar 2025:v0.4: Claude - Added help system documentation
+19 Mar 2025:v0.3: Claude - Added callback system documentation
 06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific reference content
 06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
 ---
@@ -255,6 +256,38 @@ defmodule YourApp.Cli.Configurator do
 end
 ```
 
+### Help System Configuration
+
+Commands can control their help behavior by setting the `show_help_on_empty` option:
+
+```elixir
+defmodule YourApp.Cli.Commands.QueryCommand do
+  use Arca.Cli.Command.BaseCommand
+  
+  config :query,
+    name: "query",
+    about: "Query data from the system",
+    show_help_on_empty: true,  # Show help when invoked without arguments
+    args: [
+      id: [
+        value_name: "ID",
+        help: "ID to query",
+        required: true,
+        parser: :string
+      ]
+    ]
+  
+  @impl true
+  def handle(args, settings, optimus) do
+    # Command logic - help is handled automatically
+    execute_query(args.args.id, settings)
+  end
+end
+```
+
+Setting `show_help_on_empty: true` causes the command to show help when invoked without arguments.
+Setting `show_help_on_empty: false` (the default) lets the command execute normally without arguments.
+
 ## Directory Structure
 
 ```
@@ -272,6 +305,7 @@ lib/
 │   │   ├── configurator_behaviour.ex
 │   │   ├── coordinator.ex
 │   │   └── dft_configurator.ex
+│   ├── help.ex             # Centralized help system
 │   ├── history/            # Command history modules
 │   │   └── history.ex
 │   ├── repl/               # REPL modules
@@ -318,6 +352,7 @@ Available command configuration options:
 | options     | Command options                               | Keyword list     |
 | flags       | Command flags                                 | Keyword list     |
 | hidden      | Whether command is hidden in help             | Boolean          |
+| show_help_on_empty | Whether to show help when invoked without args | Boolean  |
 
 ## Extension Points
 
@@ -338,6 +373,33 @@ Available command configuration options:
 1. Define a parent command module
 2. Define subcommand modules that use `Arca.Cli.Command.BaseSubCommand`
 3. Register the parent command in a configurator
+
+### Customizing Help Display
+
+The help system can be extended through callbacks:
+
+1. Register a callback for `:format_help` using `Arca.Cli.Callbacks.register/2`
+2. Implement a formatting function that transforms the help text
+3. Return a modified help display
+
+Example:
+
+```elixir
+# Check if the callbacks system is available
+if Code.ensure_loaded?(Arca.Cli.Callbacks) do
+  # Register a callback for format_help
+  Arca.Cli.Callbacks.register(:format_help, fn help_text ->
+    # Add branding or customize the help display
+    branded_help = ["MyApp CLI Help:" | help_text]
+    
+    # Apply custom styling
+    styled_help = Enum.map(branded_help, &MyApp.Formatters.colorize/1)
+    
+    # Return the formatted help
+    {:halt, styled_help}
+  end)
+end
+```
 
 ### Customizing Output Formatting
 

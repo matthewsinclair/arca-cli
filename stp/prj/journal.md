@@ -1,9 +1,25 @@
 ---
-verblock: "06 Mar 2025:v0.2: Matthew Sinclair - Added historical journal entries"
+verblock: "20 Mar 2025:v0.3: Claude - Added help system entry
+06 Mar 2025:v0.2: Matthew Sinclair - Added historical journal entries"
 ---
 # Project Journal
 
 This document maintains a chronological record of project activities, decisions, and progress. It serves as a historical narrative of the project's development.
+
+## 20250320
+
+### Improved Help System Implementation
+
+- Completed the redesign and implementation of the centralized help system (ST0004)
+- Created a dedicated `Arca.Cli.Help` module that handles all help-related functionality
+- Implemented pre-execution checks for displaying help before command execution
+- Added declarative configuration with `show_help_on_empty` parameter for commands
+- Extended the callback system to support custom help formatting
+- Made help display consistent between CLI and REPL modes
+- Fixed help output to always show "cli" as the command name for consistency
+- Added comprehensive tests to validate all help scenarios
+- Updated user and reference documentation with details about the new help system
+- Created a Claude Code prompt template for updating dependent projects
 
 ## 20250306
 

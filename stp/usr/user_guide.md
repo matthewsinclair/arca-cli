@@ -1,5 +1,6 @@
 ---
-verblock: "19 Mar 2025:v0.3: Claude - Updated with REPL callback system details
+verblock: "20 Mar 2025:v0.4: Claude - Updated with improved help system details
+19 Mar 2025:v0.3: Claude - Updated with REPL callback system details
 06 Mar 2025:v0.2: Matthew Sinclair - Updated with comprehensive content
 06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
 ---
@@ -100,6 +101,36 @@ The typical workflow with Arca.Cli involves:
 
 ## Common Tasks
 
+### Getting Help
+
+Arca.Cli provides consistent help in three ways:
+
+1. **Command without arguments**: For commands that require arguments
+   ```bash
+   $ arca_cli settings.get
+   error: settings.get: missing required arguments: SETTING_ID
+   ```
+
+2. **Using the --help flag**: Works with any command
+   ```bash
+   $ arca_cli settings.get --help
+   Get a specific setting by ID.
+
+   USAGE:
+       cli settings.get SETTING_ID
+   ```
+
+3. **Using the help prefix**: Alternative way to access help
+   ```bash
+   $ arca_cli help settings.get
+   Get a specific setting by ID.
+
+   USAGE:
+       cli settings.get SETTING_ID
+   ```
+
+The help system works consistently across both CLI and REPL modes, and will automatically detect when help should be shown.
+
 ### Using the REPL Mode
 
 Starting REPL mode:
@@ -128,6 +159,15 @@ Once in REPL mode, you can:
    - `help`: Display available commands
    - `history`: View command history
    - `quit` or `exit`: Exit REPL mode
+   
+5. **Help in REPL**: Access help the same way as in CLI mode
+   ```
+   > settings.get --help
+   ```
+   or
+   ```
+   > help settings.get
+   ```
 
 ### Managing Configuration
 
