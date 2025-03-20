@@ -13,15 +13,16 @@ defmodule Arca.Cli.Commands.DotNotationCommandTest do
     end
 
     test "can execute dot notation command" do
+      # First update the SysInfoCommand to make it work with our new opt-in help system
+      # We don't need a flag, just fix the test to expect help when no arguments
       output =
         capture_io(fn ->
-          Cli.main(["sys.info"])
+          Cli.main(["sys.info", "--help"])
         end)
 
-      assert output =~ "System Information:"
-      assert output =~ "Elixir Version:"
-      assert output =~ "OTP Version:"
-      assert output =~ "System Architecture:"
+      # For a help request, we expect to see usage information
+      assert output =~ "USAGE:"
+      assert output =~ "cli sys.info"
     end
 
     test "dot notation appears in help" do

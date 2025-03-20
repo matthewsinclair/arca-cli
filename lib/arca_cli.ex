@@ -299,12 +299,65 @@ defmodule Arca.Cli do
 
       {:ok, _cmd_atom, handler} ->
         try do
-          handler.handle(args, settings, optimus)
+          # Check if this command has empty arguments and is configured to show help
+          if should_show_help_for_command?(handler, args) do
+            # Show help for this command
+            handle_command_help(Atom.to_string(cmd), optimus)
+          else
+            handler.handle(args, settings, optimus)
+          end
         rescue
           e ->
             Logger.error("Error executing command #{cmd}: #{inspect(e)}")
             handle_error(cmd, "command execution failed: #{inspect(e)}")
         end
+    end
+  end
+  
+  @doc """
+  Determines if help should be shown for a command with the given arguments.
+  
+  ## Parameters
+    - handler: Command handler module
+    - args: Command arguments from Optimus.parse
+  
+  ## Returns
+    - true if help should be displayed, false otherwise
+  """
+  def should_show_help_for_command?(handler, args) do
+    # Extract command configuration
+    {_cmd_atom, opts} = apply(handler, :config, []) |> List.first()
+    
+    # Check if the command is configured to show help on empty arguments
+    show_help_on_empty = Keyword.get(opts, :show_help_on_empty, false)
+    
+    # Only show help if both conditions are met:
+    # 1. Command is configured to show help on empty
+    # 2. Arguments are actually empty
+    show_help_on_empty && is_empty_command_args?(args)
+  end
+  
+  @doc """
+  Checks if command arguments are empty.
+  
+  ## Parameters
+    - args: Command arguments from Optimus.parse
+  
+  ## Returns
+    - true if arguments are empty, false otherwise
+  """
+  def is_empty_command_args?(args) do
+    case args do
+      # Empty map or map with only metadata
+      %{} = map when map_size(map) == 0 -> true
+      %{metadata: _} = map when map_size(map) == 1 -> true
+      
+      # Optimus ParseResult with no args, flags, or options
+      %Optimus.ParseResult{args: args, flags: flags, options: options} 
+        when args == %{} and flags == %{} and options == %{} -> true
+      
+      # Otherwise, it's not empty
+      _ -> false
     end
   end
 

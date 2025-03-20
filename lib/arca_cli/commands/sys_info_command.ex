@@ -7,7 +7,8 @@ defmodule Arca.Cli.Commands.SysInfoCommand do
 
   config :"sys.info",
     name: "sys.info",
-    about: "Display system information."
+    about: "Display system information.",
+    show_help_on_empty: true
 
   @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do

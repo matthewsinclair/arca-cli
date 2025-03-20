@@ -404,19 +404,54 @@ defmodule Arca.Cli.Repl do
 
   # Print using callbacks if available, otherwise fall back to default implementation
   defp print(out) do
-    with true <- Code.ensure_loaded?(Callbacks),
-         true <- Callbacks.has_callbacks?(:format_output) do
-      # Get formatted output from callbacks
-      formatted = Callbacks.execute(:format_output, out)
+    # Detect if this is a help output that should bypass formatter callbacks
+    is_help_output = is_help_text?(out)
+    
+    cond do
+      # Help output should bypass formatter to avoid display issues
+      is_help_output ->
+        if is_list(out) do
+          Enum.join(out, "\n") |> IO.puts()
+        else
+          IO.puts(out)
+        end
+        out
+      
+      # Also handle help tuples directly
+      out == :help || (is_tuple(out) && tuple_size(out) == 2 && elem(out, 0) == :help) ->
+        out
+      
+      # Normal formatter path for non-help output
+      Code.ensure_loaded?(Callbacks) && Callbacks.has_callbacks?(:format_output) ->
+        # Get formatted output from callbacks
+        formatted = Callbacks.execute(:format_output, out)
 
-      # Only print if it's not empty
-      if formatted && formatted != "" do
-        IO.puts(formatted)
-      end
+        # Only print if it's not empty
+        if formatted && formatted != "" do
+          IO.puts(formatted)
+        end
 
-      out
-    else
-      _ -> Utils.print(out)
+        out
+        
+      # Fallback to default implementation
+      true -> 
+        Utils.print(out)
+    end
+  end
+  
+  @doc """
+  Determine if the given output is help text that should bypass formatter callbacks.
+  """
+  def is_help_text?(out) do
+    cond do
+      # Check for "USAGE:" in string content
+      is_binary(out) && String.contains?(out, "USAGE:") -> true
+      
+      # Check for "USAGE:" in any element of list
+      is_list(out) && Enum.any?(out, &(is_binary(&1) && String.contains?(&1, "USAGE:"))) -> true
+      
+      # Not help text
+      true -> false
     end
   end
 
