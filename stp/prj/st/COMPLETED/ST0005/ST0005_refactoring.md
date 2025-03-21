@@ -188,6 +188,20 @@ As of this update, the following modules have been refactored to follow function
    - Improved documentation with detailed function descriptions
    - Maintained backward compatibility with existing code
 
+10. **Arca.Cli.Commands.CliStatusCommand**
+   - Added domain-specific error types for status operations
+   - Decomposed the status display logic into smaller, focused functions
+   - Implemented Railway-Oriented Programming pattern with `with` expressions
+   - Added comprehensive error handling with descriptive error messages
+   - Improved documentation with detailed type and function specifications
+
+11. **Arca.Cli.Commands.SysFlushCommand**
+   - Added domain-specific error types for history flush operations
+   - Implemented error handling for potential failures in history access
+   - Added a helper function to encapsulate the flush operation
+   - Improved user feedback with more descriptive success/error messages
+   - Added comprehensive type specifications and documentation
+
 ## Benefits Achieved
 
 The refactoring has provided the following benefits:
