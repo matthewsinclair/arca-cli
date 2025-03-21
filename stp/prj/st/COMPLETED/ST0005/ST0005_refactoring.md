@@ -181,6 +181,13 @@ As of this update, the following modules have been refactored to follow function
    - Improved documentation with examples and detailed descriptions
    - Fixed typing issues to ensure compiler validation passes
 
+9. **Arca.Cli.Commands.AboutCommand**
+   - Added module-specific error types
+   - Implemented Railway-Oriented Programming with `with` expressions
+   - Added proper error handling for potential failures in retrieving app information
+   - Improved documentation with detailed function descriptions
+   - Maintained backward compatibility with existing code
+
 ## Benefits Achieved
 
 The refactoring has provided the following benefits:
