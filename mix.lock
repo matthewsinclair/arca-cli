@@ -51,7 +51,7 @@
   "nx_image": {:hex, :nx_image, "0.1.1", "69cf0d2fd873d12b028583aa49b5e0a25f6aca307afc337a5d871851a20fba1d", [:mix], [{:nx, "~> 0.4", [hex: :nx, repo: "hexpm", optional: false]}], "hexpm", "55c8206a822237f6027168f11214e3887263c5b8a1f8e0634eea82c96e5093e3"},
   "nx_signal": {:hex, :nx_signal, "0.2.0", "e1ca0318877b17c81ce8906329f5125f1e2361e4c4235a5baac8a95ee88ea98e", [:mix], [{:nx, "~> 0.6", [hex: :nx, repo: "hexpm", optional: false]}], "hexpm", "7247e5e18a177a59c4cb5355952900c62fdeadeb2bad02a9a34237b68744e2bb"},
   "ok": {:hex, :ok, "2.3.0", "0a3d513ec9038504dc5359d44e14fc14ef59179e625563a1a144199cdc3a6d30", [:mix], [], "hexpm", "f0347b3f8f115bf347c704184b33cf084f2943771273f2b98a3707a5fa43c4d5"},
-  "optimus": {:git, "https://github.com/matthewsinclair/arca-optimus.git", "617d9fa74826f316cc9cd96152b0e56815f0d1a8", [branch: "main"]},
+  "optimus": {:git, "https://github.com/matthewsinclair/arca-optimus.git", "39b62b21ddc1c2ba89c8509c437c7da0267670ea", [branch: "main"]},
   "owl": {:hex, :owl, "0.12.2", "65906b525e5c3ef51bab6cba7687152be017aebe1da077bb719a5ee9f7e60762", [:mix], [{:ucwidth, "~> 0.2", [hex: :ucwidth, repo: "hexpm", optional: true]}], "hexpm", "6398efa9e1fea70a04d24231e10dcd66c1ac1aa2da418d20ef5357ec61de2880"},
   "parse_trans": {:hex, :parse_trans, "3.4.1", "6e6aa8167cb44cc8f39441d05193be6e6f4e7c2946cb2759f015f8c56b76e5ff", [:rebar3], [], "hexpm", "620a406ce75dada827b82e453c19cf06776be266f5a67cff34e1ef2cbb60e49a"},
   "pathex": {:hex, :pathex, "2.5.3", "0f2674c7cb52ae9220766cae2653b4013578349ae5ec07cb0c31b92684b3f19a", [:mix], [], "hexpm", "767aefc27d0303f583ba2064f0a49546067ab5de3c42b89f014a0ba32ea04830"},
