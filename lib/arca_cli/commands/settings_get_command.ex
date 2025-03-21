@@ -23,6 +23,8 @@ defmodule Arca.Cli.Commands.SettingsGetCommand do
   @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, _settings, _optimus) do
     case Cli.get_setting(args.args.id) do
+      {:ok, value} -> value
+      {:error, _error_type, message} -> message
       {:error, message} when is_binary(message) -> message
       value -> value
     end

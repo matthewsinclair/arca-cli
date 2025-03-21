@@ -8,19 +8,29 @@ defmodule Arca.Cli.Commands.Config do
   use Arca.Cli.Commands.NamespaceCommandHelper
 
   namespace_command :list, "List all configuration settings" do
-    case Arca.Cli.load_settings() do
-      %{} = settings when map_size(settings) == 0 ->
-        "No configuration settings found."
+    # Use a simpler approach that satisfies the type checker
+    result = Arca.Cli.load_settings()
 
-      settings ->
-        header = "Configuration Settings:\n"
+    # Explicitly handle each possible return type
+    case result do
+      {:ok, settings} ->
+        if map_size(settings) == 0 do
+          "No configuration settings found."
+        else
+          header = "Configuration Settings:\n"
 
-        settings_list =
-          settings
-          |> Enum.map(fn {key, value} -> "  #{key}: #{inspect(value)}" end)
-          |> Enum.join("\n")
+          settings_list =
+            settings
+            |> Enum.map(fn {key, value} -> "  #{key}: #{inspect(value)}" end)
+            |> Enum.join("\n")
 
-        header <> settings_list
+          header <> settings_list
+        end
+
+      # This is intentionally here for future compatibility,
+      # even though the type checker might not recognize it
+      _ ->
+        "Error loading settings"
     end
   end
 
