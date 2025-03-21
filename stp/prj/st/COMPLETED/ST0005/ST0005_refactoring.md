@@ -1,5 +1,5 @@
 ---
-verblock: "21 Mar 2025:v0.1: Functional Refactoring Implementation"
+verblock: "21 Mar 2025:v0.2: Functional Refactoring Implementation"
 stp_version: 1.0.0
 status: Completed
 created: 20250321
@@ -9,7 +9,7 @@ completed: 20250321
 
 ## Overview
 
-This document details the refactoring work done to implement functional programming principles in the Arca.Cli codebase as part of ST0005. The initial refactoring focused on the highest-priority areas identified in the module analysis, starting with error handling and configuration management.
+This document details the refactoring work done to implement functional programming principles in the Arca.Cli codebase as part of ST0005. The refactoring focused on the highest-priority areas identified in the module analysis, starting with error handling and configuration management, then moving to supporting modules like Help and History.
 
 ## Improvements Implemented
 
@@ -67,6 +67,8 @@ Broke down large, complex functions into smaller, focused helper functions:
 - `handle_subcommand/4` → `find_command_handler/1` + `execute_command/5`
 - `load_settings/0` → `load_settings_from_path/1` + `read_config_file/1` + `decode_settings/2`
 - `save_settings/1` → `ensure_config_directory/0` + `merge_settings/2` + `encode_settings/1` + `write_settings_file/2`
+- `show_help_on_empty?/1` → `fetch_handler_config/1` + `extract_show_help_setting/1`
+- `generate_help/2` → `normalize_app_name/2` + `extract_remaining_text/2`
 
 ### 4. Type Specifications
 
@@ -75,6 +77,21 @@ Added comprehensive type specifications to all refactored functions:
 - `@spec` annotations for function signatures
 - Custom type definitions using `@type`
 - Generic result type with `@type result(t) :: {:ok, t} | {:error, error_type(), term()}`
+- Module-specific error types tailored to domain operations
+
+```elixir
+# In Help module
+@type error_type ::
+        :handler_not_found
+        | :config_not_available
+        | :command_error
+
+# In History module
+@type error_type ::
+        :history_not_available
+        | :invalid_command_format
+        | :history_operation_failed
+```
 
 ### 5. Pattern Matching Over Conditionals
 
@@ -84,6 +101,23 @@ Replaced complex conditional logic with pattern matching:
 - Case expressions with pattern matching for control flow
 - Guard clauses for type-based decisions
 
+```elixir
+# Before
+def has_help_flag?(args) do
+  cond do
+    is_list(args) -> "--help" in args
+    is_map(args) && Map.has_key?(args, :flags) -> args |> Map.get(:flags, %{}) |> Map.get(:help, false)
+    true -> false
+  end
+end
+
+# After
+def has_help_flag?(args) when is_list(args), do: "--help" in args
+def has_help_flag?(%{flags: flags}) when is_map(flags), do: Map.get(flags, :help, false)
+def has_help_flag?(%{} = args) when map_size(args) > 0, do: args |> Map.get(:flags, %{}) |> Map.get(:help, false)
+def has_help_flag?(_), do: false
+```
+
 ### 6. Error Context Improvement
 
 Improved error messages with more context:
@@ -91,6 +125,28 @@ Improved error messages with more context:
 - Type-specific error prefixes via `error_type_to_prefix/1`
 - Detailed error messages including file paths and operations
 - Preservation of original error data when appropriate
+
+## Modules Refactored
+
+As of this update, the following modules have been refactored to follow functional programming principles:
+
+1. **Arca.Cli** (main module)
+   - Standardized error types
+   - Railway-oriented programming with `with` expressions
+   - Comprehensive type specifications
+   - Improved error handling and context
+
+2. **Arca.Cli.Help**
+   - Module-specific error types
+   - Function decomposition
+   - Pattern matching for argument handling
+   - Railway-oriented programming
+
+3. **Arca.Cli.History**
+   - Error handling for GenServer operations
+   - Properly typed result tuples
+   - Backward compatibility with the old API
+   - Comprehensive type specifications and documentation
 
 ## Benefits Achieved
 
@@ -102,62 +158,46 @@ The refactoring has provided the following benefits:
 4. **Increased Readability**: More direct expression of intent with `with` expressions
 5. **Better Modularity**: Functions organized around single responsibilities
 
-## Example: Configuration Loading Before and After
+## Example: History Module Before and After
 
 ### Before
 
 ```elixir
-def load_settings() do
-  config_file = "~/.arca/arca_cli.json" |> Path.expand()
-  legacy_path = "~/.arca/config.json" |> Path.expand()
+def push_cmd(cmd) when is_binary(cmd) do
+  GenServer.call(__MODULE__, {:push_cmd, cmd})
+end
 
-  case File.read(config_file) do
-    {:ok, contents} ->
-      case Jason.decode(contents) do
-        {:ok, settings} ->
-          settings
-        {:error, reason} ->
-          Logger.warning("Failed to decode settings: #{inspect(reason)}")
-          %{}
-      end
-    {:error, _} ->
-      # Fall back to legacy path...
-      case File.read(legacy_path) do
-        # More deeply nested logic...
-      end
-  end
+def handle_call({:push_cmd, cmd}, _from, state) do
+  new_history = [{length(state.history), String.trim(cmd)} | state.history]
+  new_state = %CliHistory{history: new_history}
+  {:reply, new_history, new_state}
 end
 ```
 
 ### After
 
 ```elixir
-@spec load_settings() :: result(map())
-def load_settings() do
-  config_file = "~/.arca/arca_cli.json" |> Path.expand()
-  legacy_path = "~/.arca/config.json" |> Path.expand()
-
-  case load_settings_from_path(config_file) do
-    {:ok, settings} ->
-      {:ok, settings}
-    {:error, _error_type, _reason} ->
-      # Try to load from legacy path
-      case load_settings_from_path(legacy_path) do
-        {:ok, settings} ->
-          Logger.info("Using legacy config path: #{legacy_path}")
-          {:ok, settings}
-        {:error, _error_type, _reason} ->
-          Logger.debug("No configuration found at standard or legacy paths")
-          {:ok, %{}}
-      end
+@spec push_cmd(String.t()) :: result(history_list())
+def push_cmd(cmd) when is_binary(cmd) do
+  try do
+    history = GenServer.call(__MODULE__, {:push_cmd, cmd})
+    {:ok, history}
+  rescue
+    error ->
+      Logger.error("Failed to push command to history: #{inspect(error)}")
+      {:error, :history_operation_failed, "Failed to add command to history"}
   end
 end
 
-@spec load_settings_from_path(String.t()) :: result(map())
-def load_settings_from_path(path) do
-  with {:ok, contents} <- read_config_file(path),
-       {:ok, settings} <- decode_settings(contents, path) do
-    {:ok, settings}
+@impl true
+def handle_call({:push_cmd, cmd}, _from, state) do
+  with {:ok, new_history} <- add_command_to_history(state.history, cmd),
+       {:ok, new_state} <- update_history_state(new_history) do
+    {:reply, new_history, new_state}
+  else
+    {:error, _error_type, _reason} ->
+      # For GenServer callbacks, we maintain the original state on error
+      {:reply, state.history, state}
   end
 end
 ```
@@ -174,7 +214,7 @@ During the implementation, several challenges were encountered and addressed:
 2. **Maintaining Backward Compatibility**: Many modules relied on the previous error handling approach, requiring careful updates to preserve expected behavior:
    - Made command modules handle both old `{:error, reason}` and new `{:error, error_type, reason}` formats
    - Added fallback patterns to handle unexpected return types gracefully
-   - Updated test cases to reflect new return formats
+   - Provided legacy API functions that delegate to the new functions but maintain old return patterns
 
 3. **Handling Doctest Issues**: Some doctests expected specific outputs that changed with the refactoring:
    - Removed or updated doctests that were no longer compatible
@@ -186,19 +226,18 @@ The refactored code was subjected to thorough testing to ensure compatibility an
 
 - All 41 doctests pass successfully
 - All 104 unit and integration tests pass successfully
-- The codebase compiles cleanly with the `--warnings-as-errors` flag
+- The codebase compiles cleanly with all modules refactored so far
 - All smoke tests complete without errors
 
 This indicates that the refactored code maintains full compatibility with existing functionality while improving error handling.
 
 ## Next Steps
 
-1. **Apply patterns to remaining modules**: Continue refactoring other high-priority modules identified in the analysis
+1. **Apply patterns to remaining modules**: Continue refactoring other priority modules in lib/arca_cli/*
 2. **Add context-passing functions**: Implement the `with_x` naming convention for pipeline-friendly functions
-3. **Add telemetry**: Integrate telemetry for performance monitoring
-4. **Documentation**: Add more examples of functional programming patterns to documentation
-5. **Create Style Guide**: Document the new error handling approach as a standardized pattern for the codebase
+3. **Documentation**: Add more examples of functional programming patterns to documentation
+4. **Create Style Guide**: Document the new error handling approach as a standardized pattern for the codebase
 
 ## Conclusion
 
-The initial phase of functional programming refactoring has successfully established patterns for Railway-Oriented Programming, function decomposition, and improved type specifications. These patterns provide a solid foundation for refactoring the rest of the codebase in a consistent manner. The improved error handling now provides better context and more structured information, while the decomposition of complex functions has enhanced readability and maintainability.
+The ongoing functional programming refactoring has successfully established patterns for Railway-Oriented Programming, function decomposition, and improved type specifications. These patterns provide a solid foundation for refactoring the rest of the codebase in a consistent manner. The improved error handling now provides better context and more structured information, while the decomposition of complex functions has enhanced readability and maintainability.
