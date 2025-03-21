@@ -47,6 +47,19 @@ defmodule Arca.Cli.Help do
   require Logger
   alias Arca.Cli.Callbacks
 
+  @typedoc """
+  Types of errors that can occur in the Help module.
+  """
+  @type error_type ::
+          :handler_not_found
+          | :config_not_available
+          | :command_error
+
+  @typedoc """
+  Standard result tuple for operations that might fail.
+  """
+  @type result(t) :: {:ok, t} | {:error, error_type(), term()}
+
   @doc """
   Determines if help should be shown for a command with the given arguments.
 
@@ -63,6 +76,7 @@ defmodule Arca.Cli.Help do
   ## Returns
     - true if help should be displayed, false otherwise
   """
+  @spec should_show_help?(atom() | String.t(), map() | list(), module() | nil) :: boolean()
   def should_show_help?(cmd, args, handler \\ nil) do
     cmd_atom = if is_binary(cmd), do: String.to_atom(cmd), else: cmd
     handler = handler || get_handler_for_command(cmd_atom)
@@ -82,6 +96,7 @@ defmodule Arca.Cli.Help do
   ## Returns
     - Formatted help text
   """
+  @spec show(atom() | String.t(), map(), term()) :: [String.t()]
   def show(cmd, _args, optimus) do
     cmd
     |> to_atom()
@@ -98,15 +113,59 @@ defmodule Arca.Cli.Help do
   ## Returns
     - true if the command should show help on empty, false otherwise
   """
+  @spec show_help_on_empty?(module()) :: boolean()
   def show_help_on_empty?(handler) do
-    try do
-      handler
-      |> apply(:config, [])
-      |> List.first()
-      |> elem(1)
-      |> Keyword.get(:show_help_on_empty, false)
-    rescue
+    with {:ok, config} <- fetch_handler_config(handler),
+         {:ok, show_help} <- extract_show_help_setting(config) do
+      show_help
+    else
       _ -> false
+    end
+  end
+
+  @doc """
+  Fetches the configuration from a command handler module.
+
+  ## Parameters
+    - handler: Command handler module
+
+  ## Returns
+    - {:ok, config} with the configuration on success
+    - {:error, error_type, reason} on failure
+  """
+  @spec fetch_handler_config(module()) :: result(term())
+  def fetch_handler_config(handler) do
+    try do
+      {:ok, handler.config()}
+    rescue
+      error ->
+        Logger.debug("Error fetching config from handler: #{inspect(error)}")
+        {:error, :config_not_available, "Command configuration not available"}
+    end
+  end
+
+  @doc """
+  Extracts the show_help_on_empty setting from a command configuration.
+
+  ## Parameters
+    - config: Command configuration from handler.config()
+
+  ## Returns
+    - {:ok, boolean} with the setting value on success
+    - {:error, error_type, reason} on failure
+  """
+  @spec extract_show_help_setting(term()) :: result(boolean())
+  def extract_show_help_setting(config) do
+    try do
+      setting =
+        config
+        |> List.first()
+        |> elem(1)
+        |> Keyword.get(:show_help_on_empty, false)
+
+      {:ok, setting}
+    rescue
+      _ -> {:error, :command_error, "Could not extract show_help_on_empty setting"}
     end
   end
 
@@ -119,18 +178,14 @@ defmodule Arca.Cli.Help do
   ## Returns
     - true if --help is present, false otherwise
   """
-  def has_help_flag?(args) do
-    cond do
-      is_list(args) ->
-        "--help" in args
+  @spec has_help_flag?(map() | list()) :: boolean()
+  def has_help_flag?(args) when is_list(args), do: "--help" in args
+  def has_help_flag?(%{flags: flags}) when is_map(flags), do: Map.get(flags, :help, false)
 
-      is_map(args) && Map.has_key?(args, :flags) ->
-        args |> Map.get(:flags, %{}) |> Map.get(:help, false)
+  def has_help_flag?(%{} = args) when map_size(args) > 0,
+    do: args |> Map.get(:flags, %{}) |> Map.get(:help, false)
 
-      true ->
-        false
-    end
-  end
+  def has_help_flag?(_), do: false
 
   @doc """
   Checks if command arguments are empty.
@@ -141,68 +196,129 @@ defmodule Arca.Cli.Help do
   ## Returns
     - true if arguments are empty, false otherwise
   """
-  def is_empty_command_args?(args) do
-    case args do
-      %{} = map when map_size(map) == 0 ->
-        true
+  @spec is_empty_command_args?(map() | list()) :: boolean()
+  def is_empty_command_args?(%{} = map) when map_size(map) == 0, do: true
+  def is_empty_command_args?(%{metadata: _} = map) when map_size(map) == 1, do: true
 
-      %{metadata: _} = map when map_size(map) == 1 ->
-        true
+  def is_empty_command_args?(%Optimus.ParseResult{args: args, flags: flags, options: options})
+      when args == %{} and flags == %{} and options == %{},
+      do: true
 
-      %Optimus.ParseResult{args: args, flags: flags, options: options}
-      when args == %{} and flags == %{} and options == %{} ->
-        true
+  def is_empty_command_args?(["--help"]), do: true
+  def is_empty_command_args?(_), do: false
 
-      ["--help"] ->
-        true
+  @doc """
+  Convert a command name to an atom for consistency.
 
-      _ ->
-        false
-    end
-  end
+  ## Parameters
+    - cmd: Command name (binary or atom)
 
-  # Private functions
+  ## Returns
+    - Command name as atom
+  """
+  @spec to_atom(atom() | String.t()) :: atom()
+  def to_atom(cmd) when is_atom(cmd), do: cmd
+  def to_atom(cmd) when is_binary(cmd), do: String.to_atom(cmd)
 
-  defp to_atom(cmd) when is_atom(cmd), do: cmd
-  defp to_atom(cmd) when is_binary(cmd), do: String.to_atom(cmd)
+  @doc """
+  Finds the handler module for a command.
 
-  defp get_handler_for_command(cmd) do
+  ## Parameters
+    - cmd: Command name as atom
+
+  ## Returns
+    - Command handler module or nil if not found
+  """
+  @spec get_handler_for_command(atom()) :: module() | nil
+  def get_handler_for_command(cmd) do
     case Arca.Cli.handler_for_command(cmd) do
       {:ok, _cmd_atom, handler} -> handler
       _ -> nil
     end
   end
 
-  defp generate_help(cmd, optimus) do
+  @doc """
+  Generates help text for a command.
+
+  ## Parameters
+    - cmd: Command name as atom
+    - optimus: Optimus configuration
+
+  ## Returns
+    - List of help text lines
+  """
+  @spec generate_help(atom(), term()) :: [String.t()]
+  def generate_help(cmd, optimus) do
     help_lines =
       optimus
       |> Optimus.Help.help([cmd], 80)
       |> Enum.drop(2)
 
-    # Always replace the app name with "cli" in USAGE line for consistency
+    normalize_app_name(help_lines, optimus.name)
+  end
+
+  @doc """
+  Normalizes the application name in help text for consistency.
+  Always replaces the application name with "cli" in USAGE lines.
+
+  ## Parameters
+    - help_lines: List of help text lines
+    - app_name: Application name to replace
+
+  ## Returns
+    - Updated help text lines
+  """
+  @spec normalize_app_name([String.t()], String.t()) :: [String.t()]
+  def normalize_app_name(help_lines, app_name) do
     help_lines
     |> Enum.map(fn line ->
-      if String.starts_with?(line, "    #{optimus.name}") do
-        # Extract the part after the app name (command and args)
-        app_name_len = String.length(optimus.name)
-        line_len = String.length(line)
-
-        remaining =
-          if line_len > app_name_len + 4 do
-            String.slice(line, (app_name_len + 4)..(line_len - 1))
-          else
-            ""
-          end
-
-        # Replace app name with "cli"
-        "    cli#{remaining}"
+      if String.starts_with?(line, "    #{app_name}") do
+        with {:ok, remaining} <- extract_remaining_text(line, app_name) do
+          "    cli#{remaining}"
+        else
+          _ -> line
+        end
       else
         line
       end
     end)
   end
 
-  defp format_help(help_text) do
+  @doc """
+  Extracts the remaining text after the application name in a help line.
+
+  ## Parameters
+    - line: Help text line
+    - app_name: Application name to extract after
+
+  ## Returns
+    - {:ok, remaining} with the extracted text on success
+    - {:error, reason} if extraction fails
+  """
+  @spec extract_remaining_text(String.t(), String.t()) :: result(String.t())
+  def extract_remaining_text(line, app_name) do
+    app_name_len = String.length(app_name)
+    line_len = String.length(line)
+
+    if line_len > app_name_len + 4 do
+      remaining = String.slice(line, (app_name_len + 4)..(line_len - 1))
+      {:ok, remaining}
+    else
+      {:ok, ""}
+    end
+  end
+
+  @doc """
+  Formats help text using callbacks if available.
+
+  ## Parameters
+    - help_text: List of help text lines
+
+  ## Returns
+    - Formatted help text (possibly processed by callbacks)
+  """
+  @spec format_help([String.t()]) :: [String.t()]
+  def format_help(help_text) do
     if Callbacks.has_callbacks?(:format_help) do
       Callbacks.execute(:format_help, help_text)
     else
