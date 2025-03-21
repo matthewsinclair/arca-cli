@@ -4,12 +4,12 @@ defmodule Arca.Cli.Configurator.Coordinator do
   necessary to get an Arca.Cli up and running.
 
   This module provides functions to:
-  
+
   1. Set up CLI configuration using one or more configurator modules
   2. Merge configurations from multiple sources
   3. Detect and handle duplicate command and configurator definitions
   4. Generate the final Optimus configuration
-  
+
   The coordinator follows a functional approach with Railway-Oriented Programming patterns for
   error handling and data transformation pipelines.
   """
@@ -44,7 +44,7 @@ defmodule Arca.Cli.Configurator.Coordinator do
 
   @doc """
   Coordinate setup of the CLI. 
-  
+
   If no configuration is passed in, defaults to `Arca.Cli.Configurator.DftConfigurator`.
   Accepts either a single module or a list of modules that implement 
   the `Arca.Cli.Configurator.ConfiguratorBehaviour` protocol.
@@ -150,8 +150,12 @@ defmodule Arca.Cli.Configurator.Coordinator do
       {:ok, config}
     rescue
       error ->
-        Logger.error("Error getting configuration from #{inspect(configurator)}: #{inspect(error)}")
-        {:error, :configurator_setup_error, "Failed to get configuration from #{inspect(configurator)}"}
+        Logger.error(
+          "Error getting configuration from #{inspect(configurator)}: #{inspect(error)}"
+        )
+
+        {:error, :configurator_setup_error,
+         "Failed to get configuration from #{inspect(configurator)}"}
     end
   end
 
@@ -173,7 +177,9 @@ defmodule Arca.Cli.Configurator.Coordinator do
     rescue
       error ->
         Logger.error("Error getting commands from #{inspect(configurator)}: #{inspect(error)}")
-        {:error, :configurator_setup_error, "Failed to get commands from #{inspect(configurator)}"}
+
+        {:error, :configurator_setup_error,
+         "Failed to get commands from #{inspect(configurator)}"}
     end
   end
 
@@ -368,7 +374,10 @@ defmodule Arca.Cli.Configurator.Coordinator do
       {:ok, {cmd, config}}
     rescue
       error ->
-        Logger.error("Error getting command config from #{inspect(command_module)}: #{inspect(error)}")
+        Logger.error(
+          "Error getting command config from #{inspect(command_module)}: #{inspect(error)}"
+        )
+
         {:error, :command_config_error, "Failed to get command configuration"}
     end
   end

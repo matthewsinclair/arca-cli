@@ -32,6 +32,47 @@ defmodule Arca.Cli.Command.BaseCommand do
   """
   require Logger
 
+  @typedoc """
+  Represents possible error types from command operations
+  """
+  @type error_type ::
+          :validation_error
+          | :command_mismatch
+          | :not_implemented
+          | :invalid_module_name
+          | :invalid_command_name
+          | :help_requested
+
+  @typedoc """
+  Result type for command validation operations
+  """
+  @type validation_result :: {:ok, atom()} | {:error, error_type(), String.t()}
+
+  @typedoc """
+  Generic result type for operations that can fail
+  """
+  @type result(t) :: {:ok, t} | {:error, error_type(), String.t()}
+
+  @doc """
+  Create a standardized error tuple with type and reason
+  """
+  @spec create_error(error_type(), String.t()) :: {:error, error_type(), String.t()}
+  def create_error(error_type, reason) do
+    {:error, error_type, reason}
+  end
+
+  @doc """
+  Convert a 3-tuple error to a 2-tuple error for backward compatibility.
+  Also passes through non-error values unchanged.
+  """
+  @spec to_legacy_error({:error, error_type(), String.t()}) :: {:error, String.t()}
+  def to_legacy_error({:error, _error_type, reason}) do
+    {:error, reason}
+  end
+
+  @spec to_legacy_error(any()) :: any()
+  def to_legacy_error(value), do: value
+
   @doc """
   Implement base functionality for a Command.
   """
@@ -97,53 +138,87 @@ defmodule Arca.Cli.Command.BaseCommand do
   """
   defmacro config(cmd, opts) do
     quote do
-      # Get the module name suffix (last part of the module name)
-      module_name_parts = Module.split(__MODULE__)
-      module_suffix = List.last(module_name_parts)
+      # Use validate_module_name and validate_command_name in place of in-macro code
+      with {:ok, expected_cmd} <- Arca.Cli.Command.BaseCommand.validate_module_name(__MODULE__),
+           {:ok, transformed_cmd} <-
+             Arca.Cli.Command.BaseCommand.transform_dot_command(unquote(cmd)),
+           {:ok, _} <-
+             Arca.Cli.Command.BaseCommand.validate_command_name(expected_cmd, transformed_cmd) do
+        @cmdcfg [{unquote(cmd), unquote(opts)}]
+      else
+        {:error, :invalid_module_name, reason} ->
+          # Raise compile-time error for invalid module name
+          raise ArgumentError, reason
 
-      # Extract the expected command name from the module suffix
-      expected_cmd =
-        if String.ends_with?(module_suffix, "Command") do
-          suffix_without_command = String.replace_suffix(module_suffix, "Command", "")
-          # Convert to the expected atom format
-          String.to_atom(String.downcase(suffix_without_command))
-        else
-          raise ArgumentError, "Command module name must end with 'Command'"
-        end
+        {:error, :invalid_command_name, reason} ->
+          # Raise compile-time error for command name mismatch
+          raise ArgumentError, reason
 
-      # Handle dot notation commands (sys.info -> SysInfoCommand)
-      dot_cmd =
-        if is_atom(unquote(cmd)) && String.contains?(Atom.to_string(unquote(cmd)), ".") do
-          parts = Atom.to_string(unquote(cmd)) |> String.split(".")
-
-          parts
-          |> Enum.map(&String.capitalize/1)
-          |> Enum.join("")
-          |> String.downcase()
-          |> String.to_atom()
-        else
-          unquote(cmd)
-        end
-
-      # Validate that the command name matches the module name
-      cond do
-        expected_cmd == unquote(cmd) ->
-          # Standard command name matches directly
-          :ok
-
-        expected_cmd == dot_cmd ->
-          # Dot notation command name matches after transformation
-          :ok
-
-        true ->
-          # Command name doesn't match in any format
-          raise ArgumentError,
-                "Command name mismatch: config defines command as #{inspect(unquote(cmd))} " <>
-                  "but module name #{inspect(__MODULE__)} expects #{inspect(expected_cmd)}. " <>
-                  "The command name must match the module name (without 'Command' suffix, downcased)."
+        {:error, error_type, reason} ->
+          # Catch-all for other error types
+          raise ArgumentError, "#{error_type}: #{reason}"
       end
+    end
+  end
 
-      @cmdcfg [{unquote(cmd), unquote(opts)}]
+  @doc """
+  Validates that the module name follows the command naming convention.
+  Returns the expected command name derived from the module name.
+  """
+  @spec validate_module_name(module()) :: validation_result()
+  def validate_module_name(module_name) do
+    module_name_parts = Module.split(module_name)
+    module_suffix = List.last(module_name_parts)
+
+    if String.ends_with?(module_suffix, "Command") do
+      suffix_without_command = String.replace_suffix(module_suffix, "Command", "")
+      expected_cmd = String.to_atom(String.downcase(suffix_without_command))
+      {:ok, expected_cmd}
+    else
+      create_error(:invalid_module_name, "Command module name must end with 'Command'")
+    end
+  end
+
+  @doc """
+  Transforms dot notation commands (e.g., 'sys.info') to match expected format for validation.
+  """
+  @spec transform_dot_command(atom()) :: validation_result()
+  def transform_dot_command(cmd) when is_atom(cmd) do
+    cmd_str = Atom.to_string(cmd)
+
+    if String.contains?(cmd_str, ".") do
+      transformed_cmd =
+        cmd_str
+        |> String.split(".")
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join("")
+        |> String.downcase()
+        |> String.to_atom()
+
+      {:ok, transformed_cmd}
+    else
+      {:ok, cmd}
+    end
+  end
+
+  @doc """
+  Validates that the command name matches the expected command name.
+  """
+  @spec validate_command_name(atom(), atom()) :: validation_result()
+  def validate_command_name(expected_cmd, cmd) do
+    cond do
+      expected_cmd == cmd ->
+        # Standard command name matches directly
+        {:ok, cmd}
+
+      true ->
+        # Command name doesn't match in any format
+        create_error(
+          :command_mismatch,
+          "Command name mismatch: config defines command as #{inspect(cmd)} " <>
+            "but module name expects #{inspect(expected_cmd)}. " <>
+            "The command name must match the module name (without 'Command' suffix, downcased)."
+        )
     end
   end
 
@@ -165,12 +240,13 @@ defmodule Arca.Cli.Command.BaseCommand do
       @doc """
       Default handler for the command.
       This method is overridden by each command implementation.
+
+      Returns {:error, :not_implemented, message} for commands that don't override this method.
       """
       @impl Arca.Cli.Command.CommandBehaviour
       def handle(_args, _settings, _optimus) do
-        # If not overridden, treat as not implemented
         this_function_is_not_implemented()
-        {:error, :not_implemented}
+        Arca.Cli.Command.BaseCommand.create_error(:not_implemented, "Command not implemented")
       end
 
       @doc """
@@ -186,6 +262,19 @@ defmodule Arca.Cli.Command.BaseCommand do
       """
       def handle({:help, subcmd}, _settings, _optimus) do
         {:help, subcmd}
+      end
+
+      # Legacy compatibility handlers to support both old and new error formats
+      # These ensure that code depending on the old error format continues to work
+
+      @doc """
+      Convert result to legacy format for backward compatibility.
+      This allows new code to use the improved error format while maintaining
+      compatibility with code that expects the old format.
+      """
+      @spec handle_legacy_result(any()) :: any()
+      def handle_legacy_result(result) do
+        Arca.Cli.Command.BaseCommand.to_legacy_error(result)
       end
     end
   end

@@ -72,7 +72,7 @@ defmodule Arca.Cli.Command.BaseCommandTest do
              ]
 
       # TestCommand1.handle/3 returns what we expect for TestCommand1
-      assert {:error, _} = Arca.Cli.Commands.Test1Command.handle()
+      assert {:error, :not_implemented, _} = Arca.Cli.Commands.Test1Command.handle()
 
       # TestCommand2.handle/3 returns what we expect for TestCommand2
       assert {:ok, _} = Arca.Cli.Commands.Test2Command.handle()
