@@ -34,8 +34,40 @@ defmodule Arca.Cli do
 
   ## Error Handling
 
-  The application uses {:ok, result} and {:error, reason} tuples for error handling.
+  The application uses consistent error tuples in the format:
+
+  - `{:ok, result}` for successful operations
+  - `{:error, error_type, reason}` for error conditions where:
+    - `error_type` is an atom indicating the category of error
+    - `reason` is a string or term providing detailed information about the error
+
+  Standard error types are defined in this module's @type definitions.
   """
+
+  @typedoc """
+  Types of errors that can occur in the CLI application.
+  """
+  @type error_type ::
+          :command_not_found
+          | :command_failed
+          | :invalid_argument
+          | :config_error
+          | :file_not_found
+          | :file_not_readable
+          | :file_not_writable
+          | :decode_error
+          | :encode_error
+          | :unknown_error
+
+  @typedoc """
+  Standard result tuple for operations that might fail.
+  """
+  @type result(t) :: {:ok, t} | {:error, error_type(), term()}
+
+  @typedoc """
+  Detailed error tuple with context information.
+  """
+  @type error_tuple :: {:error, error_type(), term()}
 
   use Application
   require Logger
@@ -62,43 +94,96 @@ defmodule Arca.Cli do
   @doc """
   Entry point for command line parsing.
   """
+  @spec main([String.t()]) :: :ok
   def main(argv) do
     Application.put_env(:elixir, :ansi_enabled, true)
     unless length(argv) != 0, do: intro() |> put_lines
 
-    settings = load_settings() |> with_default(%{})
+    # Load settings with proper error handling
+    result = load_settings()
+
+    # Use a pattern match that the type checker can understand
+    settings =
+      case result do
+        {:ok, loaded_settings} ->
+          loaded_settings
+
+        _ ->
+          # For any other result (which should be an error tuple),
+          # log a warning and return empty settings
+          Logger.warning("Error loading settings")
+          %{}
+      end
+
     optimus = optimus_config()
 
-    # Use the centralized help system to handle help requests
+    # Use a case-based approach for cleaner flow
+    response = parse_command_line(argv, settings, optimus)
+
+    # Display the response
+    response
+    |> filter_blank_lines
+    |> put_lines
+  end
+
+  @doc """
+  Parse the command line arguments and dispatch to the appropriate handler.
+
+  ## Parameters
+    - argv: Command line arguments
+    - settings: Application settings
+    - optimus: Optimus configuration
+    
+  ## Returns
+    - Command result or error message
+  """
+  @spec parse_command_line([String.t()], map(), term()) :: String.t() | [String.t()]
+  def parse_command_line(argv, settings, optimus) do
+    case command_line_type(argv) do
+      :help ->
+        # Top-level help
+        generate_filtered_help(optimus)
+
+      {:help_command, command} ->
+        # Help for a specific command
+        handle_command_help(command, optimus)
+
+      :normal ->
+        # Normal command execution
+        Optimus.parse(optimus, argv)
+        |> handle_args(settings, optimus)
+    end
+  end
+
+  @doc """
+  Determine the type of command line request.
+
+  ## Parameters
+    - argv: Command line arguments
+    
+  ## Returns
+    - :help for top-level help
+    - {:help_command, command} for command-specific help
+    - :normal for normal command execution
+  """
+  @spec command_line_type([String.t()]) :: :help | {:help_command, String.t()} | :normal
+  def command_line_type(argv) do
     cond do
       # Case 1: Top-level help with --help flag
       argv == ["--help"] ->
-        generate_filtered_help(optimus)
-        |> filter_blank_lines
-        |> put_lines
+        :help
 
       # Case 2: Command-specific help with --help flag
       length(argv) > 1 && List.last(argv) == "--help" ->
-        cmd = List.first(argv)
-
-        handle_command_help(cmd, optimus)
-        |> filter_blank_lines
-        |> put_lines
+        {:help_command, List.first(argv)}
 
       # Case 3: Help prefix command
       length(argv) > 1 && List.first(argv) == "help" ->
-        cmd = Enum.at(argv, 1)
-
-        handle_command_help(cmd, optimus)
-        |> filter_blank_lines
-        |> put_lines
+        {:help_command, Enum.at(argv, 1)}
 
       # Case 4: Normal command parsing
       true ->
-        Optimus.parse(optimus, argv)
-        |> handle_args(settings, optimus)
-        |> filter_blank_lines
-        |> put_lines
+        :normal
     end
   end
 
@@ -275,28 +360,84 @@ defmodule Arca.Cli do
   ## Returns
     - Command result or error message
   """
+  @spec handle_subcommand(atom(), map(), map(), term()) :: String.t() | [String.t()]
   def handle_subcommand(cmd, args, settings, optimus) do
-    # Logger.info("#{__MODULE__}.handle_subcommand: #{inspect(cmd)}, #{inspect(args)}")
+    with {:ok, handler} <- find_command_handler(cmd),
+         {:ok, result} <- execute_command(cmd, args, settings, optimus, handler) do
+      result
+    else
+      {:error, error_type, reason} ->
+        handle_error({:error, error_type, reason})
+    end
+  end
 
+  @doc """
+  Find a command handler for the given command.
+
+  ## Parameters
+    - cmd: Command name (atom)
+    
+  ## Returns
+    - {:ok, handler} with the command handler module on success
+    - {:error, :command_not_found, reason} if command not found
+  """
+  @spec find_command_handler(atom()) :: result(module())
+  def find_command_handler(cmd) do
     case handler_for_command(cmd) do
       nil ->
-        handle_error(cmd, "unknown command: #{cmd}")
+        create_error(:command_not_found, "unknown command: #{cmd}")
 
       {:ok, _cmd_atom, handler} ->
-        try do
-          # Use the centralized help system to check if help should be shown
-          if Arca.Cli.Help.should_show_help?(cmd, args, handler) do
-            # Show help for this command using the centralized help system
-            Arca.Cli.Help.show(cmd, args, optimus)
-          else
-            # Normal command execution
-            handler.handle(args, settings, optimus)
-          end
-        rescue
-          e ->
-            Logger.error("Error executing command #{cmd}: #{inspect(e)}")
-            handle_error(cmd, "command execution failed: #{inspect(e)}")
+        {:ok, handler}
+    end
+  end
+
+  @doc """
+  Execute a command with proper error handling.
+
+  ## Parameters
+    - cmd: Command name (atom)
+    - args: Command arguments
+    - settings: Application settings
+    - optimus: Optimus configuration
+    - handler: Command handler module
+    
+  ## Returns
+    - {:ok, result} with command result on success
+    - {:error, error_type, reason} on execution failure
+  """
+  @spec execute_command(atom(), map(), map(), term(), module()) ::
+          result(String.t() | [String.t()])
+  def execute_command(cmd, args, settings, optimus, handler) do
+    try do
+      # Use the centralized help system to check if help should be shown
+      if Arca.Cli.Help.should_show_help?(cmd, args, handler) do
+        # Show help for this command using the centralized help system
+        {:ok, Arca.Cli.Help.show(cmd, args, optimus)}
+      else
+        # Normal command execution with proper error handling 
+        result = handler.handle(args, settings, optimus)
+
+        # A command handler can return many different result formats;
+        # normalize them here for consistent error handling
+        case result do
+          {:error, reason} when is_binary(reason) ->
+            # Convert legacy error format to new format
+            create_error(:command_failed, reason)
+
+          {:error, error_type, reason} ->
+            # Already using new format, pass through
+            create_error(error_type, reason)
+
+          other ->
+            # All other returns (string, list, etc.) considered success
+            {:ok, other}
         end
+      end
+    rescue
+      e ->
+        Logger.error("Error executing command #{cmd}: #{inspect(e)}")
+        create_error(:command_failed, "Error executing command #{cmd}: #{inspect(e)}")
     end
   end
 
@@ -333,61 +474,59 @@ defmodule Arca.Cli do
   end
 
   @doc """
+  Creates a standardized error tuple with the given error type and reason.
+
+  ## Parameters
+    - error_type: The type of error (atom)
+    - reason: Description or data about the error
+    
+  ## Returns
+    - An error tuple of the form {:error, error_type, reason}
+  """
+  @spec create_error(error_type(), term()) :: error_tuple()
+  def create_error(error_type, reason) do
+    {:error, error_type, reason}
+  end
+
+  @doc """
   Handle an error nicely and return a formatted error message.
 
   ## Parameters
     - cmd: Command name that caused the error (atom, string, or list)
     - reason: Error reason (any type)
+    - error_type: Optional error type (defaults to :unknown_error)
     
   ## Returns
     - String containing formatted error message
   """
-  # Handle atom command
-  def handle_error(cmd, reason) when is_atom(cmd) do
-    handle_error([Atom.to_string(cmd)], format_reason(reason))
+  # Handle error tuples directly
+  @spec format_error(error_tuple()) :: String.t()
+  def format_error({:error, error_type, reason}) do
+    format_error_with_type(reason, error_type)
+  end
+
+  # Define function head with default parameter
+  @spec handle_error(atom() | [String.t()] | String.t(), term(), error_type()) :: String.t()
+  def handle_error(cmd, reason, error_type \\ :unknown_error)
+
+  # Handle atom command with error type
+  def handle_error(cmd, reason, error_type) when is_atom(cmd) do
+    handle_error([Atom.to_string(cmd)], reason, error_type)
   end
 
   # Handle command with list of reasons or single reason
-  def handle_error(cmd, reason) when is_list(cmd) do
+  def handle_error(cmd, reason, _error_type) when is_list(cmd) do
     ("error: " <> Enum.join(cmd, " ") <> ": " <> format_reason(reason))
     |> String.trim()
   end
 
   # Handle string command with any reason
-  def handle_error(cmd, reason) when is_binary(cmd) do
-    # Special case for "unknown command" errors with potential dot notation
+  def handle_error(cmd, reason, error_type) when is_binary(cmd) do
+    # Special case for command not found errors
     message =
-      if reason =~ "unknown command" do
-        similar_commands = similar_commands(cmd)
-
-        # Handle namespaces more elegantly
-        cond do
-          !String.contains?(cmd, ".") &&
-              Enum.any?(similar_commands, &String.starts_with?(&1, "#{cmd}.")) ->
-            namespace_commands =
-              similar_commands
-              |> Enum.filter(&String.starts_with?(&1, "#{cmd}."))
-              |> Enum.sort()
-
-            # This is a namespace prefix, show available commands in this namespace
-            "#{cmd} is a command namespace. Available commands:\n#{Enum.join(namespace_commands, ", ")}\n" <>
-              "Try '#{cmd}.<command>' to run a specific command in this namespace."
-
-          true ->
-            # Standard error with suggestions
-            if Enum.empty?(similar_commands) do
-              "error: #{cmd}: #{format_reason(reason)}"
-            else
-              namespaced_hint =
-                if Enum.any?(similar_commands, &String.contains?(&1, ".")) do
-                  "\nHint: Commands can use dot notation for namespaces (e.g., 'sys.info', 'dev.deps')"
-                else
-                  ""
-                end
-
-              "error: #{cmd}: #{format_reason(reason)}\nDid you mean one of these? #{Enum.join(similar_commands, ", ")}#{namespaced_hint}"
-            end
-        end
+      if error_type == :command_not_found || (is_binary(reason) && reason =~ "unknown command") do
+        similar_commands = find_similar_commands(cmd)
+        format_command_not_found_error(cmd, reason, similar_commands)
       else
         "error: #{cmd}: #{format_reason(reason)}"
       end
@@ -395,8 +534,62 @@ defmodule Arca.Cli do
     message |> String.trim()
   end
 
+  # Handle error with just error type and reason
+  @spec format_error_with_type(term(), error_type()) :: String.t()
+  defp format_error_with_type(reason, error_type) do
+    prefix = error_type_to_prefix(error_type)
+    "#{prefix}: #{format_reason(reason)}" |> String.trim()
+  end
+
+  # Convert error type to human-readable prefix
+  @spec error_type_to_prefix(error_type()) :: String.t()
+  defp error_type_to_prefix(:command_not_found), do: "error: command not found"
+  defp error_type_to_prefix(:command_failed), do: "error: command failed"
+  defp error_type_to_prefix(:invalid_argument), do: "error: invalid argument"
+  defp error_type_to_prefix(:config_error), do: "error: configuration error"
+  defp error_type_to_prefix(:file_not_found), do: "error: file not found"
+  defp error_type_to_prefix(:file_not_readable), do: "error: file not readable"
+  defp error_type_to_prefix(:file_not_writable), do: "error: file not writable"
+  defp error_type_to_prefix(:decode_error), do: "error: decode error"
+  defp error_type_to_prefix(:encode_error), do: "error: encode error"
+  defp error_type_to_prefix(_), do: "error"
+
+  # Format command not found errors with suggestions and namespace handling
+  @spec format_command_not_found_error(String.t(), term(), [String.t()]) :: String.t()
+  defp format_command_not_found_error(cmd, reason, similar_commands) do
+    # Handle namespaces more elegantly
+    cond do
+      !String.contains?(cmd, ".") &&
+          Enum.any?(similar_commands, &String.starts_with?(&1, "#{cmd}.")) ->
+        namespace_commands =
+          similar_commands
+          |> Enum.filter(&String.starts_with?(&1, "#{cmd}."))
+          |> Enum.sort()
+
+        # This is a namespace prefix, show available commands in this namespace
+        "#{cmd} is a command namespace. Available commands:\n#{Enum.join(namespace_commands, ", ")}\n" <>
+          "Try '#{cmd}.<command>' to run a specific command in this namespace."
+
+      true ->
+        # Standard error with suggestions
+        if Enum.empty?(similar_commands) do
+          "error: #{cmd}: #{format_reason(reason)}"
+        else
+          namespaced_hint =
+            if Enum.any?(similar_commands, &String.contains?(&1, ".")) do
+              "\nHint: Commands can use dot notation for namespaces (e.g., 'sys.info', 'dev.deps')"
+            else
+              ""
+            end
+
+          "error: #{cmd}: #{format_reason(reason)}\nDid you mean one of these? #{Enum.join(similar_commands, ", ")}#{namespaced_hint}"
+        end
+    end
+  end
+
   # Helper to find similar commands for better error messages
-  defp similar_commands(cmd) do
+  @spec find_similar_commands(String.t()) :: [String.t()]
+  defp find_similar_commands(cmd) do
     all_command_names =
       commands()
       |> Enum.map(fn module ->
@@ -426,27 +619,38 @@ defmodule Arca.Cli do
   end
 
   # Handle RuntimeError exception
+  @spec handle_error(RuntimeError.t()) :: String.t()
   def handle_error(%RuntimeError{message: message}), do: handle_error(message)
 
   # Handle list of reasons without command
+  @spec handle_error([String.t()]) :: String.t()
   def handle_error(reasons) when is_list(reasons) do
     ("error: " <> Enum.join(reasons, " "))
     |> String.trim()
   end
 
   # Handle string reason without command
+  @spec handle_error(String.t()) :: String.t()
   def handle_error(reason) when is_binary(reason) do
     "error: #{reason}"
     |> String.trim()
   end
 
+  # Handle error tuple directly (new pattern for Railway-Oriented Programming)
+  @spec handle_error(error_tuple()) :: String.t()
+  def handle_error({:error, error_type, reason}) do
+    format_error_with_type(reason, error_type)
+  end
+
   # Handle any other error type
+  @spec handle_error(term()) :: String.t()
   def handle_error(reason) do
     "error: #{inspect(reason)}"
     |> String.trim()
   end
 
   # Private helper to format error reasons consistently
+  @spec format_reason(term()) :: String.t()
   defp format_reason(reason) when is_list(reason), do: Enum.join(reason, " ")
   defp format_reason(reason) when is_binary(reason), do: reason
   defp format_reason(reason), do: inspect(reason)
@@ -458,46 +662,109 @@ defmodule Arca.Cli do
   1. Tries the new automatic path (arca_cli.json)
   2. Falls back to the previous hard-coded path (config.json) for backward compatibility
 
+  Uses Railway-Oriented Programming with `with` expressions for cleaner error flow.
+
   ## Returns
-    - Map with settings on success
-    - Empty map on error, with a warning logged
+    - {:ok, settings} with settings map on success
+    - {:error, error_type, reason} on error
   """
+  @spec load_settings() :: {:ok, map()} | {:error, error_type(), term()}
   def load_settings() do
     # Get standard config file path
     config_file = "~/.arca/arca_cli.json" |> Path.expand()
     legacy_path = "~/.arca/config.json" |> Path.expand()
 
-    # Try reading from the standard path first
-    case File.read(config_file) do
-      {:ok, contents} ->
-        case Jason.decode(contents) do
+    # Try to load from primary path first
+    case load_settings_from_path(config_file) do
+      {:ok, settings} ->
+        {:ok, settings}
+
+      {:error, _error_type, _reason} ->
+        # Try to load from legacy path
+        case load_settings_from_path(legacy_path) do
           {:ok, settings} ->
-            settings
+            Logger.info("Using legacy config path: #{legacy_path}")
+            {:ok, settings}
 
-          {:error, reason} ->
-            Logger.warning("Failed to decode settings: #{inspect(reason)}")
-            %{}
-        end
-
-      {:error, _} ->
-        # Fall back to legacy path for backward compatibility
-        case File.read(legacy_path) do
-          {:ok, contents} ->
-            case Jason.decode(contents) do
-              {:ok, settings} ->
-                Logger.info("Using legacy config path: #{legacy_path}")
-                settings
-
-              {:error, reason} ->
-                Logger.warning("Failed to decode legacy settings: #{inspect(reason)}")
-                %{}
-            end
-
-          {:error, _} ->
+          {:error, _error_type, _reason} ->
             # No configuration files found, return empty settings
             Logger.debug("No configuration found at standard or legacy paths")
-            %{}
+            {:ok, %{}}
         end
+    end
+  end
+
+  @doc """
+  Load settings from a specific path with proper error handling.
+
+  ## Parameters
+    - path: File path to load settings from
+    
+  ## Returns
+    - {:ok, settings} with settings map on success
+    - {:error, error_type, reason} on error
+  """
+  @spec load_settings_from_path(String.t()) :: result(map())
+  def load_settings_from_path(path) do
+    with {:ok, contents} <- read_config_file(path),
+         {:ok, settings} <- decode_settings(contents, path) do
+      {:ok, settings}
+    end
+  end
+
+  @doc """
+  Read a configuration file with proper error handling.
+
+  ## Parameters
+    - path: File path to read
+    
+  ## Returns
+    - {:ok, contents} with file contents on success
+    - {:error, error_type, reason} on error
+  """
+  @spec read_config_file(String.t()) :: result(String.t())
+  def read_config_file(path) do
+    case File.read(path) do
+      {:ok, contents} ->
+        {:ok, contents}
+
+      {:error, :enoent} ->
+        create_error(:file_not_found, "Configuration file not found: #{path}")
+
+      {:error, :eacces} ->
+        create_error(:file_not_readable, "Configuration file not readable: #{path}")
+
+      {:error, reason} ->
+        create_error(:file_not_readable, "Error reading configuration file: #{inspect(reason)}")
+    end
+  end
+
+  @doc """
+  Decode JSON settings with proper error handling.
+
+  ## Parameters
+    - contents: JSON string to decode
+    - path: Original file path (for error reporting)
+    
+  ## Returns
+    - {:ok, settings} with decoded settings on success
+    - {:error, error_type, reason} on error
+  """
+  @spec decode_settings(String.t(), String.t()) :: result(map())
+  def decode_settings(contents, path) do
+    case Jason.decode(contents) do
+      {:ok, settings} ->
+        {:ok, settings}
+
+      {:error, %Jason.DecodeError{} = error} ->
+        message = "Invalid JSON in configuration file #{path}: #{Exception.message(error)}"
+        Logger.warning(message)
+        create_error(:decode_error, message)
+
+      {:error, reason} ->
+        message = "Failed to decode settings from #{path}: #{inspect(reason)}"
+        Logger.warning(message)
+        create_error(:decode_error, message)
     end
   end
 
@@ -508,18 +775,39 @@ defmodule Arca.Cli do
     - id: The setting identifier
     
   ## Returns
-    - Setting value on success
-    - {:error, reason} if setting couldn't be retrieved
+    - {:ok, value} with the setting value on success
+    - {:error, error_type, reason} if setting couldn't be retrieved
   """
+  @spec get_setting(atom() | String.t()) :: result(term())
   def get_setting(id) do
-    settings = load_settings()
+    with {:ok, settings} <- load_settings(),
+         {:ok, value} <- fetch_setting_value(settings, id) do
+      {:ok, value}
+    end
+  end
 
+  @doc """
+  Fetch a specific setting from the settings map.
+
+  ## Parameters
+    - settings: The settings map
+    - id: The setting identifier (string or atom)
+    
+  ## Returns
+    - {:ok, value} with the setting value on success
+    - {:error, error_type, reason} if setting not found
+  """
+  @spec fetch_setting_value(map(), atom() | String.t()) :: result(term())
+  def fetch_setting_value(settings, id) do
     # Convert id to string for consistency
     key = to_string(id)
 
     case Map.fetch(settings, key) do
-      {:ok, value} -> value
-      :error -> {:error, "Setting not found: #{key}"}
+      {:ok, value} ->
+        {:ok, value}
+
+      :error ->
+        create_error(:config_error, "Setting not found: #{key}")
     end
   end
 
@@ -534,37 +822,106 @@ defmodule Arca.Cli do
     
   ## Returns
     - {:ok, updated_settings} on success
-    - {:error, reason} on failure
+    - {:error, error_type, reason} on failure
   """
+  @spec save_settings(map()) :: result(map())
   def save_settings(new_settings) do
-    # Get config file path 
+    with {:ok, current_settings} <- load_settings(),
+         {:ok, path} <- ensure_config_directory(),
+         {:ok, updated_settings} <- merge_settings(current_settings, new_settings),
+         {:ok, json} <- encode_settings(updated_settings),
+         :ok <- write_settings_file(path, json) do
+      Logger.info("Settings saved to #{path}")
+      {:ok, updated_settings}
+    end
+  end
+
+  @doc """
+  Ensure the configuration directory exists.
+
+  ## Returns
+    - {:ok, path} with the config file path on success
+    - {:error, error_type, reason} on failure
+  """
+  @spec ensure_config_directory() :: result(String.t())
+  def ensure_config_directory do
     config_file = "~/.arca/arca_cli.json" |> Path.expand()
 
-    # Load existing settings (from either legacy or new path)
-    current_settings = load_settings()
-
-    # Merge with new settings
-    updated_settings = Map.merge(current_settings, new_settings)
-
-    # Ensure directory exists
-    File.mkdir_p!(Path.dirname(config_file))
-
-    # Direct file write for reliability
-    case Jason.encode(updated_settings, pretty: true) do
-      {:ok, json} ->
-        case File.write(config_file, json) do
-          :ok ->
-            Logger.info("Settings saved to #{config_file}")
-            {:ok, updated_settings}
-
-          {:error, reason} ->
-            Logger.warning("Failed to write config file: #{inspect(reason)}")
-            {:error, "Failed to write config file: #{inspect(reason)}"}
-        end
+    case File.mkdir_p(Path.dirname(config_file)) do
+      :ok ->
+        {:ok, config_file}
 
       {:error, reason} ->
-        Logger.warning("Failed to encode settings: #{inspect(reason)}")
-        {:error, "Failed to encode settings: #{inspect(reason)}"}
+        message = "Failed to create config directory: #{inspect(reason)}"
+        Logger.warning(message)
+        create_error(:file_not_writable, message)
+    end
+  end
+
+  @doc """
+  Merge existing settings with new settings.
+
+  ## Parameters
+    - current_settings: Existing settings map
+    - new_settings: New settings to merge in
+    
+  ## Returns
+    - {:ok, updated_settings} with merged settings
+  """
+  @spec merge_settings(map(), map()) :: result(map())
+  def merge_settings(current_settings, new_settings) do
+    {:ok, Map.merge(current_settings, new_settings)}
+  end
+
+  @doc """
+  Encode settings to JSON.
+
+  ## Parameters
+    - settings: Settings map to encode
+    
+  ## Returns
+    - {:ok, json} with encoded JSON on success
+    - {:error, error_type, reason} on encoding failure
+  """
+  @spec encode_settings(map()) :: result(String.t())
+  def encode_settings(settings) do
+    case Jason.encode(settings, pretty: true) do
+      {:ok, json} ->
+        {:ok, json}
+
+      {:error, reason} ->
+        message = "Failed to encode settings: #{inspect(reason)}"
+        Logger.warning(message)
+        create_error(:encode_error, message)
+    end
+  end
+
+  @doc """
+  Write settings to file.
+
+  ## Parameters
+    - path: Path to write to
+    - json: JSON content to write
+    
+  ## Returns
+    - :ok on success
+    - {:error, error_type, reason} on write failure
+  """
+  @spec write_settings_file(String.t(), String.t()) :: :ok | error_tuple()
+  def write_settings_file(path, json) do
+    case File.write(path, json) do
+      :ok ->
+        :ok
+
+      {:error, :eacces} ->
+        message = "Permission denied writing to config file: #{path}"
+        Logger.warning(message)
+        create_error(:file_not_writable, message)
+
+      {:error, reason} ->
+        message = "Failed to write config file: #{inspect(reason)}"
+        Logger.warning(message)
+        create_error(:file_not_writable, message)
     end
   end
 
