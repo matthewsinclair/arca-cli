@@ -5,7 +5,7 @@ status: In Progress
 created: 20250321
 completed: 
 ---
-# ST0006: Functional Elixir Codebase Improvements - Module Analysis
+# ST0005: Functional Elixir Codebase Improvements - Module Analysis
 
 ## Overview
 
