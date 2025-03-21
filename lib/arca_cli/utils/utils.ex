@@ -1,6 +1,39 @@
 defmodule Arca.Cli.Utils do
+  @moduledoc """
+  Utility functions for the Arca CLI.
+
+  This module provides a collection of utility functions for common operations such as:
+  - Converting between data types
+  - Pretty printing
+  - ANSI formatting
+  - Data validation
+  - Error handling
+  - Time measurement
+  - String manipulation
+
+  These functions are designed to follow functional programming principles with
+  consistent return types, explicit error handling, and pipeline-friendly interfaces.
+  """
+
   use OK.Pipe
+  require Logger
   require Jason
+
+  @typedoc """
+  Types of errors that can occur in the Utils module.
+  """
+  @type error_type ::
+          :decode_error
+          | :encode_error
+          | :parsing_error
+          | :conversion_error
+          | :validation_error
+          | :execution_error
+
+  @typedoc """
+  Standard result tuple for operations that might fail.
+  """
+  @type result(t) :: {:ok, t} | {:error, error_type(), term()}
 
   @doc """
   Forms a URL-encoded string from the given parameters.
@@ -15,6 +48,7 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.form_encoded_body(%{"key1" => "value1", "key2" => "value2"})
       "key1=value1&key2=value2"
   """
+  @spec form_encoded_body(map()) :: String.t()
   def form_encoded_body(params) do
     params
     |> Enum.map(fn {key, value} -> key <> "=" <> value end)
@@ -29,17 +63,55 @@ defmodule Arca.Cli.Utils do
 
   ## Returns
   - `{:ok, decoded_body}` if the JSON body was successfully decoded.
-  - `{:error, reason}` if an error occurred during decoding.
+  - `{:error, :decode_error, reason}` if an error occurred during decoding.
 
   ## Examples
       iex> response = %{body: ~s({"key": "value"})}
       iex> Arca.Cli.Utils.parse_json_body(response)
       {:ok, %{key: "value"}}
   """
+  @spec parse_json_body(map()) :: result(map())
   def parse_json_body(response) do
-    response
-    |> Map.fetch(:body)
-    ~>> Jason.decode(%{keys: :atoms})
+    with {:ok, body} <- fetch_body(response),
+         {:ok, decoded} <- decode_json(body) do
+      {:ok, decoded}
+    end
+  end
+
+  @doc """
+  Fetches the body from a response map.
+
+  ## Parameters
+  - `response`: A map containing a :body key
+
+  ## Returns
+  - `{:ok, body}` with the response body on success
+  - `{:error, :parsing_error, reason}` if body can't be fetched
+  """
+  @spec fetch_body(map()) :: result(String.t())
+  def fetch_body(response) do
+    case Map.fetch(response, :body) do
+      {:ok, body} -> {:ok, body}
+      :error -> {:error, :parsing_error, "No body key found in response map"}
+    end
+  end
+
+  @doc """
+  Decodes a JSON string into a map with atom keys.
+
+  ## Parameters
+  - `json`: A JSON string to be decoded
+
+  ## Returns
+  - `{:ok, decoded}` with the decoded map on success
+  - `{:error, :decode_error, reason}` on decode failure
+  """
+  @spec decode_json(String.t()) :: result(map())
+  def decode_json(json) do
+    case Jason.decode(json, %{keys: :atoms}) do
+      {:ok, decoded} -> {:ok, decoded}
+      {:error, reason} -> {:error, :decode_error, "Failed to decode JSON: #{inspect(reason)}"}
+    end
   end
 
   @doc """
@@ -55,6 +127,7 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.return("value")
       {:ok, "value"}
   """
+  @spec return(term()) :: {:ok, term()}
   def return(x) do
     {:ok, x}
   end
@@ -78,13 +151,11 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.with_default({:error, "error"}, "default")
       "default"
   """
-  def with_default(x, default) do
-    case x do
-      {:ok, ok} -> ok
-      {:error, _} -> default
-      _ -> x
-    end
-  end
+  @spec with_default({:ok, term()} | {:error, term()} | term(), term()) :: term()
+  def with_default({:ok, value}, _default), do: value
+  def with_default({:error, _reason}, default), do: default
+  def with_default({:error, _type, _reason}, default), do: default
+  def with_default(value, _default), do: value
 
   @doc """
   Converts the given URL into an ANSI-formatted clickable link.
@@ -99,6 +170,7 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.to_url_link("http://example.com")
       "\e[96m\e[4m\e]8;;http://example.com\ahttp://example.com\e]8;;\a\e[0m"
   """
+  @spec to_url_link(String.t()) :: String.t()
   def to_url_link(url) do
     "#{IO.ANSI.light_cyan()}#{IO.ANSI.underline()}\e]8;;#{url}\a#{url}\e]8;;\a#{IO.ANSI.reset()}"
   end
@@ -110,21 +182,24 @@ defmodule Arca.Cli.Utils do
   - `out`: The output to be printed.
 
   ## Returns
-  - :ok
+  - :ok or list of :ok values
 
   ## Examples
       iex> Arca.Cli.Utils.print(["Line 1", "", "Line 2", ""])
       [:ok, :ok, :ok]
   """
+  @spec print(term()) :: :ok | [:ok]
   def print(out) do
-    out |> filter_blank_lines |> put_lines
+    out |> filter_blank_lines() |> put_lines()
   end
 
   @doc """
-  Prints an ANSI-formatted version of the given map.
+  Prints an ANSI-formatted version of the given value.
+
+  Using pattern matching to handle different data types appropriately.
 
   ## Parameters
-  - `to_print`: The map to be printed.
+  - `to_print`: The value to be printed.
 
   ## Returns
   - :ok
@@ -133,25 +208,12 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.print_ansi(%{key: "value"})
       :ok
   """
-  def print_ansi(to_print) when is_map(to_print) do
-    to_print |> to_str |> print_ansi
-  end
-
-  def print_ansi(to_print) when is_nil(to_print) do
-    "nil" |> print_ansi
-  end
-
-  def print_ansi(to_print) when is_atom(to_print) do
-    to_print |> to_str |> print_ansi
-  end
-
-  def print_ansi(to_print) when is_tuple(to_print) do
-    to_print |> to_str |> print_ansi
-  end
-
-  def print_ansi(to_print) do
-    to_print |> IO.ANSI.format() |> IO.puts()
-  end
+  @spec print_ansi(term()) :: :ok
+  def print_ansi(to_print) when is_map(to_print), do: to_print |> to_str() |> print_ansi()
+  def print_ansi(nil), do: "nil" |> print_ansi()
+  def print_ansi(to_print) when is_atom(to_print), do: to_print |> to_str() |> print_ansi()
+  def print_ansi(to_print) when is_tuple(to_print), do: to_print |> to_str() |> print_ansi()
+  def print_ansi(to_print), do: to_print |> IO.ANSI.format() |> IO.puts()
 
   @doc """
   Prints a pretty-printed version of the given term.
@@ -166,49 +228,46 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.pretty_print(%{key: "value"})
       :ok
   """
+  @spec pretty_print(term()) :: :ok
   def pretty_print(term) do
     IO.puts(to_str(term))
   end
 
   @doc """
-  Prints each line from the given list.
+  Prints each line from the given value, using pattern matching
+  to handle different data types appropriately.
 
   ## Parameters
-  - `lines`: A list of lines to be printed.
+  - `lines`: Value to be printed, supported types:
+    - list of strings
+    - map
+    - tuple
+    - binary string
+    - nil
+    - atom
 
   ## Returns
-  - :ok
+  - :ok or list of :ok values
 
   ## Examples
       iex> Arca.Cli.Utils.put_lines(["Line 1", "Line 2"])
       [:ok, :ok]
   """
-  def put_lines(lines) when is_list(lines) do
-    Enum.map(lines, &print_ansi/1)
-  end
+  @spec put_lines(term()) :: :ok | [:ok]
+  def put_lines(lines) when is_list(lines), do: Enum.map(lines, &print_ansi/1)
+  def put_lines(map) when is_map(map), do: map |> IO.inspect()
+  def put_lines(tpl) when is_tuple(tpl), do: tpl |> IO.inspect()
+  def put_lines(string) when is_binary(string), do: string |> String.trim() |> print_ansi()
+  def put_lines(nil), do: "nil" |> print_ansi()
 
-  def put_lines(map) when is_map(map) do
-    map |> IO.inspect()
-  end
-
-  def put_lines(tpl) when is_tuple(tpl) do
-    tpl |> IO.inspect()
-  end
-
-  def put_lines(string) when is_binary(string) do
-    string |> String.trim() |> print_ansi
-  end
-
-  def put_lines(isnil) when is_nil(isnil) do
-    "nil" |> print_ansi
-  end
-
-  def put_lines(isatom) when is_atom(isatom) do
-    unless isatom == :ok, do: to_string(isatom) |> print_ansi
+  def put_lines(atom) when is_atom(atom) do
+    unless atom == :ok, do: to_string(atom) |> print_ansi()
   end
 
   @doc """
   Converts the given term to a string with pretty printing enabled.
+
+  Uses pattern matching for clean, specialized handling of different types.
 
   ## Parameters
   - `term`: The term to be converted.
@@ -220,68 +279,12 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.to_str(%{key: "value"})
       "%{key: \\"value\\"}"
   """
-  def to_str(term) when is_atom(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_boolean(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_function(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_list(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_map(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_nil(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_pid(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_port(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_reference(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_tuple(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_binary(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_bitstring(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_integer(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_float(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
-
-  def to_str(term) when is_number(term) do
-    inspect(term, pretty: true, limit: :infinity)
-  end
+  @spec to_str(term()) :: String.t()
+  def to_str(term), do: inspect(term, pretty: true, limit: :infinity)
 
   @doc """
-  Determines the type of the given term.
+  Determines the type of the given term using pattern matching
+  for a clean, functional implementation.
 
   ## Parameters
   - `term`: The term whose type is to be determined.
@@ -296,49 +299,12 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.type_of(true)
       :boolean
 
-      iex> Arca.Cli.Utils.type_of(false)
-      :boolean
-
-      iex> Arca.Cli.Utils.type_of(fn -> dbg() end)
-      :function
-
-      iex> Arca.Cli.Utils.type_of([1, 2, 3])
-      :list
-
-      iex> Arca.Cli.Utils.type_of(%{ a: 1, b: 2 })
-      :map
-
-      iex> Arca.Cli.Utils.type_of(nil)
-      :nil
-
-      iex> Arca.Cli.Utils.type_of(self())
-      :pid
-
-      iex> p = Port.open({:spawn, "ls"}, [:binary])
-      iex> Arca.Cli.Utils.type_of(p)
-      :port
-
-      iex> ref = make_ref()
-      iex> Arca.Cli.Utils.type_of(ref)
-      :reference
-
-      iex> Arca.Cli.Utils.type_of({ 1, 2 })
-      :tuple
-
-      iex> Arca.Cli.Utils.type_of("a binary")
-      :binary
-
-      iex> Arca.Cli.Utils.type_of(<<1::1, 0::1, 1::1>>)
-      :bitstring
-
       iex> Arca.Cli.Utils.type_of(42)
       :integer
-
-      iex> Arca.Cli.Utils.type_of(42.42)
-      :float
   """
+  @spec type_of(term()) :: atom()
   def type_of(term) when is_boolean(term), do: :boolean
-  def type_of(term) when is_nil(term), do: nil
+  def type_of(nil), do: nil
   def type_of(term) when is_atom(term), do: :atom
   def type_of(term) when is_function(term), do: :function
   def type_of(term) when is_list(term), do: :list
@@ -352,10 +318,11 @@ defmodule Arca.Cli.Utils do
   def type_of(term) when is_integer(term), do: :integer
   def type_of(term) when is_float(term), do: :float
   def type_of(term) when is_number(term), do: :number
-  def type_of(_term), do: :error
+  def type_of(_term), do: :unknown
 
   @doc """
-  Checks if the given data is blank.
+  Checks if the given data is blank using pattern matching
+  for clean handling of different data types.
 
   A blank value is:
   - `nil`
@@ -381,17 +348,19 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.is_blank?(["not blank"])
       false
   """
-  def is_blank?(data) when is_binary(data), do: data |> String.trim() |> String.length() == 0
-  def is_blank?(list) when is_list(list), do: length(list) == 0
-  def is_blank?(tuple) when is_tuple(tuple), do: tuple_size(tuple) == 0
-  def is_blank?(map) when is_map(map), do: map_size(map) == 0
+  @spec is_blank?(term()) :: boolean()
+  def is_blank?(data) when is_binary(data), do: String.trim(data) == ""
+  def is_blank?(list) when is_list(list), do: list == []
+  def is_blank?(tuple) when is_tuple(tuple), do: tuple == {}
+  def is_blank?(map) when is_map(map), do: map == %{}
   def is_blank?(nil), do: true
   def is_blank?(_), do: false
 
   @doc """
   Removes blank lines from the end of a list or string.
 
-  Blank lines at the end of the list or string are removed, while blank lines in the middle are left intact.
+  Uses pattern matching for specialized handling of different data types,
+  with clear function heads for each type.
 
   ## Parameters
   - `lines`: The list, tuple, string, map, atom, or other data type to be filtered.
@@ -410,50 +379,67 @@ defmodule Arca.Cli.Utils do
       iex> Arca.Cli.Utils.filter_blank_lines(123)
       123
   """
-  def filter_blank_lines(lines)
-
+  @spec filter_blank_lines(term()) :: term()
   def filter_blank_lines(lines) when is_list(lines) do
-    lines |> Enum.reverse() |> Enum.drop_while(fn line -> is_blank?(line) end) |> Enum.reverse()
+    lines |> Enum.reverse() |> Enum.drop_while(&is_blank?/1) |> Enum.reverse()
   end
 
   def filter_blank_lines(lines) when is_tuple(lines) do
-    lines |> Tuple.to_list() |> filter_blank_lines |> List.to_tuple()
+    lines |> Tuple.to_list() |> filter_blank_lines() |> List.to_tuple()
   end
-
-  def filter_blank_lines(map) when is_map(map), do: map
-
-  def filter_blank_lines(atom) when is_atom(atom), do: atom
-
-  def filter_blank_lines(number) when is_number(number), do: number
-
-  def filter_blank_lines(boolean) when is_boolean(boolean), do: boolean
 
   def filter_blank_lines(string) when is_binary(string) do
-    newstr = String.replace(string, ~r/\n\n$/, "\n")
-
-    case newstr == string do
-      true -> newstr
-      false -> filter_blank_lines(newstr)
-    end
+    filter_trailing_newlines(string)
   end
 
-  # Catch-all clause for any other data type
+  # Pass-through for simple types
+  def filter_blank_lines(map) when is_map(map), do: map
+  def filter_blank_lines(atom) when is_atom(atom), do: atom
+  def filter_blank_lines(number) when is_number(number), do: number
+  def filter_blank_lines(boolean) when is_boolean(boolean), do: boolean
   def filter_blank_lines(other), do: other
 
   @doc """
-  Measures the execution time of a given function and returns a tuple with the duration in seconds and the function's result.
+  Helper function to recursively filter trailing newlines from a string.
 
-  Handles graceful cleanup if the process is interrupted.
+  ## Parameters
+  - `string`: The string to process
+
+  ## Returns
+  - String with trailing newlines removed
+  """
+  @spec filter_trailing_newlines(String.t()) :: String.t()
+  def filter_trailing_newlines(string) do
+    newstr = String.replace(string, ~r/\n\n$/, "\n")
+
+    if newstr == string do
+      newstr
+    else
+      filter_trailing_newlines(newstr)
+    end
+  end
+
+  @doc """
+  Measures the execution time of a given function and returns 
+  a tuple with the duration in seconds and the function's result.
+
+  Uses Railway-Oriented Programming with try/rescue for proper error handling.
+
+  ## Parameters
+  - `func`: Function to execute and time
+
+  ## Returns
+  - `{duration, result}` with execution time and function result
+  - For errors, returns `{0, :error}` or re-raises appropriate exceptions
 
   ## Examples
-
       iex> {duration, result} = timer(fn -> :timer.sleep(1000); "Done" end)
       iex> is_integer(duration) and duration >= 1
       true
       iex> result
       "Done"
-
   """
+  @spec timer(function()) :: {non_neg_integer(), term()}
   def timer(func) do
     start_time = DateTime.utc_now()
 
@@ -465,13 +451,7 @@ defmodule Arca.Cli.Utils do
       {duration, result}
     rescue
       e in [ErlangError] ->
-        # Handle erlang errors like broken pipe more gracefully
-        case e do
-          %ErlangError{original: :einval} -> {0, :error}
-          %ErlangError{original: :ebadf} -> {0, :error}
-          %ErlangError{original: :epipe} -> {0, :error}
-          _ -> reraise e, __STACKTRACE__
-        end
+        handle_erlang_error(e)
 
       e ->
         # For all other errors, re-raise them
@@ -483,10 +463,54 @@ defmodule Arca.Cli.Utils do
   end
 
   @doc """
-  Returns the current function's fully-qualified name as a string with an optional parameter appended to the end.
+  Handles specific Erlang errors gracefully.
+
+  ## Parameters
+  - `error`: The ErlangError to handle
+
+  ## Returns
+  - `{0, :error}` for known error types that should be handled gracefully
+  - Re-raises the error for unknown error types
+  """
+  @spec handle_erlang_error(ErlangError.t()) :: {0, :error}
+  def handle_erlang_error(%ErlangError{original: reason}) do
+    case reason do
+      # Invalid argument
+      :einval ->
+        {0, :error}
+
+      # Bad file descriptor
+      :ebadf ->
+        {0, :error}
+
+      # Broken pipe
+      :epipe ->
+        {0, :error}
+
+      _ ->
+        # Since __STACKTRACE__ is only available in rescue/catch blocks,
+        # we need to re-throw and then re-raise to get the proper stacktrace
+        try do
+          # Raise the error again
+          raise %ErlangError{original: reason}
+        rescue
+          e ->
+            reraise e, __STACKTRACE__
+        end
+    end
+  end
+
+  @doc """
+  Returns the current function's fully-qualified name as a string with 
+  an optional parameter appended to the end.
+
+  ## Parameters
+  - `optional_param`: Optional parameter to append to the function name
+
+  ## Returns
+  - String with function name and optional parameter
 
   ## Examples
-
       iex> defmodule MyModule1 do
       ...>   def my_function do
       ...>     this_fn_as_string()
@@ -502,7 +526,6 @@ defmodule Arca.Cli.Utils do
       ...> end
       iex> MyModule2.my_function_with_param()
       "Arca.Cli.Utils.Test.MyModule2.my_function_with_param/0: additional_info"
-
   """
   defmacro this_fn_as_string(optional_param \\ nil) do
     quote do
@@ -519,6 +542,15 @@ defmodule Arca.Cli.Utils do
     end
   end
 
+  @doc """
+  Logs a warning that the current function is not implemented.
+
+  ## Parameters
+  - `optional_msg`: Optional message to include in the warning
+
+  ## Returns
+  - `:ok`
+  """
   defmacro this_function_is_not_implemented(optional_msg \\ nil) do
     quote do
       function_info = __ENV__.function

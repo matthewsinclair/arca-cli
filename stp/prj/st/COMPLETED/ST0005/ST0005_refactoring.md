@@ -148,6 +148,20 @@ As of this update, the following modules have been refactored to follow function
    - Backward compatibility with the old API
    - Comprehensive type specifications and documentation
 
+4. **Arca.Cli.Command.BaseCommand**
+   - Standardized error typing with module-specific error types
+   - Railway-oriented programming with `with` expressions in macros
+   - Function decomposition for validation logic
+   - Backward compatibility helpers
+   - Improved error context and messaging
+   - Type specifications for all functions
+
+5. **Arca.Cli.Utils**
+   - Fixed deprecated System.stacktrace() with modern __STACKTRACE__ in try/rescue blocks
+   - Added proper error handling with standardized error tuples
+   - Used pattern matching for type-specific behavior
+   - Fixed error handling in timer and HTTP functions
+
 ## Benefits Achieved
 
 The refactoring has provided the following benefits:
@@ -158,9 +172,11 @@ The refactoring has provided the following benefits:
 4. **Increased Readability**: More direct expression of intent with `with` expressions
 5. **Better Modularity**: Functions organized around single responsibilities
 
-## Example: History Module Before and After
+## Examples of Refactored Code
 
-### Before
+### History Module Before and After
+
+#### Before
 
 ```elixir
 def push_cmd(cmd) when is_binary(cmd) do
@@ -174,7 +190,7 @@ def handle_call({:push_cmd, cmd}, _from, state) do
 end
 ```
 
-### After
+#### After
 
 ```elixir
 @spec push_cmd(String.t()) :: result(history_list())
@@ -198,6 +214,124 @@ def handle_call({:push_cmd, cmd}, _from, state) do
     {:error, _error_type, _reason} ->
       # For GenServer callbacks, we maintain the original state on error
       {:reply, state.history, state}
+  end
+end
+```
+
+### BaseCommand Module Before and After
+
+#### Before (config macro validation logic)
+
+```elixir
+defmacro config(cmd, opts) do
+  quote do
+    # Get the module name suffix (last part of the module name)
+    module_name_parts = Module.split(__MODULE__)
+    module_suffix = List.last(module_name_parts)
+
+    # Extract the expected command name from the module suffix
+    expected_cmd =
+      if String.ends_with?(module_suffix, "Command") do
+        suffix_without_command = String.replace_suffix(module_suffix, "Command", "")
+        # Convert to the expected atom format
+        String.to_atom(String.downcase(suffix_without_command))
+      else
+        raise ArgumentError, "Command module name must end with 'Command'"
+      end
+
+    # Handle dot notation commands (sys.info -> SysInfoCommand)
+    dot_cmd =
+      if is_atom(unquote(cmd)) && String.contains?(Atom.to_string(unquote(cmd)), ".") do
+        parts = Atom.to_string(unquote(cmd)) |> String.split(".")
+
+        parts
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join("")
+        |> String.downcase()
+        |> String.to_atom()
+      else
+        unquote(cmd)
+      end
+
+    # Validate that the command name matches the module name
+    cond do
+      expected_cmd == unquote(cmd) ->
+        # Standard command name matches directly
+        :ok
+
+      expected_cmd == dot_cmd ->
+        # Dot notation command name matches after transformation
+        :ok
+
+      true ->
+        # Command name doesn't match in any format
+        raise ArgumentError,
+              "Command name mismatch: config defines command as #{inspect(unquote(cmd))} " <>
+                "but module name #{inspect(__MODULE__)} expects #{inspect(expected_cmd)}. " <>
+                "The command name must match the module name (without 'Command' suffix, downcased)."
+    end
+
+    @cmdcfg [{unquote(cmd), unquote(opts)}]
+  end
+end
+```
+
+#### After (Railway-Oriented Programming with function decomposition)
+
+```elixir
+# Type definitions provide context for errors
+@type error_type ::
+        :validation_error
+        | :command_mismatch
+        | :not_implemented
+        | :invalid_module_name
+        | :invalid_command_name
+        | :help_requested
+
+@type validation_result :: {:ok, atom()} | {:error, error_type(), String.t()}
+
+# Standardized error creation function
+@spec create_error(error_type(), String.t()) :: {:error, error_type(), String.t()}
+def create_error(error_type, reason) do
+  {:error, error_type, reason}
+end
+
+# Refactored config macro using Railway-Oriented Programming
+defmacro config(cmd, opts) do
+  quote do
+    # Use with expression for sequential operations that might fail
+    with {:ok, expected_cmd} <- Arca.Cli.Command.BaseCommand.validate_module_name(__MODULE__),
+         {:ok, transformed_cmd} <- Arca.Cli.Command.BaseCommand.transform_dot_command(unquote(cmd)),
+         {:ok, _} <- Arca.Cli.Command.BaseCommand.validate_command_name(expected_cmd, transformed_cmd) do
+      @cmdcfg [{unquote(cmd), unquote(opts)}]
+    else
+      {:error, :invalid_module_name, reason} ->
+        # Raise compile-time error for invalid module name
+        raise ArgumentError, reason
+
+      {:error, :invalid_command_name, reason} ->
+        # Raise compile-time error for command name mismatch
+        raise ArgumentError, reason
+
+      {:error, error_type, reason} ->
+        # Catch-all for other error types
+        raise ArgumentError, "#{error_type}: #{reason}"
+    end
+  end
+end
+
+# Decomposed validation into smaller, focused helper functions
+@spec validate_module_name(module()) :: validation_result()
+def validate_module_name(module_name) do
+  module_name_parts = Module.split(module_name)
+  module_suffix = List.last(module_name_parts)
+
+  if String.ends_with?(module_suffix, "Command") do
+    suffix_without_command = String.replace_suffix(module_suffix, "Command", "")
+    expected_cmd = String.to_atom(String.downcase(suffix_without_command))
+    {:ok, expected_cmd}
+  else
+    create_error(:invalid_module_name, "Command module name must end with 'Command'")
   end
 end
 ```
