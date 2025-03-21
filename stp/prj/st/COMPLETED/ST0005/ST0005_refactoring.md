@@ -162,6 +162,25 @@ As of this update, the following modules have been refactored to follow function
    - Used pattern matching for type-specific behavior
    - Fixed error handling in timer and HTTP functions
 
+6. **Arca.Cli.Command.SubCommandBehaviour**
+   - Added comprehensive type specifications
+   - Defined proper error types for subcommand operations
+   - Improved documentation with examples
+   - Standardized result types for better error handling
+
+7. **Arca.Cli.Command.BaseSubCommand**
+   - Implemented Railway-Oriented Programming with `with` expressions
+   - Added proper error handling with explicit error types
+   - Decomposed complex functions into smaller, focused helpers
+   - Added comprehensive type specifications and documentation
+   
+8. **Settings Command Group**
+   - Added error type specifications to SettingsCommand, SettingsGetCommand, and SettingsAllCommand
+   - Implemented Railway-Oriented Programming for multistep operations
+   - Added validation and error handling with descriptive error messages
+   - Improved documentation with examples and detailed descriptions
+   - Fixed typing issues to ensure compiler validation passes
+
 ## Benefits Achieved
 
 The refactoring has provided the following benefits:
@@ -336,6 +355,196 @@ def validate_module_name(module_name) do
 end
 ```
 
+### BaseSubCommand Module Before and After
+
+#### Before (handle function before refactoring)
+
+```elixir
+@impl Arca.Cli.Command.CommandBehaviour
+def handle(args, settings, _outer_optimus) do
+  argv =
+    args.args
+    |> Map.values()
+    |> Enum.filter(&(!is_nil(&1)))
+    |> Enum.reverse()
+
+  inner_optimus = subcommand_setup()
+
+  Optimus.parse(inner_optimus, argv)
+  |> handle_args(settings, inner_optimus)
+  |> filter_blank_lines()
+
+  # Note: no need to put lines here because that will happen via the original command
+  # |> put_lines()
+end
+
+@doc """
+Handle the command line arguments for the sub command.
+"""
+def handle_args({:ok, [subcmd], result}, settings, optimus) do
+  handle_subcommand(subcmd, result.args, settings, optimus)
+end
+
+def handle_args({:error, reason}, settings, optimus) do
+  handle_subcommand(:error, reason, settings, optimus)
+end
+
+def handle_args({:error, [cmd], [reason]}, settings, optimus) do
+  handle_subcommand(:error, reason, settings, optimus)
+end
+```
+
+#### After (Railway-Oriented Programming with proper error handling)
+
+```elixir
+@type error_type ::
+        :subcommand_not_found
+        | :parsing_failed
+        | :invalid_arguments
+        | :dispatch_error
+        | :optimus_error
+
+@type result(t) :: {:ok, t} | {:error, error_type(), String.t()}
+
+@spec create_error(error_type(), String.t()) :: {:error, error_type(), String.t()}
+def create_error(error_type, reason) do
+  {:error, error_type, reason}
+end
+
+@impl Arca.Cli.Command.CommandBehaviour
+@spec handle(map(), map(), Optimus.t()) :: String.t() | [String.t()] | {:ok, any()} | {:error, any()}
+def handle(args, settings, _outer_optimus) do
+  with {:ok, argv} <- extract_arguments(args),
+       {:ok, inner_optimus} <- create_subcommand_optimus(),
+       {:ok, parse_result} <- parse_arguments(inner_optimus, argv),
+       {:ok, output} <- dispatch_to_subcommand(parse_result, settings, inner_optimus) do
+    filter_blank_lines(output)
+  else
+    # Handle error cases from any step in the with pipeline
+    {:error, :invalid_arguments, reason} ->
+      "Error: #{reason}"
+      
+    {:error, :parsing_failed, reason} ->
+      "Parsing error: #{reason}"
+      
+    {:error, :subcommand_not_found, reason} ->
+      "Command not found: #{reason}"
+      
+    {:error, error_type, reason} ->
+      "Error (#{error_type}): #{reason}"
+  end
+end
+
+@spec extract_arguments(map()) :: {:ok, [String.t()]} | {:error, BaseSubCommand.error_type(), String.t()}
+def extract_arguments(args) do
+  try do
+    argv =
+      args.args
+      |> Map.values()
+      |> Enum.filter(&(!is_nil(&1)))
+      |> Enum.reverse()
+      
+    {:ok, argv}
+  rescue
+    e ->
+      BaseSubCommand.create_error(:invalid_arguments, "Failed to extract arguments: #{inspect(e)}")
+  end
+end
+```
+
+### Settings Commands Before and After
+
+#### Before (SettingsAllCommand)
+
+```elixir
+defmodule Arca.Cli.Commands.SettingsAllCommand do
+  @moduledoc """
+  Arca CLI command to show all settings.
+  """
+  use Arca.Cli.Command.BaseCommand
+
+  config :"settings.all",
+    name: "settings.all",
+    about: "Display current configuration settings."
+
+  @doc """
+  Show all settings
+  """
+  @impl Arca.Cli.Command.CommandBehaviour
+  def handle(_args, settings, _optimus) do
+    inspect(settings, pretty: true)
+  end
+end
+```
+
+#### After (SettingsAllCommand with Railway-Oriented Programming)
+
+```elixir
+defmodule Arca.Cli.Commands.SettingsAllCommand do
+  @moduledoc """
+  Displays all current configuration settings.
+  
+  This command provides a formatted view of all application settings,
+  showing the complete configuration state.
+  """
+  use Arca.Cli.Command.BaseCommand
+
+  config :"settings.all",
+    name: "settings.all",
+    about: "Display all current configuration settings"
+
+  @typedoc """
+  Possible error types for settings display operations
+  """
+  @type error_type ::
+          :formatting_error
+          | :empty_settings
+          | :internal_error
+  
+  @typedoc """
+  Result type for settings operations
+  """
+  @type result(t) :: {:ok, t} | {:error, error_type(), String.t()}
+
+  @impl Arca.Cli.Command.CommandBehaviour
+  @spec handle(map(), map(), Optimus.t()) :: String.t()
+  def handle(_args, settings, _optimus) do
+    with {:ok, valid_settings} <- validate_settings(settings),
+         {:ok, formatted} <- format_settings(valid_settings) do
+      formatted
+    else
+      {:error, :empty_settings, message} ->
+        message
+        
+      {:error, _error_type, message} ->
+        message
+    end
+  end
+  
+  # Validate that settings are not empty
+  @spec validate_settings(map()) :: result(map())
+  defp validate_settings(settings) do
+    if is_map(settings) && map_size(settings) > 0 do
+      {:ok, settings}
+    else
+      {:error, :empty_settings, "No settings available"}
+    end
+  end
+  
+  # Format the settings map for display
+  @spec format_settings(map()) :: result(String.t())
+  defp format_settings(settings) do
+    try do
+      formatted = inspect(settings, pretty: true)
+      {:ok, formatted}
+    rescue
+      e ->
+        {:error, :formatting_error, "Failed to format settings: #{inspect(e)}"}
+    end
+  end
+end
+```
+
 ## Implementation Challenges and Solutions
 
 During the implementation, several challenges were encountered and addressed:
@@ -362,6 +571,7 @@ The refactored code was subjected to thorough testing to ensure compatibility an
 - All 104 unit and integration tests pass successfully
 - The codebase compiles cleanly with all modules refactored so far
 - All smoke tests complete without errors
+- Fixed a description text mismatch between the test expectation and SettingsAllCommand implementation
 
 This indicates that the refactored code maintains full compatibility with existing functionality while improving error handling.
 
