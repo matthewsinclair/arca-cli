@@ -1,5 +1,5 @@
 ---
-verblock: "21 Mar 2025:v0.5: Updated ST0005 status to In Progress"
+verblock: "22 Mar 2025:v0.6: Updated ST0005 status to Completed"
 ---
 # Steel Threads
 
@@ -10,7 +10,7 @@ This document serves as an index of all steel threads in the project. A steel th
 <!-- BEGIN: STEEL_THREAD_INDEX -->
 | ID                                | Title                               | Status      | Created    | Completed  |
 |-----------------------------------|-------------------------------------|-------------|------------|------------|
-| [ST0005](./NOT-STARTED/ST0005.md) | Functional Elixir Codebase Improvements | In Progress | 2025-03-21 |            |
+| [ST0005](./COMPLETED/ST0005/ST0005.md) | Functional Elixir Codebase Improvements | Completed | 2025-03-21 | 2025-03-22 |
 | [ST0004](./COMPLETED/ST0004.md)   | Improved Help Subsystem for CLI     | Completed   | 2025-03-20 | 2025-03-19 |
 | [ST0003](./COMPLETED/ST0003.md)   | REPL Output Callback System         | Completed   | 2025-03-19 | 2025-03-19 |
 | [ST0002](./COMPLETED/ST0002.md)   | REPL Tab Completion Improvements    | Completed   | 2025-02-26 | 2025-03-19 |
