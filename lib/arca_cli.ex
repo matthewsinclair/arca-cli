@@ -91,10 +91,10 @@ defmodule Arca.Cli do
     opts = [strategy: :one_for_one, name: Arca.Cli]
     Supervisor.start_link(children, opts)
   end
-  
+
   @doc """
   Register callbacks for configuration changes.
-  
+
   Sets up handlers that respond to configuration changes,
   allowing the CLI to adapt to updates in real-time.
   """
@@ -104,30 +104,31 @@ defmodule Arca.Cli do
     |> register_main_config_callback()
     |> register_specific_callbacks()
   end
-  
+
   defp register_main_config_callback(_app_name) do
     # Register a main callback for any configuration change
     Arca.Config.register_change_callback(:arca_cli, &handle_config_change/1)
     :ok
   end
-  
+
   defp register_specific_callbacks(:ok) do
     # Additional specific settings we want to watch
     ["callbacks", "repl_settings", "display_options"]
     |> Enum.each(&Arca.Config.subscribe/1)
+
     :ok
   end
-  
+
   defp handle_config_change(config) do
     # Handle the configuration change in a focused, functional way
     Logger.debug("Configuration changed")
-    
+
     # Extract any important settings that require special handling
     config
     |> Map.get("display_options", %{})
     |> apply_display_settings()
   end
-  
+
   defp apply_display_settings(display_options) do
     # Apply any display settings that were changed
     # This is just a placeholder for actual implementation
@@ -715,22 +716,44 @@ defmodule Arca.Cli do
       test_settings = Application.get_env(:arca_cli, :test_settings, %{})
       {:ok, test_settings}
     else
-      # Get the entire config from the server directly
-      case Arca.Config.Server.reload() do
-        {:ok, config} -> 
-          {:ok, config}
-        
-        {:error, reason} ->
-          Logger.warning("Failed to load configuration: #{inspect(reason)}")
-          {:error, "Failed to load configuration: #{inspect(reason)}"}
+      try do
+        # First, make sure our server is up
+        Process.whereis(Arca.Config.Server) || raise "Arca.Config.Server not started"
+
+        case Arca.Config.Server.reload() do
+          {:ok, config} ->
+            {:ok, config}
+
+          {:error, reason} ->
+            Logger.warning("Failed to load configuration: #{inspect(reason)}")
+            # Return empty config rather than error to ensure app can continue
+            {:ok, %{}}
+        end
+      rescue
+        e in [KeyError] ->
+          if e.key == :load_error do
+            # Handle KeyError specifically for the :load_error key
+            Logger.warning(
+              "Failed to load configuration due to missing :load_error key in Arca.Config.Server state"
+            )
+            {:ok, %{}}
+          else
+            Logger.error("KeyError in load_settings: #{inspect(e)}")
+            {:ok, %{}}
+          end
+
+        e ->
+          Logger.error("Error loading settings: #{inspect(e)}")
+          # Return empty settings to ensure app can continue
+          {:ok, %{}}
       end
     end
   rescue
     e ->
       Logger.error("Error loading settings: #{inspect(e)}")
-      {:ok, %{}} # Return empty settings to ensure app can continue
+      # Return empty settings to ensure app can continue
+      {:ok, %{}}
   end
-
 
   @doc """
   Get a setting by its id.
@@ -745,16 +768,16 @@ defmodule Arca.Cli do
   @spec get_setting(atom() | String.t()) :: {:ok, term()} | {:error, String.t()}
   def get_setting(id) do
     id_str = to_string(id)
-    
+
     # In test environment, get from application env
     if Mix.env() == :test do
       test_settings = Application.get_env(:arca_cli, :test_settings, %{})
-      
+
       case Map.fetch(test_settings, id_str) do
-        {:ok, value} -> 
+        {:ok, value} ->
           {:ok, value}
-          
-        :error -> 
+
+        :error ->
           {:error, "Setting not found: #{id_str}"}
       end
     else
@@ -762,12 +785,12 @@ defmodule Arca.Cli do
       id_str
       |> Arca.Config.get()
       |> case do
-        {:ok, value} -> 
+        {:ok, value} ->
           {:ok, value}
-        
+
         {:error, :not_found} ->
           {:error, "Setting not found: #{id_str}"}
-        
+
         {:error, reason} ->
           {:error, "Failed to get setting #{id_str}: #{inspect(reason)}"}
       end
@@ -799,15 +822,15 @@ defmodule Arca.Cli do
       new_settings
       |> save_settings_individually()
       |> case do
-        :ok -> 
+        :ok ->
           {:ok, new_settings}
-        
+
         {:error, reason} ->
           {:error, "Failed to save settings: #{inspect(reason)}"}
       end
     end
   end
-  
+
   # Save settings one by one 
   defp save_settings_individually(settings) do
     settings

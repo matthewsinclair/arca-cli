@@ -342,12 +342,15 @@ Arca.Config automatically determines the configuration file paths based on the h
 ```elixir
 # Example of how configuration file paths are determined
 defp determine_config_path do
-  # Check for environment variable override
-  config_dir = System.get_env("ARCA_CONFIG_PATH") || "~/.arca/"
-  
-  # Derive filename from application name if not overridden
+  # Get the application name
   app_name = Application.get_application(__MODULE__) |> Atom.to_string()
-  config_filename = System.get_env("ARCA_CONFIG_FILE") || "#{app_name}.json"
+  
+  # Check for application-specific environment variable override
+  app_env_prefix = String.upcase(app_name)
+  config_dir = System.get_env("#{app_env_prefix}_CONFIG_PATH") || ".#{app_name}/"
+  
+  # Get config filename from env or use default
+  config_filename = System.get_env("#{app_env_prefix}_CONFIG_FILE") || "config.json"
   
   Path.join([config_dir, config_filename])
 end
@@ -355,8 +358,8 @@ end
 
 By default, if no environment variables are set:
 
-1. The configuration directory will be `~/.arca/`
-2. The configuration file will be named after the application (e.g., `arca_cli.json` for the `arca_cli` application)
+1. The configuration directory will be `.app_name/` in the current directory (e.g., `.arca_cli/` for the `arca_cli` application)
+2. The configuration file will be named `config.json`
 
 ## Directory Structure
 
@@ -393,12 +396,12 @@ lib/
 
 ### Environment Variables
 
-| Variable           | Description                           | Default                           |
-|--------------------|---------------------------------------|-----------------------------------|
-| ARCA_CONFIG_PATH   | Configuration directory path          | ~/.arca/                          |
-| ARCA_CONFIG_FILE   | Configuration filename                | {application_name}.json           |
+| Variable                     | Description                           | Default                           |
+|------------------------------|---------------------------------------|-----------------------------------|
+| APP_NAME_CONFIG_PATH         | Configuration directory path          | .app_name/ (e.g., .arca_cli/)     |
+| APP_NAME_CONFIG_FILE         | Configuration filename                | config.json                       |
 
-Note: If these environment variables are not set, Arca.Config automatically determines the configuration file name based on the application name.
+Note: The actual environment variable names are derived from the application name. For example, for the `arca_cli` application, the environment variables would be `ARCA_CLI_CONFIG_PATH` and `ARCA_CLI_CONFIG_FILE`.
 
 ### Application Configuration
 
@@ -412,9 +415,9 @@ config :arca_cli, :configurators, [
 
 # Arca.Config registry settings
 config :arca_config,
-  app_name: :your_app,           # Optional, defaults to the current application name
-  config_dir: "~/.arca",         # Optional, defaults to "~/.arca/"
-  config_file: "custom.json",    # Optional, defaults to "{app_name}.json"
+  parent_app: :your_app,         # Optional, defaults to the current application name
+  default_config_path: "/path",  # Optional, defaults to ".{app_name}/"
+  default_config_file: "config.json", # Optional, defaults to "config.json"
   watch_file: true,              # Enable file watching
   watch_interval: 1000           # Check file changes every 1000ms
 ```

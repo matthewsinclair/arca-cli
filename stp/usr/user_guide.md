@@ -202,15 +202,15 @@ The configuration system now features real-time file watching, which means that 
 
 Arca.Cli and Arca.Config automatically determine the configuration paths based on the application name. By default:
 
-- The configuration directory is set to `~/.arca/`
-- The configuration file is named after the host application (e.g., `arca_cli.json` for the `arca_cli` application)
+- The configuration directory is set to `.app_name/` in the current directory (e.g., `.arca_cli/` for the `arca_cli` application)
+- The configuration file is named `config.json`
 
-These paths can be overridden with environment variables if needed:
+These paths can be overridden with application-specific environment variables if needed:
 
 ```bash
-# Example of custom configuration paths
-export ARCA_CONFIG_PATH="/custom/path/to/config/dir/"
-export ARCA_CONFIG_FILE="custom_config.json"
+# Example of custom configuration paths for the arca_cli application
+export ARCA_CLI_CONFIG_PATH="/custom/path/to/config/dir/"
+export ARCA_CLI_CONFIG_FILE="custom_config.json"
 ```
 
 ### Working with Command History
@@ -313,7 +313,7 @@ This is particularly useful for applications that need to react to configuration
    - Check for typos in the command name
 
 2. **Configuration Issues**:
-   - Verify that the configuration file exists (by default at `~/.arca/your_app_name.json`)
+   - Verify that the configuration file exists (by default at `.app_name/config.json`, e.g. `.arca_cli/config.json`)
    - Check that the configuration file contains valid JSON
    - If you're using custom paths, verify the environment variables are set correctly
    - Confirm the Arca.Config registry is running properly with `Arca.Config.Server.ping()`
@@ -323,10 +323,10 @@ This is particularly useful for applications that need to react to configuration
 
 ### Environment Variables
 
-| Variable           | Description                               | Default                           |
-|--------------------|-------------------------------------------|-----------------------------------|
-| ARCA_CONFIG_PATH   | Configuration directory path              | ~/.arca/                          |
-| ARCA_CONFIG_FILE   | Configuration filename                    | {application_name}.json           |
+| Variable                     | Description                               | Default                         |
+|------------------------------|-------------------------------------------|----------------------------------|
+| APP_NAME_CONFIG_PATH        | Configuration directory path              | .app_name/ (e.g., .arca_cli/)    |
+| APP_NAME_CONFIG_FILE        | Configuration filename                    | config.json                      |
 
 Note that if these environment variables are not set, Arca.Config will automatically use the application name to determine the configuration file name.
 
