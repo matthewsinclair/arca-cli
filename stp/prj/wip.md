@@ -5,6 +5,10 @@ verblock: "20 Mar 2025:v0.4.1: Claude - Completed Improved Help Subsystem implem
 
 ## Current Focus
 
+**005: Upgrade to latest version of Arca.Config**
+
+See: stp/prj/st/NOT-STARTED/ST0005.md
+
 **005: Command Parameter Validation Improvements**
 
 - Enhancing parameter validation for commands

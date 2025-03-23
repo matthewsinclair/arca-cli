@@ -23,8 +23,9 @@ defmodule Arca.Cli.Commands.GetCommand do
   @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, _settings, _optimus) do
     case Cli.get_setting(args.args.id) do
-      {:error, error} -> error.message
-      value -> value
+      {:error, message} -> message  # Error message is returned directly
+      {:ok, value} -> value        # Extract value from success tuple
+      value -> value              # Fallback for any direct value returned
     end
   rescue
     error in RuntimeError -> error.message

@@ -29,6 +29,7 @@ defmodule Arca.Cli.MixProject do
       {:httpoison, "~> 2.1"},
       # {:optimus, "~> 0.5.0"},
       {:optimus, github: "matthewsinclair/arca-optimus", branch: "main", override: true},
+      {:arca_config, github: "matthewsinclair/arca-config", branch: "main", override: true},
       {:castore, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:tesla, "~> 1.5"},
@@ -39,8 +40,7 @@ defmodule Arca.Cli.MixProject do
       {:pathex, "~> 2.5"},
       {:table_rex, "~> 4.1"},
       {:elixir_uuid, "~> 1.2"},
-      {:ex_prompt, "~> 0.1.3"},
-      {:arca_config, path: "../config"}
+      {:ex_prompt, "~> 0.1.3"}
     ]
   end
 end
