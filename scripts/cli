@@ -1,1 +1,1 @@
-export $(cat ./config/.env | grep -v "^#" | xargs) && ARCA_CONFIG_PATH=.arca ARCA_CONFIG_FILE=config.json mix Arca.Cli $*
+export $(cat ./config/.env | grep -v "^#" | xargs) && mix Arca.Cli $*
