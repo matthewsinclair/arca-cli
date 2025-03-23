@@ -267,23 +267,15 @@ defmodule Arca.Cli.Commands.ConfigGetCommand do
   @spec fetch_setting_value(String.t()) :: result(term())
   def fetch_setting_value(key) do
     case Arca.Cli.get_setting(key) do
-      # New-style return with success tuple
+      # Success with tuple
       {:ok, value} ->
         {:ok, value}
 
-      # New-style return with error tuple including type
-      {:error, error_type, reason} ->
-        create_error(error_type, reason)
-
-      # Legacy error format for backward compatibility
+      # Error with message
       {:error, reason} when is_binary(reason) ->
         create_error(:setting_not_found, reason)
 
-      # If setting not found but response is not an error tuple
-      nil ->
-        create_error(:setting_not_found, "Setting '#{key}' not found")
-
-      # For any direct value return (backward compatibility)
+      # Direct value (backward compatibility)
       value ->
         # If we got a value directly, treat it as a success
         {:ok, value}

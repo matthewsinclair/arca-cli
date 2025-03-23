@@ -53,21 +53,17 @@ defmodule Arca.Cli.Commands.SettingsGetCommand do
   # Retrieve a setting by ID and handle all potential error cases
   @spec retrieve_setting(String.t()) :: any() | String.t()
   defp retrieve_setting(setting_id) do
-    # Delegate to Cli.get_setting but handle all potential return types
+    # Delegate to Cli.get_setting and handle the return types
     case Cli.get_setting(setting_id) do
-      # New format (success)
+      # Success case
       {:ok, value} ->
         value
 
-      # New format (error with type)
-      {:error, error_type, message} when is_atom(error_type) ->
-        message
-
-      # Legacy format (error)
+      # Error case
       {:error, message} when is_binary(message) ->
         message
 
-      # Unexpected return value (value itself)
+      # Fallback for direct value (for backward compatibility)
       value ->
         value
     end
