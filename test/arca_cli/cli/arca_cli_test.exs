@@ -39,6 +39,8 @@ defmodule Arca.Cli.Test do
       on_exit(fn ->
         # Delete test config file
         File.rm(config_file_path)
+        # Delete test config directory
+        File.rmdir(test_config_path)
         # Restore environment variables
         System.put_env(previous_env)
       end)
