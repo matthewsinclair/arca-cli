@@ -1,5 +1,6 @@
 ---
-verblock: "22 Mar 2025:v0.6: Updated ST0005 status to Completed"
+verblock: "23 Mar 2025:v0.7: Added ST0006 for Arca.Config upgrade
+22 Mar 2025:v0.6: Updated ST0005 status to Completed"
 ---
 # Steel Threads
 
@@ -8,13 +9,14 @@ This document serves as an index of all steel threads in the project. A steel th
 ## Index
 
 <!-- BEGIN: STEEL_THREAD_INDEX -->
-| ID                                | Title                               | Status      | Created    | Completed  |
-|-----------------------------------|-------------------------------------|-------------|------------|------------|
-| [ST0005](./COMPLETED/ST0005/ST0005.md) | Functional Elixir Codebase Improvements | Completed | 2025-03-21 | 2025-03-22 |
-| [ST0004](./COMPLETED/ST0004.md)   | Improved Help Subsystem for CLI     | Completed   | 2025-03-20 | 2025-03-19 |
-| [ST0003](./COMPLETED/ST0003.md)   | REPL Output Callback System         | Completed   | 2025-03-19 | 2025-03-19 |
-| [ST0002](./COMPLETED/ST0002.md)   | REPL Tab Completion Improvements    | Completed   | 2025-02-26 | 2025-03-19 |
-| [ST0001](./COMPLETED/ST0001.md)   | Documentation Migration to STP      | Completed   | 2025-03-21 | 2025-03-19 |
+| ID                              | Title                                   | Status    | Created    | Completed  |
+|---------------------------------|-----------------------------------------|-----------|------------|------------|
+| [ST0006](./COMPLETED/ST0006.md) | Upgrading to Latest Arca.Config         | Completed | 2025-03-23 | 2025-03-23 |
+| [ST0005](./COMPLETED/ST0005.md) | Functional Elixir Codebase Improvements | Completed | 2025-03-21 | 2025-03-22 |
+| [ST0004](./COMPLETED/ST0004.md) | Improved Help Subsystem for CLI         | Completed | 2025-03-20 | 2025-03-19 |
+| [ST0003](./COMPLETED/ST0003.md) | REPL Output Callback System             | Completed | 2025-03-19 | 2025-03-19 |
+| [ST0002](./COMPLETED/ST0002.md) | REPL Tab Completion Improvements        | Completed | 2025-02-26 | 2025-03-19 |
+| [ST0001](./COMPLETED/ST0001.md) | Documentation Migration to STP          | Completed | 2025-03-21 | 2025-03-19 |
 <!-- END: STEEL_THREAD_INDEX -->
 
 ## Steel Thread Status Definitions

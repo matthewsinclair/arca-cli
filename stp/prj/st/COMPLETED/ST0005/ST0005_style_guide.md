@@ -5,7 +5,7 @@ status: Completed
 created: 20250321
 completed: 20250321
 ---
-# Arca.Cli Functional Programming Style Guide
+# ST0005: Arca.Cli Functional Programming Style Guide
 
 This document provides guidelines for applying functional programming principles in the Arca.Cli codebase. Following these conventions will ensure consistency and maintainability across the project.
 
