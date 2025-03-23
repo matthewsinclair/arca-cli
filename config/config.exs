@@ -5,9 +5,10 @@ import Config
 #
 # Note: Configuration paths are now automatically derived by Arca.Config based on the application name.
 # When not explicitly configured, Arca.Config will:
-#   - Use "~/.arca/" as the default config directory
-#   - Create a config file named after the application (e.g., "arca_cli.json")
-#   - These can be overridden with ARCA_CONFIG_PATH and ARCA_CONFIG_FILE environment variables
+#   - Use ".app_name/" as the default config directory (e.g., ".arca_cli/")
+#   - Use "config.json" as the default config filename
+#   - These can be overridden with APP_NAME_CONFIG_PATH and APP_NAME_CONFIG_FILE environment variables
+#     (e.g., ARCA_CLI_CONFIG_PATH and ARCA_CLI_CONFIG_FILE)
 config :arca_cli,
   env: config_env(),
   name: "arca_cli",
@@ -20,6 +21,10 @@ config :arca_cli,
   configurators: [
     Arca.Cli.Configurator.DftConfigurator
   ]
+
+# Configure Arca.Config to ensure it uses the right config domain
+config :arca_config,
+  config_domain: :arca_cli
 
 # Configures Elixir's Logger
 config :logger, :console,

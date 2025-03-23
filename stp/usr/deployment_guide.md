@@ -95,18 +95,18 @@ arca_cli --help
 
 Configure Arca.Cli behavior using these environment variables:
 
-| Variable           | Purpose                           | Default                           |
-|--------------------|-----------------------------------|-----------------------------------|
-| ARCA_CONFIG_PATH   | Configuration directory path      | ~/.arca/                          |
-| ARCA_CONFIG_FILE   | Configuration filename            | {application_name}.json           |
+| Variable                     | Purpose                           | Default                           |
+|------------------------------|-----------------------------------|-----------------------------------|
+| APP_NAME_CONFIG_PATH         | Configuration directory path      | .app_name/ (e.g., .arca_cli/)     |
+| APP_NAME_CONFIG_FILE         | Configuration filename            | config.json                       |
 
-Note: If these environment variables are not set, the configuration filename is automatically derived from your application name.
+Note: The actual environment variable names are derived from the application name (in UPPERCASE). For example, for the `arca_cli` application, the environment variables would be `ARCA_CLI_CONFIG_PATH` and `ARCA_CLI_CONFIG_FILE`.
 
-Example configuration in `.bashrc` or `.zshrc`:
+Example configuration in `.bashrc` or `.zshrc` for an application named `arca_cli`:
 
 ```bash
-export ARCA_CONFIG_PATH="$HOME/.config/arca/"
-export ARCA_CONFIG_FILE="custom_config.json"
+export ARCA_CLI_CONFIG_PATH="$HOME/.config/arca_cli/"
+export ARCA_CLI_CONFIG_FILE="custom_config.json"
 ```
 
 ### Application Configuration
@@ -123,12 +123,11 @@ config :arca_cli, :configurators, [
 # Configure Arca.Config with registry and file watching options
 config :arca_config,
   # Optional, defaults to the current application name
-  # This name is used to generate the default config filename
-  app_name: :your_app,
-  # Optional, defaults to "~/.arca/"
-  config_dir: "~/.arca",  
-  # Optional, defaults to "{app_name}.json"
-  config_file: "custom.json",    
+  parent_app: :your_app,
+  # Optional, defaults to ".{app_name}/" (e.g., ".your_app/") 
+  default_config_path: "/custom/path",  
+  # Optional, defaults to "config.json"
+  default_config_file: "custom.json",    
   # Enable file watching
   watch_file: true,  
   # Check for file changes every 1000ms
@@ -290,12 +289,12 @@ end
 For CI/CD environments, ensure the configuration path is set correctly:
 
 ```yaml
-# GitHub Actions example
+# GitHub Actions example for an app named arca_cli
 jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      ARCA_CONFIG_PATH: "/tmp/arca"
+      ARCA_CLI_CONFIG_PATH: "/tmp/arca_cli"
     steps:
       - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
@@ -323,7 +322,7 @@ Add launch configuration for debugging:
       "task": "arca_cli",
       "taskArgs": ["about"],
       "env": {
-        "ARCA_CONFIG_PATH": "${workspaceFolder}/.arca"
+        "ARCA_CLI_CONFIG_PATH": "${workspaceFolder}/.arca_cli"
       }
     }
   ]
@@ -408,9 +407,9 @@ When upgrading to the latest version of Arca.Config with Registry integration:
    ```
 
 5. Note that the configuration file paths are now automatically derived:
-   - By default, Arca.Config will use a configuration file named after your application
-   - For example, if your application is named `:my_app`, the config file will be `~/.arca/my_app.json`
-   - This can be overridden with environment variables or explicit configuration
+   - By default, Arca.Config will use a configuration directory named after your application
+   - For example, if your application is named `:my_app`, the config file will be `.my_app/config.json`
+   - This can be overridden with application-specific environment variables (e.g., `MY_APP_CONFIG_PATH` and `MY_APP_CONFIG_FILE`) or explicit configuration
 
 ### Migrating Between Major Versions
 
@@ -440,9 +439,9 @@ When upgrading between major versions:
 **Problem**: The CLI cannot find or load the configuration file.
 
 **Solution**:
-- Check that the configuration directory exists (`~/.arca/` by default)
-- Verify the configuration filename follows the expected pattern (applicationName.json)
-- Set the environment variables `ARCA_CONFIG_PATH` and `ARCA_CONFIG_FILE` if using custom locations
+- Check that the configuration directory exists (`.app_name/` in the current directory by default, e.g., `.arca_cli/`)
+- Verify the configuration file exists and is named `config.json`
+- Set the application-specific environment variables (e.g., `ARCA_CLI_CONFIG_PATH` and `ARCA_CLI_CONFIG_FILE` for the arca_cli app) if using custom locations
 
 #### Registry-Related Errors
 
