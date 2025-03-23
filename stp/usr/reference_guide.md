@@ -1,5 +1,7 @@
 ---
-verblock: "20 Mar 2025:v0.4: Claude - Added help system documentation
+verblock: "23 Mar 2025:v0.6: Claude - Updated with automatic config path determination
+23 Mar 2025:v0.5: Claude - Added Arca.Config registry integration documentation
+20 Mar 2025:v0.4: Claude - Added help system documentation
 19 Mar 2025:v0.3: Claude - Added callback system documentation
 06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific reference content
 06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
@@ -34,7 +36,7 @@ arca_cli about
 **Example Output:**
 
 ```
-Arca.Cli v0.3.0
+Arca.Cli v0.4.0
 Copyright (c) 2024, Your Organization
 ```
 
@@ -288,6 +290,74 @@ end
 Setting `show_help_on_empty: true` causes the command to show help when invoked without arguments.
 Setting `show_help_on_empty: false` (the default) lets the command execute normally without arguments.
 
+### Configuration System
+
+Arca.Cli uses the Arca.Config library for configuration management. The updated implementation includes Registry integration, file watching, and a callback system:
+
+```elixir
+# Loading settings (internal implementation)
+def load_settings() do
+  case Arca.Config.Server.reload() do
+    {:ok, _} -> {:ok, true}
+    {:error, reason} -> {:error, reason}
+  end
+end
+
+# Retrieving a setting
+def get_setting(setting_id) do
+  case Arca.Config.get(setting_id) do
+    {:ok, value} -> {:ok, value}
+    {:error, :not_found} -> {:error, "Setting not found: #{setting_id}"}
+    {:error, reason} -> {:error, "Error retrieving setting: #{inspect(reason)}"}
+  end
+end
+
+# Saving settings
+def save_settings(settings) do
+  Enum.reduce_while(settings, {:ok, []}, fn {key, value}, {:ok, acc} ->
+    case Arca.Config.put(key, value) do
+      {:ok, _} -> {:cont, {:ok, [{key, value} | acc]}}
+      error -> {:halt, error}
+    end
+  end)
+end
+
+# Registering for configuration changes
+def register_for_changes(component_id, callback_fn) do
+  Arca.Config.register_change_callback(component_id, callback_fn)
+end
+
+# Subscribing to specific config key changes
+def subscribe_to_key_changes(key_path) do
+  Arca.Config.subscribe(key_path)
+end
+```
+
+The Registry integration provides better process isolation and resiliency, while file watching enables automatic reloading of configuration when changes are detected.
+
+#### Configuration File Path Determination
+
+Arca.Config automatically determines the configuration file paths based on the hosting application's name:
+
+```elixir
+# Example of how configuration file paths are determined
+defp determine_config_path do
+  # Check for environment variable override
+  config_dir = System.get_env("ARCA_CONFIG_PATH") || "~/.arca/"
+  
+  # Derive filename from application name if not overridden
+  app_name = Application.get_application(__MODULE__) |> Atom.to_string()
+  config_filename = System.get_env("ARCA_CONFIG_FILE") || "#{app_name}.json"
+  
+  Path.join([config_dir, config_filename])
+end
+```
+
+By default, if no environment variables are set:
+
+1. The configuration directory will be `~/.arca/`
+2. The configuration file will be named after the application (e.g., `arca_cli.json` for the `arca_cli` application)
+
 ## Directory Structure
 
 ```
@@ -323,10 +393,12 @@ lib/
 
 ### Environment Variables
 
-| Variable           | Description                           | Default          |
-|--------------------|---------------------------------------|------------------|
-| ARCA_CONFIG_PATH   | Configuration directory path          | ~/.arca/         |
-| ARCA_CONFIG_FILE   | Configuration filename                | arca_cli.json    |
+| Variable           | Description                           | Default                           |
+|--------------------|---------------------------------------|-----------------------------------|
+| ARCA_CONFIG_PATH   | Configuration directory path          | ~/.arca/                          |
+| ARCA_CONFIG_FILE   | Configuration filename                | {application_name}.json           |
+
+Note: If these environment variables are not set, Arca.Config automatically determines the configuration file name based on the application name.
 
 ### Application Configuration
 
@@ -337,6 +409,14 @@ config :arca_cli, :configurators, [
   YourApp.Cli.Configurator,
   Arca.Cli.Configurator.DftConfigurator
 ]
+
+# Arca.Config registry settings
+config :arca_config,
+  app_name: :your_app,           # Optional, defaults to the current application name
+  config_dir: "~/.arca",         # Optional, defaults to "~/.arca/"
+  config_file: "custom.json",    # Optional, defaults to "{app_name}.json"
+  watch_file: true,              # Enable file watching
+  watch_interval: 1000           # Check file changes every 1000ms
 ```
 
 ### Command Configuration
@@ -425,6 +505,37 @@ if Code.ensure_loaded?(Arca.Cli.Callbacks) do
 end
 ```
 
+### Configuration Change Reactions
+
+The updated Arca.Cli integrates with Arca.Config's callback system to react to configuration changes:
+
+```elixir
+# Register for all configuration changes
+if Code.ensure_loaded?(Arca.Config) && function_exported?(Arca.Config, :register_change_callback, 2) do
+  Arca.Config.register_change_callback(:my_component, fn config ->
+    # React to configuration changes
+    Logger.info("Configuration updated: #{inspect(config)}")
+    apply_new_configuration(config)
+  end)
+end
+
+# Subscribe to specific configuration key changes
+if Code.ensure_loaded?(Arca.Config) && function_exported?(Arca.Config, :subscribe, 1) do
+  Arca.Config.subscribe("app.feature.enabled")
+  
+  # In a process (such as a GenServer), handle the subscription messages:
+  def handle_info({:config_updated, "app.feature.enabled", true}, state) do
+    # Enable feature
+    {:noreply, %{state | feature_enabled: true}}
+  end
+  
+  def handle_info({:config_updated, "app.feature.enabled", false}, state) do
+    # Disable feature
+    {:noreply, %{state | feature_enabled: false}}
+  end
+end
+```
+
 ## Concepts and Terminology
 
 | Term         | Definition                                                                          |
@@ -438,3 +549,6 @@ end
 | BaseSubCommand | The base module for defining subcommands                                          |
 | Callbacks    | Extension system allowing external applications to customize behavior               |
 | Callback Chain | Multiple callbacks executed in reverse registration order (last registered, first executed) |
+| Registry     | Elixir's built-in process registry, used by Arca.Config for process management      |
+| File Watching | Mechanism to detect and automatically reload configuration file changes            |
+| Application-based Config | The system of deriving configuration paths from the application name    |
