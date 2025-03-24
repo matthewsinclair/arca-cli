@@ -736,6 +736,7 @@ defmodule Arca.Cli do
             Logger.warning(
               "Failed to load configuration due to missing :load_error key in Arca.Config.Server state"
             )
+
             {:ok, %{}}
           else
             Logger.error("KeyError in load_settings: #{inspect(e)}")
