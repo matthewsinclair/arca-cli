@@ -894,6 +894,15 @@ defmodule Arca.Cli do
       ""
     ]
 
+    # Check if sorting is enabled (default: true)
+    # Get this from the first configurator in the list for simplicity
+    should_sort =
+      case configurators() do
+        [first_configurator | _] -> first_configurator.sorted()
+        # Default to true if no configurators
+        _ -> true
+      end
+
     # Format the command list
     command_list =
       visible_commands
@@ -901,6 +910,11 @@ defmodule Arca.Cli do
         {cmd_atom, opts} = apply(module, :config, []) |> List.first()
         name = Atom.to_string(cmd_atom)
         about = Keyword.get(opts, :about, "")
+        {name, about}
+      end)
+      # Sort by name (alphabetically) if sorting is enabled
+      |> maybe_sort_commands(should_sort)
+      |> Enum.map(fn {name, about} ->
         padding = String.duplicate(" ", max(0, 20 - String.length(name)))
         "    #{name}#{padding}#{about}"
       end)
@@ -915,5 +929,16 @@ defmodule Arca.Cli do
 
   def prompt_symbol do
     Application.fetch_env!(:arca_cli, :prompt_symbol)
+  end
+
+  # Helper function to conditionally sort commands
+  defp maybe_sort_commands(commands, true) do
+    # Sort alphabetically when sorting is enabled
+    Enum.sort_by(commands, fn {name, _} -> String.downcase(name) end)
+  end
+
+  defp maybe_sort_commands(commands, false) do
+    # Keep original order when sorting is disabled
+    commands
   end
 end

@@ -51,6 +51,13 @@ defmodule Arca.Cli.Configurator.ConfiguratorBehaviour do
   @callback parse_double_dash() :: boolean()
 
   @doc """
+  Determine if commands should be sorted alphabetically.
+  When true, commands are displayed in alphabetical order.
+  When false, commands are displayed in the order they were defined.
+  """
+  @callback sorted() :: boolean()
+
+  @doc """
   Create the basic structure of the Optimus config.
   """
   @callback create_base_config() :: list()

@@ -1,5 +1,5 @@
 ---
-verblock: "06 Mar 2025:v0.1: Matthew Sinclair - Initial creation"
+verblock: "25 Mar 2025:v0.3: Fixed command sorting implementation"
 ---
 # 4. Detailed Design
 
@@ -214,9 +214,21 @@ The `Arca.Cli.Configurator.ConfiguratorBehaviour` defines the interface for conf
 
 ```elixir
 defmodule Arca.Cli.Configurator.ConfiguratorBehaviour do
-  @callback config() :: Keyword.t()
+  @callback commands() :: list()
+  @callback setup() :: Optimus.t()
+  @callback name() :: String.t() | nil
+  @callback author() :: String.t() | nil
+  @callback about() :: String.t()
+  @callback description() :: String.t() | nil
+  @callback version() :: String.t() | nil
+  @callback allow_unknown_args() :: boolean()
+  @callback parse_double_dash() :: boolean()
+  @callback sorted() :: boolean()
+  @callback create_base_config() :: list()
 end
 ```
+
+The `sorted()` callback controls whether commands should be displayed in alphabetical order (when `true`) or preserved in their defined order (when `false`).
 
 ### 4.4.2 BaseConfigurator Implementation
 
@@ -229,6 +241,15 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
       @behaviour Arca.Cli.Configurator.ConfiguratorBehaviour
       import Arca.Cli.Configurator.BaseConfigurator, only: [config: 2]
       
+      # Register module attributes
+      Module.register_attribute(__MODULE__, :app_name, accumulate: false)
+      Module.register_attribute(__MODULE__, :commands, accumulate: false)
+      Module.register_attribute(__MODULE__, :author, accumulate: false)
+      Module.register_attribute(__MODULE__, :about, accumulate: false)
+      Module.register_attribute(__MODULE__, :description, accumulate: false)
+      Module.register_attribute(__MODULE__, :version, accumulate: false)
+      Module.register_attribute(__MODULE__, :sorted, accumulate: false)
+      
       # Default implementation
       def config, do: []
       
@@ -237,12 +258,81 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
   end
   
   defmacro config(name, opts) do
-    # Implementation of the config DSL
+    quote do
+      Module.put_attribute(__MODULE__, :app_name, unquote(name))
+      Module.put_attribute(__MODULE__, :commands, Keyword.get(unquote(opts), :commands, []))
+      Module.put_attribute(__MODULE__, :author, Keyword.get(unquote(opts), :author, "Author"))
+      Module.put_attribute(__MODULE__, :about, Keyword.get(unquote(opts), :about, "About"))
+      Module.put_attribute(__MODULE__, :description, Keyword.get(unquote(opts), :description, "Description"))
+      Module.put_attribute(__MODULE__, :version, Keyword.get(unquote(opts), :version, "0.1.0"))
+      Module.put_attribute(__MODULE__, :sorted, Keyword.get(unquote(opts), :sorted, true))
+    end
   end
 end
 ```
 
-### 4.4.3 Configuration Coordination
+### 4.4.3 Command Sorting
+
+The command sorting system works at two levels:
+
+1. In `BaseConfigurator` during command registration and processing:
+```elixir
+# Sort commands alphabetically if sorted is true (default)
+defp maybe_sort_commands(commands) do
+  if sorted() do
+    # Ensure proper alphabetical ordering with case-insensitive comparison
+    Enum.sort_by(commands, fn {cmd_name, _config} ->
+      cmd_name |> to_string() |> String.downcase()
+    end)
+  else
+    commands
+  end
+end
+
+def inject_subcommands(optimus, commands \\ commands()) do
+  # Process commands
+  processed_commands =
+    commands
+    |> Enum.map(&get_command_config/1)
+    |> maybe_sort_commands()
+
+  # The rest of the inject_subcommands implementation...
+end
+```
+
+2. In help text generation in `Arca.Cli`:
+```elixir
+# Check if sorting is enabled (default: true)
+should_sort = 
+  case configurators() do
+    [first_configurator | _] -> first_configurator.sorted()
+    _ -> true  # Default to true if no configurators
+  end
+
+# Format the command list
+command_list =
+  visible_commands
+  |> Enum.map(fn module ->
+    {cmd_atom, opts} = apply(module, :config, []) |> List.first()
+    name = Atom.to_string(cmd_atom)
+    about = Keyword.get(opts, :about, "")
+    {name, about}
+  end)
+  # Sort by name (alphabetically) if sorting is enabled
+  |> maybe_sort_commands(should_sort)
+  |> Enum.map(fn {name, about} ->
+    padding = String.duplicate(" ", max(0, 20 - String.length(name)))
+    "    #{name}#{padding}#{about}"
+  end)
+```
+
+This implementation provides two command display modes:
+1. **Alphabetical order** (default): Makes commands easier to find, especially as the command list grows
+2. **Defined order**: Preserves the order in which commands were defined, useful for logical grouping or workflows
+
+The command sorting is case-insensitive, ensuring that commands are properly ordered regardless of capitalization (e.g., "cfg.list" comes before "cli.history").
+
+### 4.4.4 Configuration Coordination
 
 The `Arca.Cli.Configurator.Coordinator` manages multiple configurators:
 
@@ -258,7 +348,7 @@ defmodule Arca.Cli.Configurator.Coordinator do
 end
 ```
 
-### 4.4.4 Settings Management
+### 4.4.5 Settings Management
 
 User settings are managed through:
 
