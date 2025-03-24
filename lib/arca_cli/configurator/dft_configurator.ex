@@ -18,12 +18,12 @@ defmodule Arca.Cli.Configurator.DftConfigurator do
       Arca.Cli.Commands.DevInfoCommand,
       # dev.deps
       Arca.Cli.Commands.DevDepsCommand,
-      # config.list
-      Arca.Cli.Commands.ConfigListCommand,
-      # config.get
-      Arca.Cli.Commands.ConfigGetCommand,
-      # config.help
-      Arca.Cli.Commands.ConfigHelpCommand,
+      # cfg.list
+      Arca.Cli.Commands.CfgListCommand,
+      # cfg.get
+      Arca.Cli.Commands.CfgGetCommand,
+      # cfg.help
+      Arca.Cli.Commands.CfgHelpCommand,
       # stays the same
       Arca.Cli.Commands.ReplCommand,
       # settings -> settings.all

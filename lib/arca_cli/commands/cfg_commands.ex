@@ -1,4 +1,4 @@
-defmodule Arca.Cli.Commands.ConfigListCommand do
+defmodule Arca.Cli.Commands.CfgListCommand do
   @moduledoc """
   Displays all current configuration settings.
 
@@ -8,8 +8,8 @@ defmodule Arca.Cli.Commands.ConfigListCommand do
   require Logger
   use Arca.Cli.Command.BaseCommand
 
-  config :"config.list",
-    name: "config.list",
+  config :"cfg.list",
+    name: "cfg.list",
     about: "List all configuration settings"
 
   @typedoc """
@@ -50,7 +50,7 @@ defmodule Arca.Cli.Commands.ConfigListCommand do
         message
 
       {:error, error_type, message} ->
-        Logger.debug("Config list error: #{error_type} - #{message}")
+        Logger.debug("Cfg list error: #{error_type} - #{message}")
         "Error loading settings: #{message}"
     end
   end
@@ -110,7 +110,7 @@ defmodule Arca.Cli.Commands.ConfigListCommand do
   end
 end
 
-defmodule Arca.Cli.Commands.ConfigGetCommand do
+defmodule Arca.Cli.Commands.CfgGetCommand do
   @moduledoc """
   Retrieves a specific setting value from the configuration.
 
@@ -121,8 +121,8 @@ defmodule Arca.Cli.Commands.ConfigGetCommand do
   require Logger
   use Arca.Cli.Command.BaseCommand
 
-  config :"config.get",
-    name: "config.get",
+  config :"cfg.get",
+    name: "cfg.get",
     about: "Get a specific configuration setting",
     allow_unknown_args: true,
     args: [
@@ -169,10 +169,10 @@ defmodule Arca.Cli.Commands.ConfigGetCommand do
     if is_nil(setting_key) || setting_key == "" do
       # No setting key provided, show usage
       """
-      Usage: config.get <setting_name>
+      Usage: cfg.get <setting_name>
 
       Gets a specific configuration setting by name.
-      Example: config.get username
+      Example: cfg.get username
       """
     else
       # Process the setting key
@@ -191,7 +191,7 @@ defmodule Arca.Cli.Commands.ConfigGetCommand do
 
         {:error, error_type, message} ->
           # Log detailed error, return simplified message for other error types
-          Logger.debug("Config.get error: #{error_type} - #{message}")
+          Logger.debug("Cfg.get error: #{error_type} - #{message}")
           "Error retrieving setting '#{setting_key}': #{message}"
       end
     end
@@ -283,26 +283,26 @@ defmodule Arca.Cli.Commands.ConfigGetCommand do
   end
 end
 
-defmodule Arca.Cli.Commands.ConfigHelpCommand do
+defmodule Arca.Cli.Commands.CfgHelpCommand do
   @moduledoc """
-  Displays help information for config namespace commands.
+  Displays help information for cfg namespace commands.
 
   This command provides an overview of all available commands in the
-  config namespace and their purposes.
+  cfg namespace and their purposes.
   """
   use Arca.Cli.Command.BaseCommand
 
-  config :"config.help",
-    name: "config.help",
-    about: "Display help for config commands"
+  config :"cfg.help",
+    name: "cfg.help",
+    about: "Display help for cfg commands"
 
   @impl Arca.Cli.Command.CommandBehaviour
   def handle(_args, _settings, _optimus) do
     # Return as a simple string instead of a heredoc to avoid formatting issues
-    "Config Namespace Commands:\n\n" <>
-      "config.list - List all configuration settings\n" <>
-      "config.get  - Get a specific configuration setting\n" <>
-      "config.help - Display this help message\n\n" <>
+    "Cfg Namespace Commands:\n\n" <>
+      "cfg.list - List all configuration settings\n" <>
+      "cfg.get  - Get a specific configuration setting\n" <>
+      "cfg.help - Display this help message\n\n" <>
       "These commands help manage the application configuration."
   end
 end
