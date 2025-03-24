@@ -79,6 +79,9 @@ defmodule Arca.Cli.Commands.NamespaceCommandHelperTest.TestConfigurator do
   @impl true
   def parse_double_dash, do: true
 
+  @impl true
+  def sorted, do: true
+
   # Helper methods (copied from BaseConfigurator)
   def inject_subcommands(optimus, commands \\ commands()) do
     processed_commands = Enum.map(commands, &get_command_config/1)

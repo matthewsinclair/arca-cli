@@ -1,5 +1,7 @@
 ---
-verblock: "23 Mar 2025:v0.6: Claude - Updated with automatic config path determination
+verblock: "25 Mar 2025:v0.8: Claude - Fixed command sorting documentation
+24 Mar 2025:v0.7: Claude - Added command sorting documentation
+23 Mar 2025:v0.6: Claude - Updated with automatic config path determination
 23 Mar 2025:v0.5: Claude - Added Arca.Config registry integration documentation
 20 Mar 2025:v0.4: Claude - Added help system documentation
 19 Mar 2025:v0.3: Claude - Added callback system documentation
@@ -254,7 +256,8 @@ defmodule YourApp.Cli.Configurator do
     author: "Your Name",
     about: "Your CLI application",
     description: "A CLI tool for your application",
-    version: "1.0.0"
+    version: "1.0.0",
+    sorted: true  # Optional, defaults to true - sorts commands alphabetically
 end
 ```
 
@@ -436,6 +439,7 @@ Available command configuration options:
 | flags       | Command flags                                 | Keyword list     |
 | hidden      | Whether command is hidden in help             | Boolean          |
 | show_help_on_empty | Whether to show help when invoked without args | Boolean  |
+| sorted      | Whether commands should be sorted alphabetically (configurator option) | Boolean |
 
 ## Extension Points
 
@@ -555,3 +559,4 @@ end
 | Registry     | Elixir's built-in process registry, used by Arca.Config for process management      |
 | File Watching | Mechanism to detect and automatically reload configuration file changes            |
 | Application-based Config | The system of deriving configuration paths from the application name    |
+| Command Sorting | Feature that determines whether commands are displayed in alphabetical order (case-insensitive, default) or in the order they were defined |

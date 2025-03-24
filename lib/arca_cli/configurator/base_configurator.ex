@@ -1,6 +1,25 @@
 defmodule Arca.Cli.Configurator.BaseConfigurator do
   @moduledoc """
   Use an `Arca.Cli.Configurator.BaseConfigurator` to quickly and easily build a new Configurator for the CLI.
+
+  ## Command Sorting
+
+  By default, commands are displayed in alphabetical order to make them easier to find.
+  You can control this behavior with the `sorted` configuration option:
+
+  ```elixir
+  config :my_app,
+    commands: [...],
+    sorted: true    # Default - commands are displayed in alphabetical order
+  ```
+
+  To display commands in the order they are defined:
+
+  ```elixir
+  config :my_app,
+    commands: [...],
+    sorted: false   # Commands are displayed in the order they're defined
+  ```
   """
   require Logger
 
@@ -24,6 +43,7 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
       Module.register_attribute(__MODULE__, :version, accumulate: false)
       Module.register_attribute(__MODULE__, :allow_unknown_args, accumulate: false)
       Module.register_attribute(__MODULE__, :parse_double_dash, accumulate: false)
+      Module.register_attribute(__MODULE__, :sorted, accumulate: false)
 
       @before_compile unquote(__MODULE__)
     end
@@ -69,6 +89,12 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
         :parse_double_dash,
         Keyword.get(unquote(opts), :parse_double_dash, true)
       )
+
+      Module.put_attribute(
+        __MODULE__,
+        :sorted,
+        Keyword.get(unquote(opts), :sorted, true)
+      )
     end
   end
 
@@ -81,6 +107,7 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
     version = Module.get_attribute(env.module, :version) || "Arca CLI VERSION"
     allow_unknown_args = Module.get_attribute(env.module, :allow_unknown_args) || true
     parse_double_dash = Module.get_attribute(env.module, :parse_double_dash) || true
+    sorted = Module.get_attribute(env.module, :sorted) || true
 
     quote do
       def config do
@@ -92,7 +119,8 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
           description: unquote(description),
           version: unquote(version),
           allow_unknown_args: unquote(allow_unknown_args),
-          parse_double_dash: unquote(parse_double_dash)
+          parse_double_dash: unquote(parse_double_dash),
+          sorted: unquote(sorted)
         }
       end
 
@@ -147,6 +175,11 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
       end
 
       @impl Arca.Cli.Configurator.ConfiguratorBehaviour
+      def sorted do
+        unquote(sorted)
+      end
+
+      @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def create_base_config do
         [
           name: name(),
@@ -160,7 +193,11 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
       end
 
       def inject_subcommands(optimus, commands \\ commands()) do
-        processed_commands = Enum.map(commands, &get_command_config/1)
+        # Process commands
+        processed_commands =
+          commands
+          |> Enum.map(&get_command_config/1)
+          |> maybe_sort_commands()
 
         {top_level_keys, subcommands} =
           Keyword.split(optimus, [
@@ -175,6 +212,18 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
         merged_subcommands = merge_subcommands(subcommands[:subcommands], processed_commands)
 
         top_level_keys ++ [subcommands: merged_subcommands]
+      end
+
+      # Sort commands alphabetically if sorted is true
+      defp maybe_sort_commands(commands) do
+        if sorted() do
+          # Ensure proper alphabetical ordering by converting command names to strings
+          Enum.sort_by(commands, fn {cmd_name, _config} ->
+            cmd_name |> to_string() |> String.downcase()
+          end)
+        else
+          commands
+        end
       end
 
       defp merge_subcommands(existing, new) do

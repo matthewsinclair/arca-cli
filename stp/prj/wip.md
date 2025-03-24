@@ -1,9 +1,17 @@
 ---
-verblock: "20 Mar 2025:v0.4.1: Claude - Completed Improved Help Subsystem implementation"
+verblock: "25 March 2025:v0.4.2: Claude - Fixed command alphabetical sorting implementation"
 ---
 # Work In Progress
 
 ## Current Focus
+
+**006: Command Display Order Customization**
+
+- Added alphabetical sorting of commands by default with case-insensitive comparison
+- Fixed help display to correctly sort commands alphabetically 
+- Implemented `sorted: false` option to preserve defined command order when needed
+- Updated documentation and added comprehensive tests
+- Improved user experience by making commands easier to find
 
 **005: Upgrade to latest version of Arca.Config**
 

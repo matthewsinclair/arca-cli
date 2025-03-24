@@ -1,6 +1,5 @@
 ---
-verblock: "23 Mar 2025:v0.7: Added ST0006 for Arca.Config upgrade
-22 Mar 2025:v0.6: Updated ST0005 status to Completed"
+verblock: "23 Mar 2025:v0.7: Added ST0006 for Arca.Config upgrade"
 ---
 # Steel Threads
 

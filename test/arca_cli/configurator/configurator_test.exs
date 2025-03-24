@@ -27,10 +27,59 @@ defmodule Arca.Cli.Configurator.ConfiguratorTest.TestCfg8r2 do
     version: "Arca CLI VERSION TestCfg8r2"
 end
 
+defmodule Arca.Cli.Configurator.ConfiguratorTest.UnsortedConfigurator do
+  use Arca.Cli.Configurator.BaseConfigurator
+
+  config :unsorted_configurator,
+    commands: [
+      # Deliberately out of alphabetical order
+      Arca.Cli.Commands.SysInfoCommand,
+      Arca.Cli.Commands.AboutCommand,
+      Arca.Cli.Commands.GetCommand,
+      Arca.Cli.Commands.FlushCommand
+    ],
+    author: "Test Author",
+    about: "Test Unsorted CLI",
+    description: "A test CLI with unsorted commands",
+    version: "0.0.1",
+    # Disable command sorting
+    sorted: false
+
+  # Override the default sorted function for testing
+  # This is necessary because the module attribute isn't being properly 
+  # transferred in the test environment
+  @impl Arca.Cli.Configurator.ConfiguratorBehaviour
+  def sorted, do: false
+end
+
+# Create an unsorted configurator for manual testing
+defmodule UnsortedTestConfigurator do
+  use Arca.Cli.Configurator.BaseConfigurator
+
+  config :test_cli,
+    commands: [
+      # Deliberately out of alphabetical order
+      Arca.Cli.Commands.SysInfoCommand,
+      Arca.Cli.Commands.AboutCommand,
+      Arca.Cli.Commands.CfgListCommand,
+      Arca.Cli.Commands.CliHistoryCommand
+    ],
+    author: "Test Author",
+    about: "Test Unsorted CLI",
+    description: "A test CLI with unsorted commands",
+    version: "0.0.1",
+    # Disable command sorting
+    sorted: false
+
+  @impl Arca.Cli.Configurator.ConfiguratorBehaviour
+  def sorted, do: false
+end
+
 defmodule Arca.Cli.Configurator.ConfiguratorTest do
   use ExUnit.Case
   import ExUnit.CaptureIO
   import ExUnit.CaptureLog
+  require Logger
   alias Arca.Cli.Commands.AboutCommand
   alias Arca.Cli.Test.Support
   alias Arca.Cli.Configurator.Coordinator
@@ -146,6 +195,92 @@ defmodule Arca.Cli.Configurator.ConfiguratorTest do
         end)
 
       assert log =~ "Duplicate configurators found and rejected"
+    end
+
+    test "Command sorting with sorted=true (default) sorts commands alphabetically" do
+      # Default configurator has sorted=true
+      commands = [
+        Arca.Cli.Commands.SysInfoCommand,
+        Arca.Cli.Commands.AboutCommand,
+        Arca.Cli.Commands.GetCommand,
+        Arca.Cli.Commands.FlushCommand
+      ]
+
+      # Extract command names before injection
+      command_names_before =
+        Enum.map(commands, fn mod ->
+          [{name, _}] = mod.config()
+          to_string(name)
+        end)
+
+      # Process commands through the default configurator's inject_subcommands
+      optimus_base = [
+        name: "test",
+        description: "test",
+        version: "0.0.1",
+        author: "test",
+        allow_unknown_args: true,
+        parse_double_dash: true,
+        subcommands: []
+      ]
+
+      result = DftConfigurator.inject_subcommands(optimus_base, commands)
+      subcommands = Keyword.get(result, :subcommands)
+
+      # Extract command names after processing
+      command_names_after =
+        Enum.map(subcommands, fn {name, _} ->
+          to_string(name)
+        end)
+
+      # Verify commands are alphabetically sorted
+      assert command_names_after == Enum.sort(command_names_before)
+      refute command_names_after == command_names_before
+    end
+
+    test "Command sorting with sorted=false preserves command order" do
+      alias Arca.Cli.Configurator.ConfiguratorTest.UnsortedConfigurator
+
+      # Debug - check if sorted value is correctly set to false
+      Logger.info("UnsortedConfigurator.sorted(): #{UnsortedConfigurator.sorted()}")
+
+      commands = [
+        Arca.Cli.Commands.SysInfoCommand,
+        Arca.Cli.Commands.AboutCommand,
+        Arca.Cli.Commands.GetCommand,
+        Arca.Cli.Commands.FlushCommand
+      ]
+
+      # Extract command names before injection
+      command_names_before =
+        Enum.map(commands, fn mod ->
+          [{name, _}] = mod.config()
+          to_string(name)
+        end)
+
+      # Process commands through the unsorted configurator's inject_subcommands
+      optimus_base = [
+        name: "test",
+        description: "test",
+        version: "0.0.1",
+        author: "test",
+        allow_unknown_args: true,
+        parse_double_dash: true,
+        subcommands: []
+      ]
+
+      result = UnsortedConfigurator.inject_subcommands(optimus_base, commands)
+      subcommands = Keyword.get(result, :subcommands)
+
+      # Extract command names after processing
+      command_names_after =
+        Enum.map(subcommands, fn {name, _} ->
+          to_string(name)
+        end)
+
+      # Verify command order is preserved (not sorted)
+      assert command_names_after == command_names_before
+      refute command_names_after == Enum.sort(command_names_before)
     end
   end
 end

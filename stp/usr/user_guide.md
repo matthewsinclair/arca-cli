@@ -1,10 +1,5 @@
 ---
-verblock: "23 Mar 2025:v0.6: Claude - Updated with automatic config path determination
-23 Mar 2025:v0.5: Claude - Updated with Arca.Config registry integration details
-20 Mar 2025:v0.4: Claude - Updated with improved help system details
-19 Mar 2025:v0.3: Claude - Updated with REPL callback system details
-06 Mar 2025:v0.2: Matthew Sinclair - Updated with comprehensive content
-06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
+verblock: "25 Mar 2025:v0.8: Claude - Fixed command sorting implementation"
 ---
 # Arca.Cli User Guide
 
@@ -261,6 +256,42 @@ $ arca_cli cli.redo      # Redo a previously executed command
 $ arca_cli dev.info      # Show development information
 $ arca_cli dev.deps      # List project dependencies
 ```
+
+#### Command Sorting
+
+By default, commands are displayed in alphabetical order to make them easier to find, especially in applications with a large number of commands. This behavior can be customized:
+
+1. **Alphabetical Sorting (Default)**: Commands are sorted alphabetically in help output using case-insensitive comparison
+   ```bash
+   $ arca_cli --help
+   SUBCOMMANDS:
+       about               Info about the command line interface.
+       cfg.get             Get a specific configuration setting
+       cfg.help            Display help for cfg commands
+       cfg.list            List all configuration settings
+       cli.history         Show a history of recent commands.
+       cli.redo            Redo a previous command from the history.
+       # ... commands are listed in alphabetical order
+   ```
+
+2. **Defined Order**: For applications that need to preserve a specific ordering of commands (e.g., for workflow or logical grouping), the `sorted` configuration option can be set to `false`:
+   ```elixir
+   defmodule YourApp.Cli.Configurator do
+     use Arca.Cli.Configurator.BaseConfigurator
+
+     config :your_app_cli,
+       commands: [
+         # Commands will be displayed in this exact order
+         YourApp.Cli.Commands.FirstCommand,
+         YourApp.Cli.Commands.SecondCommand,
+         YourApp.Cli.Commands.ThirdCommand,
+       ],
+       sorted: false,  # Disable alphabetical sorting
+       # Other configuration...
+   end
+   ```
+
+The alphabetical sorting used by Arca.Cli is case-insensitive, ensuring proper ordering of commands regardless of capitalization patterns (e.g., "cfg.list" correctly appears before "cli.history").
 
 ### Command Parameters
 
