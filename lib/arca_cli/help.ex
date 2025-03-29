@@ -14,27 +14,27 @@ defmodule Arca.Cli.Help do
      - This shows help if the command has `show_help_on_empty: true`
      - Commands requiring arguments should set this to true
      - Commands that work without args should set this to false
-     
+
   2. Command invoked with `--help` flag: `cli cmd --help`
      - Always shows help regardless of command configuration
-     
+
   3. Command invoked with help prefix: `cli help cmd`
      - Always shows help regardless of command configuration
 
   ## Integration with BaseCommand
 
-  Commands that use `Arca.Cli.Command.BaseCommand` can simply set the 
+  Commands that use `Arca.Cli.Command.BaseCommand` can simply set the
   `show_help_on_empty` configuration parameter to control when help is shown:
 
   ```elixir
   defmodule MyApp.Commands.QueryCommand do
     use Arca.Cli.Command.BaseCommand
-    
+
     config :query,
       name: "query",
       about: "Query data from the system",
       show_help_on_empty: true  # Show help when invoked without args
-      
+
     @impl true
     def handle(args, settings, optimus) do
       # Just implement the command logic - help is handled automatically
