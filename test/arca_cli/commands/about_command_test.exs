@@ -30,12 +30,16 @@ defmodule Arca.Cli.Commands.AboutCommandTest do
       about_cmd_cfg = AboutCommand.config()
       assert is_list(about_cmd_cfg), "Expected config to be a list"
 
-      assert about_cmd_cfg == [
-               about: [
-                 name: "about",
-                 about: "Info about the command line interface."
-               ]
-             ]
+      # Extract the config for about command
+      [about: config_opts] = about_cmd_cfg
+
+      # Check required fields exist
+      assert Keyword.get(config_opts, :name) == "about"
+      assert Keyword.get(config_opts, :about) == "Info about the command line interface."
+
+      # Help field is optional but should be a string if present
+      help_text = Keyword.get(config_opts, :help)
+      if help_text, do: assert(is_binary(help_text))
     end
 
     test "AboutCommand.handle/3" do

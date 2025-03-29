@@ -7,9 +7,16 @@ defmodule Arca.Cli.Commands.AboutCommand do
   """
   use Arca.Cli.Command.BaseCommand
 
+  @cli_command """
+  Arca.Cli is a simple example implementaiton to show the main use cases. It displays basic information about the CLI application.
+
+  This command shows version, description, and other core information about the CLI application to users.
+  """
+
   config :about,
     name: "about",
-    about: "Info about the command line interface."
+    about: "Info about the command line interface.",
+    help: @cli_command
 
   @typedoc """
   Possible error types for the about command
