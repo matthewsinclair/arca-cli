@@ -3,69 +3,8 @@ verblock: "25 March 2025:v0.4.2: Claude - Fixed command alphabetical sorting imp
 ---
 # Work In Progress
 
-## Current Focus
+## TODO
 
-**006: Command Display Order Customization**
-
-- Added alphabetical sorting of commands by default with case-insensitive comparison
-- Fixed help display to correctly sort commands alphabetically 
-- Implemented `sorted: false` option to preserve defined command order when needed
-- Updated documentation and added comprehensive tests
-- Improved user experience by making commands easier to find
-
-**005: Upgrade to latest version of Arca.Config**
-
-See: stp/prj/st/NOT-STARTED/ST0005.md
-
-**005: Command Parameter Validation Improvements**
-
-- Enhancing parameter validation for commands
-- Implementing better error messages for invalid parameters
-- Adding type conversion and validation helpers
-- Streamlining validation in BaseCommand
-
-## Recently Completed
-
-**004: Improved Help Subsystem** ✓
-
-- Implemented a more reliable and consistent help system
-- Created a centralized help module with pre-execution checks
-- Extended the callback system for help formatting
-- Added comprehensive tests for all help scenarios
-- Created documentation to help dependent projects upgrade
-
-**003: REPL Output Formatting Enhancements** ✓
-
-- Implemented a callback system for customizing output formatting
-- Created a flexible extension mechanism for external applications
-- Maintained clean separation of concerns and avoided circular dependencies
-
-**002: STP Documentation Integration**
-
-- Migrating existing documentation to STP structure
-- Creating comprehensive user, reference, and deployment guides
-- Establishing project journal with development history
-
-**001: Dot Notation Command Enhancements**
-
-- Improving hierarchical command organization
-- Refining tab completion in REPL mode
-- Enhancing error messages for namespace commands
-
-## Active Steel Threads
-
-- ST004: Improved Help Subsystem
-- ST003: REPL Output Callback System
-- ST002: REPL Tab Completion Improvements
-- ST001: Documentation Migration to STP Framework
-
-## Upcoming Work
-
-- Command Parameter Validation Improvements
-- Configuration File Format Enhancements
-- Performance Optimization for Command Dispatch
-- Integration with External Authentication Systems
-- Support for Plugins/Extensions
 
 ## Notes
 
