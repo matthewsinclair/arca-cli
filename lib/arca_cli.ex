@@ -238,14 +238,18 @@ defmodule Arca.Cli do
         :help
 
       # Case 2: Command-specific help with --help flag
-      length(argv) > 1 && List.last(argv) == "--help" ->
+      length(argv) >= 2 && Enum.at(argv, 1) == "--help" ->
         {:help_command, List.first(argv)}
 
-      # Case 3: Help prefix command
-      length(argv) > 1 && List.first(argv) == "help" ->
+      # Case 3: Command-specific help with --help flag anywhere after command
+      length(argv) >= 2 && "--help" in argv ->
+        {:help_command, List.first(argv)}
+
+      # Case 4: Help prefix command
+      length(argv) >= 2 && List.first(argv) == "help" ->
         {:help_command, Enum.at(argv, 1)}
 
-      # Case 4: Normal command parsing
+      # Case 5: Normal command parsing
       true ->
         :normal
     end
@@ -263,21 +267,93 @@ defmodule Arca.Cli do
   @doc """
   Handle help for a specific command
 
-  Delegates to the Help module for centralized help handling.
+  First tries to get help text from the command's config;
+  falls back to the Help module for centralized help handling.
   """
   def handle_command_help(cmd, optimus) do
     # Convert cmd to atom if it's a string
     cmd_atom = if is_binary(cmd), do: String.to_atom(cmd), else: cmd
 
     case handler_for_command(cmd_atom) do
-      {:ok, _cmd_atom, _handler} ->
-        # Use the centralized help system to show command help
-        Arca.Cli.Help.show(cmd_atom, [], optimus)
+      {:ok, _cmd_atom, handler} ->
+        # First try to get help text directly from the command's config
+        case extract_help_from_config(handler) do
+          {:ok, help_text} when is_binary(help_text) ->
+            # Format the help text to match the style of Optimus.Help.help
+            format_command_help(cmd, help_text)
+
+          _ ->
+            # Fall back to the centralized help system
+            Arca.Cli.Help.show(cmd_atom, [], optimus)
+        end
 
       nil ->
         # Command not found
         ["error: unknown command: #{cmd}"]
     end
+  end
+
+  @doc """
+  Extract help text from a command's config.
+
+  ## Parameters
+    - handler: Command handler module
+
+  ## Returns
+    - {:ok, help_text} if help text is found in config
+    - {:error, reason} if help text is not found
+  """
+  def extract_help_from_config(handler) do
+    try do
+      # Get the command's config
+      config = handler.config() |> List.first()
+
+      # Extract the help text from the config
+      help_text = config |> elem(1) |> Keyword.get(:help)
+
+      if is_binary(help_text) do
+        {:ok, help_text}
+      else
+        {:error, :help_not_found, "Help text not found in command config"}
+      end
+    rescue
+      e ->
+        Logger.debug("Error extracting help from config: #{inspect(e)}")
+        {:error, :config_error, "Error extracting help from config"}
+    end
+  end
+
+  @doc """
+  Format help text to match the style of Optimus.Help.help output.
+
+  ## Parameters
+    - cmd: Command name (atom or string)
+    - help_text: Raw help text from command config
+    
+  ## Returns
+    - Formatted help text in a list of strings with proper formatting
+  """
+  def format_command_help(cmd, help_text) do
+    cmd_str = if is_atom(cmd), do: Atom.to_string(cmd), else: cmd
+
+    # Create a header similar to Optimus.Help.help
+    header = [
+      "USAGE:",
+      "    cli #{cmd_str} [OPTIONS]",
+      "",
+      "DESCRIPTION:"
+    ]
+
+    # Split the help text into lines and indent appropriately
+    help_lines =
+      help_text
+      |> String.split("\n")
+      |> Enum.map(fn line ->
+        if String.trim(line) == "", do: "", else: "    #{line}"
+      end)
+
+    # Combine the parts
+    header ++ help_lines
   end
 
   @doc """
