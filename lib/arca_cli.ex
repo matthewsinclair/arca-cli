@@ -16,7 +16,7 @@ defmodule Arca.Cli do
   ## Architecture
 
   - Commands: Individual command implementations in `Arca.Cli.Command.*`
-  - Configurators: Setup modules in `Arca.Cli.Configurator.*` 
+  - Configurators: Setup modules in `Arca.Cli.Configurator.*`
   - History: Command history tracking in `Arca.Cli.History`
   - Utils: Utility functions in `Arca.Cli.Utils`
 
@@ -173,16 +173,6 @@ defmodule Arca.Cli do
     else
       # In non-test environments, handle the response more carefully to avoid duplicated error message
       case response do
-        # Skip printing any error messages to prevent duplication
-        "error: " <> _ ->
-          # Don't show error messages again; they're already displayed
-          :ok
-
-        # Special handling for raw error atoms
-        :error ->
-          # Don't show raw error atoms; they're already handled
-          :ok
-
         # Skip empty responses
         "" ->
           :ok
@@ -207,7 +197,7 @@ defmodule Arca.Cli do
     - argv: Command line arguments
     - settings: Application settings
     - optimus: Optimus configuration
-    
+
   ## Returns
     - Command result or error message
   """
@@ -234,7 +224,7 @@ defmodule Arca.Cli do
 
   ## Parameters
     - argv: Command line arguments
-    
+
   ## Returns
     - :help for top-level help
     - {:help_command, command} for command-specific help
@@ -430,7 +420,7 @@ defmodule Arca.Cli do
     - args: Command arguments
     - settings: Application settings
     - optimus: Optimus configuration
-    
+
   ## Returns
     - Command result or error message
   """
@@ -450,7 +440,7 @@ defmodule Arca.Cli do
 
   ## Parameters
     - cmd: Command name (atom)
-    
+
   ## Returns
     - {:ok, handler} with the command handler module on success
     - {:error, :command_not_found, reason} if command not found
@@ -475,7 +465,7 @@ defmodule Arca.Cli do
     - settings: Application settings
     - optimus: Optimus configuration
     - handler: Command handler module
-    
+
   ## Returns
     - {:ok, result} with command result on success
     - {:error, error_type, reason} on execution failure
@@ -489,7 +479,7 @@ defmodule Arca.Cli do
         # Show help for this command using the centralized help system
         {:ok, Arca.Cli.Help.show(cmd, args, optimus)}
       else
-        # Normal command execution with proper error handling 
+        # Normal command execution with proper error handling
         result = handler.handle(args, settings, optimus)
 
         # A command handler can return many different result formats;
@@ -553,7 +543,7 @@ defmodule Arca.Cli do
   ## Parameters
     - error_type: The type of error (atom)
     - reason: Description or data about the error
-    
+
   ## Returns
     - An error tuple of the form {:error, error_type, reason}
   """
@@ -569,7 +559,7 @@ defmodule Arca.Cli do
     - cmd: Command name that caused the error (atom, string, or list)
     - reason: Error reason (any type)
     - error_type: Optional error type (defaults to :unknown_error)
-    
+
   ## Returns
     - String containing formatted error message
   """
@@ -790,7 +780,7 @@ defmodule Arca.Cli do
 
   ## Parameters
     - id: The setting identifier
-    
+
   ## Returns
     - {:ok, value} with the setting value on success
     - {:error, reason} if setting couldn't be retrieved (for backward compatibility)
@@ -834,7 +824,7 @@ defmodule Arca.Cli do
 
   ## Parameters
     - new_settings: Map containing settings to be saved
-    
+
   ## Returns
     - {:ok, updated_settings} on success
     - {:error, reason} on failure (for backward compatibility)
@@ -861,7 +851,7 @@ defmodule Arca.Cli do
     end
   end
 
-  # Save settings one by one 
+  # Save settings one by one
   defp save_settings_individually(settings) do
     settings
     |> Enum.reduce_while(:ok, fn {key, value}, _acc ->
