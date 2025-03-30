@@ -52,4 +52,11 @@ defmodule ArcaCliReplTest do
       assert Repl.should_push?("flush") == false
     end
   end
+
+  describe "REPL print_result" do
+    test "handles nooutput correctly" do
+      # Test that nooutput is passed through correctly
+      assert Repl.print_result({:ok, :nooutput}) == {:ok, {:ok, :nooutput}}
+    end
+  end
 end

@@ -78,7 +78,7 @@ defmodule Arca.Cli.Repl do
   ## Parameters
     - args: Command line arguments
     - settings: Application settings
-    
+
   ## Returns
     - {:ok, intro_text} with formatted introduction text
     - {:error, error_type, reason} on failure
@@ -99,7 +99,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - intro_text: The text to display
-    
+
   ## Returns
     - :ok on success
     - {:error, error_type, reason} on failure
@@ -152,7 +152,7 @@ defmodule Arca.Cli.Repl do
   ## Parameters
     - error_type: The type of error
     - reason: Error details
-    
+
   ## Returns
     - Formatted error message string
   """
@@ -170,7 +170,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - error_message: The error message to display
-    
+
   ## Returns
     - :ok on success
   """
@@ -244,7 +244,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - prompt: The prompt string to display
-    
+
   ## Returns
     - {:ok, input} with the user input
     - {:ok, :eof} if end-of-file is reached
@@ -273,7 +273,7 @@ defmodule Arca.Cli.Repl do
     - prompt: The prompt string to display
     - settings: Application settings
     - optimus: Command line parser configuration
-    
+
   ## Returns
     - {:ok, input} with the user input
     - {:ok, :eof} if end-of-file is reached
@@ -300,7 +300,7 @@ defmodule Arca.Cli.Repl do
   # Custom prompt implementation with basic completion
   defp prompt_with_completion(prompt, settings \\ %{}, optimus \\ nil) do
     try do
-      # Use simple input 
+      # Use simple input
       case IO.gets(prompt) do
         :eof ->
           :eof
@@ -329,7 +329,7 @@ defmodule Arca.Cli.Repl do
     - prompt: The prompt string for recursion
     - settings: Application settings
     - optimus: Command line parser configuration
-    
+
   ## Returns
     - The processed input or the result of recursive prompt calls
   """
@@ -341,7 +341,7 @@ defmodule Arca.Cli.Repl do
         display_available_commands()
         prompt_with_completion(prompt)
 
-      # Handle "?" as a single character (help shortcut)  
+      # Handle "?" as a single character (help shortcut)
       input == "?" ->
         # Use the central help generation function
         display_help(optimus)
@@ -364,7 +364,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - input: The user input string
-    
+
   ## Returns
     - true if input is a namespace prefix
     - false otherwise
@@ -401,7 +401,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - optimus: Command line parser configuration
-    
+
   ## Returns
     - :ok
   """
@@ -419,7 +419,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - namespace: The namespace prefix (e.g., "sys")
-    
+
   ## Returns
     - :ok
   """
@@ -513,7 +513,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - cmd: The command to potentially add to history
-    
+
   ## Returns
     - :ok
   """
@@ -536,7 +536,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - input: The command string to split
-    
+
   ## Returns
     - {:ok, args_list} with the tokenized arguments
     - {:error, error_type, reason} on tokenization failure
@@ -727,7 +727,7 @@ defmodule Arca.Cli.Repl do
 
       iex> Arca.Cli.Repl.autocomplete("sy")
       ["sys", "sys.info", "sys.flush", "sys.cmd"]
-      
+
       iex> Arca.Cli.Repl.autocomplete("dev.")
       ["dev.info", "dev.deps"]
   """
@@ -750,7 +750,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - partial: The partial command to complete
-    
+
   ## Returns
     - List of matching namespaces or commands
   """
@@ -802,16 +802,32 @@ defmodule Arca.Cli.Repl do
   end
 
   # Print result with proper error handling
+  @doc """
+  Handles the result of command evaluation, deciding whether to print output.
+
+  ## Parameters
+    - result: The command result to process
+    
+  ## Returns
+    - {:ok, result} on success
+    - {:error, error_type, reason} on failure
+    
+  ## Cases
+    - For {:ok, :nooutput}, skips printing and returns the result as-is
+    - For {:ok, :quit}, returns the result without printing
+    - For other {:ok, _} or {:error, _, _} tuples, returns without printing
+    - For all other values, prints the result and returns it
+  """
   @spec print_result(any()) :: result(any())
-  defp print_result(result) do
+  def print_result({:ok, :nooutput} = result), do: {:ok, result}
+  def print_result({:ok, :quit} = result), do: {:ok, result}
+  def print_result({:ok, _} = result), do: {:ok, result}
+  def print_result({:error, _, _} = result), do: {:ok, result}
+
+  def print_result(result) do
     try do
-      # For tuples like {:ok, :quit}, just return them directly
-      if is_tuple(result) && elem(result, 0) in [:ok, :error] do
-        {:ok, result}
-      else
-        printed = print(result)
-        {:ok, printed}
-      end
+      printed = print(result)
+      {:ok, printed}
     rescue
       e ->
         {:error, :output_error, "Failed to display output: #{Exception.message(e)}"}
@@ -850,7 +866,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - out: The help text to display
-    
+
   ## Returns
     - The input, passed through after printing
   """
@@ -870,7 +886,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - out: The output to format and display
-    
+
   ## Returns
     - The input, passed through after printing
   """
@@ -892,7 +908,7 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - out: The output to check
-    
+
   ## Returns
     - true if the output is help text
     - false otherwise
