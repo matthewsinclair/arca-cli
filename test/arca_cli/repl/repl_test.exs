@@ -58,5 +58,21 @@ defmodule ArcaCliReplTest do
       # Test that nooutput is passed through correctly
       assert Repl.print_result({:ok, :nooutput}) == {:ok, {:ok, :nooutput}}
     end
+
+    test "handles quit correctly" do
+      # Test that quit is passed through correctly
+      assert Repl.print_result({:ok, :quit}) == {:ok, {:ok, :quit}}
+    end
+
+    test "handles other ok tuples correctly" do
+      # Test that other ok tuples are passed through correctly
+      assert Repl.print_result({:ok, "result"}) == {:ok, {:ok, "result"}}
+    end
+
+    test "handles error tuples correctly" do
+      # Test that error tuples are passed through correctly
+      assert Repl.print_result({:error, :test_error, "reason"}) ==
+               {:ok, {:error, :test_error, "reason"}}
+    end
   end
 end
