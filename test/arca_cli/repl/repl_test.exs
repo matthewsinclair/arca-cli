@@ -56,7 +56,8 @@ defmodule ArcaCliReplTest do
   describe "REPL print_result" do
     test "handles nooutput correctly" do
       # Test that nooutput is passed through correctly
-      assert Repl.print_result({:ok, :nooutput}) == {:ok, {:ok, :nooutput}}
+      assert Repl.print_result({:nooutput, "preserved data"}) ==
+               {:ok, {:nooutput, "preserved data"}}
     end
 
     test "handles quit correctly" do
