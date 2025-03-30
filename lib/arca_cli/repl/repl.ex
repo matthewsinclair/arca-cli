@@ -126,6 +126,10 @@ defmodule Arca.Cli.Repl do
         {:ok, :quit} ->
           {:ok, :quit}
 
+        {:ok, :nooutput} ->
+          # Continue the REPL loop without printing anything
+          repl(args, settings, optimus)
+
         _ ->
           # Continue the REPL loop
           repl(args, settings, optimus)
