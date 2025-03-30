@@ -126,7 +126,7 @@ defmodule Arca.Cli.Repl do
         {:ok, :quit} ->
           {:ok, :quit}
 
-        {:ok, :nooutput} ->
+        {:nooutput, _} ->
           # Continue the REPL loop without printing anything
           repl(args, settings, optimus)
 
@@ -817,13 +817,13 @@ defmodule Arca.Cli.Repl do
     - {:error, error_type, reason} on failure
     
   ## Cases
-    - For {:ok, :nooutput}, skips printing and returns the result as-is
+    - For {:nooutput, _}, skips printing and returns the result as-is
     - For {:ok, :quit}, returns the result without printing
     - For other {:ok, _} or {:error, _, _} tuples, returns without printing
     - For all other values, prints the result and returns it
   """
   @spec print_result(any()) :: result(any())
-  def print_result({:ok, :nooutput} = result), do: {:ok, result}
+  def print_result({:nooutput, _} = result), do: {:ok, result}
   def print_result({:ok, :quit} = result), do: {:ok, result}
   def print_result({:ok, _} = result), do: {:ok, result}
   def print_result({:error, _, _} = result), do: {:ok, result}
