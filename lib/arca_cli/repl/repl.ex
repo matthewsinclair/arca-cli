@@ -483,6 +483,17 @@ defmodule Arca.Cli.Repl do
     |> Enum.join("\n")
   end
 
+  # Handle 'help <command>' as a special case
+  defp do_eval(<<"help ", cmd::binary>>, _settings, optimus) do
+    # Extract the command name and remove newline if present
+    cmd = String.trim(cmd)
+
+    # Use the same help generation as CLI mode for consistent display
+    # This ensures namespace commands show full help text in REPL
+    Cli.handle_command_help(cmd, optimus)
+    |> Enum.join("\n")
+  end
+
   # Evaluate params and dispatch to appropriate handler
   defp do_eval("\n", _settings, _optimus) do
     :ok
