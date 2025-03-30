@@ -177,6 +177,10 @@ defmodule Arca.Cli do
         "" ->
           :ok
 
+        # Handle :nooutput tuples - don't display anything
+        {:nooutput, _} ->
+          :ok
+
         # For any other response, process it normally
         _ ->
           # Only display non-error responses
