@@ -958,34 +958,53 @@ defmodule Arca.Cli do
   # Helper function to safely return empty settings
   defp return_empty_settings, do: {:ok, %{}}
 
-  # Check if we're in an initialization phase by looking at the process hierarchy
-  # and checking for markers that would indicate we're still initializing
-  defp is_initialization_phase? do
-    # In test environment, we don't want to consider initialization phase
-    # This ensures tests can run without the initializer being present
-    if Mix.env() == :test do
-      false
-    else
-      initializer_running? = Process.whereis(Arca.Cli.Configurator.Initializer) != nil
+  @initialization_phase_key :arca_cli_initialization_phase
 
-      cond do
-        # If the initializer isn't running yet, we're definitely in initialization
-        !initializer_running? ->
-          true
-
-        # Check if the initializer is still in the initialization phase
-        initializer_running? ->
-          case Arca.Cli.Configurator.Initializer.status() do
-            %{initialized: true} -> false
-            _ -> true
-          end
-
-        # Default to assuming we're not in initialization if unsure
-        true ->
-          false
-      end
-    end
+  @doc """
+  Mark the current process as being in the initialization phase.
+  Should only be called by the Initializer.
+  """
+  def mark_initialization_phase(value \\ true) do
+    Process.put(@initialization_phase_key, value)
   end
+
+  @doc """
+  Mark the current process as no longer being in the initialization phase.
+  Should only be called by the Initializer when initialization is complete.
+  """
+  def clear_initialization_phase do
+    Process.delete(@initialization_phase_key)
+  end
+
+  # Check if we're in an initialization phase
+  # Pattern matching approach for different environments
+  defp is_initialization_phase? do
+    is_initialization_phase?(Mix.env())
+  end
+
+  # Test environment - never consider as initialization phase
+  defp is_initialization_phase?(:test), do: false
+
+  # All other environments - check process conditions
+  defp is_initialization_phase?(_env) do
+    initializer_pid = Process.whereis(Arca.Cli.Configurator.Initializer)
+    current_pid = self()
+    process_flag = Process.get(@initialization_phase_key)
+
+    check_initialization_state(initializer_pid, current_pid, process_flag)
+  end
+
+  # When flag is explicitly set in process dictionary, use that value
+  defp check_initialization_state(_, _, flag) when not is_nil(flag), do: flag
+
+  # When current process is the Initializer itself
+  defp check_initialization_state(pid, pid, _) when is_pid(pid), do: true
+
+  # When Initializer is not running yet
+  defp check_initialization_state(nil, _, _), do: true
+
+  # Default case - not in initialization phase
+  defp check_initialization_state(_, _, _), do: false
 
   @doc """
   Get a setting by its id.
