@@ -42,6 +42,9 @@ defmodule Arca.Cli.Configurator.Initializer do
 
   @impl true
   def init(_opts) do
+    # Mark this process as being in initialization phase
+    Arca.Cli.mark_initialization_phase()
+
     # Schedule delayed initialization
     Process.send_after(self(), :initialize, @initialization_delay)
     {:ok, %{initialized: false, initialization_time: nil}}
@@ -77,24 +80,29 @@ defmodule Arca.Cli.Configurator.Initializer do
     end_time = System.monotonic_time(:millisecond)
     duration = end_time - start_time
 
-    # Log initialization results
-    case {load_settings_result, register_callbacks_result} do
-      {{:ok, _}, :ok} ->
-        Logger.info("CLI initialization completed successfully in #{duration}ms")
-        {:noreply, %{initialized: true, initialization_time: end_time}}
+    # Log initialization results and update state
+    new_state =
+      case {load_settings_result, register_callbacks_result} do
+        {{:ok, _}, :ok} ->
+          Logger.info("CLI initialization completed successfully in #{duration}ms")
+          # Clear initialization flag since we're done initializing
+          Arca.Cli.clear_initialization_phase()
+          %{initialized: true, initialization_time: end_time}
 
-      _ ->
-        Logger.error(
-          "CLI initialization failed: settings=#{inspect(load_settings_result)}, callbacks=#{inspect(register_callbacks_result)}"
-        )
+        _ ->
+          Logger.error(
+            "CLI initialization failed: settings=#{inspect(load_settings_result)}, callbacks=#{inspect(register_callbacks_result)}"
+          )
 
-        {:noreply,
-         %{
-           initialized: false,
-           initialization_time: end_time,
-           errors: [load_settings_result, register_callbacks_result]
-         }}
-    end
+          # Keep initialization flag set since we failed to initialize
+          %{
+            initialized: false,
+            initialization_time: end_time,
+            errors: [load_settings_result, register_callbacks_result]
+          }
+      end
+
+    {:noreply, new_state}
   end
 
   @impl true
