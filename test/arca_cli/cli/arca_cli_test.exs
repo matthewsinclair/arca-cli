@@ -2,6 +2,7 @@ defmodule Arca.Cli.Test do
   use ExUnit.Case
   import ExUnit.CaptureIO
   alias Arca.Cli
+  alias Arca.Cli.Test.Support
   doctest Arca.Cli
 
   @cli_commands [
@@ -34,6 +35,9 @@ defmodule Arca.Cli.Test do
       config_file_path = Path.join(test_config_path, test_config_file)
       File.mkdir_p!(test_config_path)
       File.write!(config_file_path, Jason.encode!(%{}, pretty: true))
+
+      # Ensure History GenServer is started
+      Support.ensure_history_started()
 
       # Clean up on exit
       on_exit(fn ->

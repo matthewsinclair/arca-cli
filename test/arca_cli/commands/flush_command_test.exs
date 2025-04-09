@@ -20,6 +20,9 @@ defmodule Arca.Cli.Commands.FlushCommandTest do
         System.get_env("ARCA_CONFIG_PATH")
       )
 
+      # Ensure the History GenServer is running for tests that will use it
+      Support.ensure_history_started()
+
       # Put things back how we found them
       on_exit(fn -> System.put_env(previous_env) end)
 
