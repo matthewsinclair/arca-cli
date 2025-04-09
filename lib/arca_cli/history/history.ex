@@ -67,6 +67,8 @@ defmodule Arca.Cli.History do
     - `{:error, reason}` on failure
 
   ## Examples
+      iex> # Ensure the GenServer is started
+      iex> {:ok, _} = Arca.Cli.History.start_link()
       iex> is_pid(Process.whereis(Arca.Cli.History))
       true
   """
@@ -83,7 +85,8 @@ defmodule Arca.Cli.History do
     - `{:error, error_type, reason}` on failure
 
   ## Examples
-      iex> # .History.start_link() is already started
+      iex> # Ensure the GenServer is started
+      iex> {:ok, _} = Arca.Cli.History.start_link()
       iex> {:ok, %Arca.Cli.History.CliHistory{}} = Arca.Cli.History.get_state()
   """
   @spec get_state() :: result(state())
@@ -109,6 +112,8 @@ defmodule Arca.Cli.History do
     - `{:error, error_type, reason}` on failure
 
   ## Examples
+      iex> # Ensure the GenServer is started
+      iex> {:ok, _} = Arca.Cli.History.start_link()
       iex> Arca.Cli.History.flush_history()
       iex> {:ok, [{0, "echo 'Hello World'"}]} = Arca.Cli.History.push_cmd("echo 'Hello World'")
   """
@@ -137,6 +142,8 @@ defmodule Arca.Cli.History do
     - `{:error, error_type, reason}` on failure
 
   ## Examples
+      iex> # Ensure the GenServer is started
+      iex> {:ok, _} = Arca.Cli.History.start_link()
       iex> Arca.Cli.History.flush_history()
       iex> Arca.Cli.History.push_cmd("echo 'Hello World'")
       iex> {:ok, 1} = Arca.Cli.History.get_history_length()
@@ -161,6 +168,8 @@ defmodule Arca.Cli.History do
     - `{:error, error_type, reason}` on failure
 
   ## Examples
+      iex> # Ensure the GenServer is started
+      iex> {:ok, _} = Arca.Cli.History.start_link()
       iex> Arca.Cli.History.flush_history()
       iex> Arca.Cli.History.push_cmd("echo 'Hello World'")
       iex> Arca.Cli.History.push_cmd("ls -l")
@@ -188,6 +197,8 @@ defmodule Arca.Cli.History do
     - `{:error, error_type, reason}` on failure
 
   ## Examples
+      iex> # Ensure the GenServer is started
+      iex> {:ok, _} = Arca.Cli.History.start_link()
       iex> Arca.Cli.History.push_cmd("echo 'Hello World'")
       iex> {:ok, []} = Arca.Cli.History.flush_history()
   """

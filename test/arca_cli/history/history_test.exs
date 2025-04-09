@@ -1,20 +1,14 @@
 defmodule Arca.Cli.History.Test do
   use ExUnit.Case, async: false
   alias Arca.Cli.History, as: History
+  alias Arca.Cli.Test.Support
 
   doctest Arca.Cli.History
 
   describe "Arca.Cli.History" do
     setup do
-      case History.start_link() do
-        {:ok, _pid} ->
-          # Was started, great!
-          :ok
-
-        _ ->
-          # Was already started, who cares!?
-          :ok
-      end
+      # Use our centralized test support function to ensure History is available
+      Support.ensure_history_started()
 
       {:ok, %{}}
     end
