@@ -211,8 +211,8 @@ defmodule Arca.Cli do
     # If initialization is still in progress, this will return defaults
     result = load_settings()
 
-    # Check initialization status for appropriate logging
-    check_initialization_status()
+    # # Check initialization status for appropriate logging
+    # check_initialization_status()
 
     # Use a pattern match that the type checker can understand
     settings =
@@ -261,23 +261,23 @@ defmodule Arca.Cli do
     :ok
   end
 
-  # Check initialization status and log appropriately
-  defp check_initialization_status do
-    # Skip checking in test mode
-    unless Mix.env() == :test do
-      if Process.whereis(Arca.Cli.Configurator.Initializer) != nil do
-        status = Arca.Cli.Configurator.Initializer.status()
+  # # Check initialization status and log appropriately
+  # defp check_initialization_status do
+  #   # Skip checking in test mode
+  #   unless Mix.env() == :test do
+  #     if Process.whereis(Arca.Cli.Configurator.Initializer) != nil do
+  #       status = Arca.Cli.Configurator.Initializer.status()
 
-        # Only log a warning if initialization isn't complete
-        unless Map.get(status, :initialized, false) do
-          Logger.debug("CLI initialization not yet complete - using default settings")
-        end
-      else
-        # Initializer not started - this shouldn't happen in normal operation
-        Logger.debug("CLI initializer not started - using default settings")
-      end
-    end
-  end
+  #       # # Only log a warning if initialization isn't complete
+  #       # unless Map.get(status, :initialized, false) do
+  #       #   Logger.debug("CLI initialization not yet complete - using default settings")
+  #       # end
+  #     else
+  #       # Initializer not started - this shouldn't happen in normal operation
+  #       Logger.debug("CLI initializer not started - using default settings")
+  #     end
+  #   end
+  # end
 
   @doc """
   Parse the command line arguments and dispatch to the appropriate handler.
@@ -418,7 +418,7 @@ defmodule Arca.Cli do
   ## Parameters
     - cmd: Command name (atom or string)
     - help_text: Raw help text from command config
-    
+
   ## Returns
     - Formatted help text in a list of strings with proper formatting
   """
@@ -908,13 +908,13 @@ defmodule Arca.Cli do
       # or by checking the calling process's ancestry
       if is_initialization_phase?() do
         # During initialization, return conservative defaults
-        Logger.debug("Arca.Cli.load_settings called during initialization phase - using defaults")
+        # Logger.debug("Arca.Cli.load_settings called during initialization phase - using defaults")
         {:ok, %{}}
       else
         try do
           # First, make sure our server is up
           unless Process.whereis(Arca.Config.Server) do
-            Logger.debug("Arca.Config.Server not started - returning empty settings")
+            # Logger.debug("Arca.Config.Server not started - returning empty settings")
             return_empty_settings()
           else
             case Arca.Config.Server.reload() do
