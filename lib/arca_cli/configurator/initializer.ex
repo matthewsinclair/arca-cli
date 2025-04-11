@@ -55,7 +55,7 @@ defmodule Arca.Cli.Configurator.Initializer do
     # Logger.debug("Starting delayed CLI initialization")
 
     # Perform initialization tasks
-    start_time = System.monotonic_time(:millisecond)
+    # start_time = System.monotonic_time(:millisecond)
 
     # Step 1: Load settings from Arca.Config
     load_settings_result =
@@ -78,13 +78,13 @@ defmodule Arca.Cli.Configurator.Initializer do
       end
 
     end_time = System.monotonic_time(:millisecond)
-    duration = end_time - start_time
+    # duration = end_time - start_time
 
     # Log initialization results and update state
     new_state =
       case {load_settings_result, register_callbacks_result} do
         {{:ok, _}, :ok} ->
-          Logger.info("CLI initialization completed successfully in #{duration}ms")
+          # Logger.info("CLI initialization completed successfully in #{duration}ms")
           # Clear initialization flag since we're done initializing
           Arca.Cli.clear_initialization_phase()
           %{initialized: true, initialization_time: end_time}
