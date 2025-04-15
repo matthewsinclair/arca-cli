@@ -18,6 +18,7 @@ config :arca_cli,
   author: "hello@arca.io",
   url: "https://arca.io",
   prompt_symbol: "📦",
+  debug_mode: false,
   configurators: [
     Arca.Cli.Configurator.DftConfigurator
   ]
