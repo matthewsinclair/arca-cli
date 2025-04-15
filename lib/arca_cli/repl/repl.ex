@@ -17,6 +17,7 @@ defmodule Arca.Cli.Repl do
 
   alias Arca.Cli
   alias Arca.Cli.Callbacks
+  alias Arca.Cli.ErrorHandler
   alias Arca.Cli.History
   alias Arca.Cli.Utils
   require Logger
@@ -35,7 +36,7 @@ defmodule Arca.Cli.Repl do
   @typedoc """
   Standard result tuple for operations that might fail
   """
-  @type result(t) :: {:ok, t} | {:error, error_type(), String.t()}
+  @type result(t) :: {:ok, t} | {:error, error_type(), String.t()} | ErrorHandler.enhanced_error()
 
   @doc """
   Kicks off the REPL loop.
@@ -139,11 +140,31 @@ defmodule Arca.Cli.Repl do
       {:eof} ->
         {:ok, :quit}
 
-      # Handle errors from any step in the pipeline
+      # Handle enhanced error format (with debug info)
+      {:error, error_type, reason, debug_info} ->
+        # Use ErrorHandler to format and display the error
+        debug_enabled = Application.get_env(:arca_cli, :debug_mode, false)
+
+        formatted =
+          ErrorHandler.format_error({:error, error_type, reason, debug_info},
+            debug: debug_enabled
+          )
+
+        IO.puts(formatted)
+
+        # Continue the REPL
+        repl(args, settings, optimus)
+
+      # Handle standard error tuples for backward compatibility
       {:error, error_type, reason} ->
-        # Handle error and display to user
-        error_message = format_error(error_type, reason)
-        print_error(error_message)
+        # Convert to enhanced error format
+        enhanced_error =
+          ErrorHandler.create_error(error_type, reason, error_location: "Arca.Cli.Repl")
+
+        # Format and display
+        debug_enabled = Application.get_env(:arca_cli, :debug_mode, false)
+        formatted = ErrorHandler.format_error(enhanced_error, debug: debug_enabled)
+        IO.puts(formatted)
 
         # Continue the REPL
         repl(args, settings, optimus)
@@ -153,6 +174,8 @@ defmodule Arca.Cli.Repl do
   @doc """
   Format an error message based on error type and reason.
 
+  @deprecated "Use Arca.Cli.ErrorHandler.format_error/2 instead"
+
   ## Parameters
     - error_type: The type of error
     - reason: Error details
@@ -160,6 +183,7 @@ defmodule Arca.Cli.Repl do
   ## Returns
     - Formatted error message string
   """
+  @deprecated "Use Arca.Cli.ErrorHandler.format_error/2 instead"
   @spec format_error(error_type(), String.t()) :: String.t()
   def format_error(:input_error, reason), do: "Input error: #{reason}"
   def format_error(:evaluation_error, reason), do: "Evaluation error: #{reason}"
@@ -173,20 +197,27 @@ defmodule Arca.Cli.Repl do
   Print an error message to the user.
 
   ## Parameters
-    - error_message: The error message to display
+    - error_message: The error message to display (string, error tuple, or enhanced error tuple)
 
   ## Returns
     - :ok on success
   """
-  @spec print_error(String.t()) :: :ok
+  @spec print_error(String.t() | ErrorHandler.enhanced_error() | Arca.Cli.error_tuple()) :: :ok
   def print_error(error_message) do
-    formatted = Cli.handle_error(error_message)
-    print_result(formatted)
+    # Check if debug mode is enabled
+    debug_enabled = Application.get_env(:arca_cli, :debug_mode, false)
+
+    # Format the error using the central ErrorHandler
+    formatted = ErrorHandler.format_error(error_message, debug: debug_enabled)
+
+    # Print the formatted error
+    IO.puts(formatted)
     :ok
   end
 
   # Parse REPL input into dispatchable params with error handling
-  @spec read([String.t()], map(), term()) :: result(String.t() | [String.t()] | :eof)
+  @spec read([String.t()], map(), term()) ::
+          result(String.t() | [String.t()] | :eof) | ErrorHandler.enhanced_error()
   defp read(args, settings, optimus) do
     with {:ok, prompt} <- get_prompt(),
          {:ok, input} <- read_with_prompt(args, settings, optimus, prompt) do
@@ -201,14 +232,24 @@ defmodule Arca.Cli.Repl do
     - {:ok, prompt} with the formatted prompt string
     - {:error, error_type, reason} on failure
   """
-  @spec get_prompt() :: result(String.t())
+  @spec get_prompt() :: result(String.t()) | ErrorHandler.enhanced_error()
   def get_prompt() do
     try do
       prompt = repl_prompt()
       {:ok, prompt}
     rescue
       e ->
-        {:error, :prompt_error, "Failed to generate prompt: #{inspect(e)}"}
+        # Capture stack trace for debugging
+        stacktrace = __STACKTRACE__
+
+        # Create enhanced error with debug info
+        ErrorHandler.create_error(
+          :prompt_error,
+          "Failed to generate prompt: #{Exception.message(e)}",
+          stack_trace: stacktrace,
+          original_error: e,
+          error_location: "Arca.Cli.Repl.get_prompt/0"
+        )
     end
   end
 
@@ -225,8 +266,10 @@ defmodule Arca.Cli.Repl do
         {:ok, input} ->
           {:ok, input <> "\n"}
 
-        {:error, error_type, reason} ->
-          {:error, error_type, reason}
+        # Both get_input_with_completion and get_standard_input now 
+        # return enhanced error format by default, so we just pass through
+        error = {:error, _, _, _} ->
+          error
       end
     else
       # Fallback to standard IO.gets if ExPrompt is not available
@@ -237,8 +280,9 @@ defmodule Arca.Cli.Repl do
         {:ok, input} ->
           {:ok, input}
 
-        {:error, error_type, reason} ->
-          {:error, error_type, reason}
+        # Pass through enhanced errors directly
+        error = {:error, _, _, _} ->
+          error
       end
     end
   end
@@ -254,7 +298,8 @@ defmodule Arca.Cli.Repl do
     - {:ok, :eof} if end-of-file is reached
     - {:error, error_type, reason} on input error
   """
-  @spec get_standard_input(String.t()) :: result(String.t() | :eof)
+  @spec get_standard_input(String.t()) ::
+          result(String.t() | :eof) | ErrorHandler.enhanced_error()
   def get_standard_input(prompt) do
     try do
       case IO.gets(prompt) do
@@ -266,7 +311,17 @@ defmodule Arca.Cli.Repl do
       end
     rescue
       e ->
-        {:error, :input_error, "Failed to read input: #{inspect(e)}"}
+        # Capture stack trace for debugging
+        stacktrace = __STACKTRACE__
+
+        # Create enhanced error with debug info
+        ErrorHandler.create_error(
+          :input_error,
+          "Failed to read input: #{Exception.message(e)}",
+          stack_trace: stacktrace,
+          original_error: e,
+          error_location: "Arca.Cli.Repl.get_standard_input/1"
+        )
     end
   end
 
@@ -283,7 +338,8 @@ defmodule Arca.Cli.Repl do
     - {:ok, :eof} if end-of-file is reached
     - {:error, error_type, reason} on input error
   """
-  @spec get_input_with_completion(String.t(), map(), term()) :: result(String.t() | :eof)
+  @spec get_input_with_completion(String.t(), map(), term()) ::
+          result(String.t() | :eof) | ErrorHandler.enhanced_error()
   def get_input_with_completion(prompt, settings \\ %{}, optimus \\ nil) do
     try do
       input = prompt_with_completion(prompt, settings, optimus)
@@ -297,7 +353,17 @@ defmodule Arca.Cli.Repl do
       end
     rescue
       e ->
-        {:error, :input_error, "Failed to read input with completion: #{inspect(e)}"}
+        # Capture stack trace for debugging
+        stacktrace = __STACKTRACE__
+
+        # Create enhanced error with debug info
+        ErrorHandler.create_error(
+          :input_error,
+          "Failed to read input with completion: #{Exception.message(e)}",
+          stack_trace: stacktrace,
+          original_error: e,
+          error_location: "Arca.Cli.Repl.get_input_with_completion/3"
+        )
     end
   end
 
@@ -442,14 +508,29 @@ defmodule Arca.Cli.Repl do
   end
 
   # Evaluate input with proper error handling using Railway-Oriented Programming
-  @spec eval(any(), map(), term()) :: result(any())
+  @spec eval(any(), map(), term()) :: result(any()) | ErrorHandler.enhanced_error()
   defp eval(input, settings, optimus) do
     try do
       result = do_eval(input, settings, optimus)
       {:ok, result}
     rescue
       e ->
-        {:error, :evaluation_error, "Failed to evaluate command: #{Exception.message(e)}"}
+        # Capture stack trace and create enhanced error
+        stacktrace = __STACKTRACE__
+
+        # Log the error with stack trace
+        Logger.error(
+          "Failed to evaluate command: #{Exception.message(e)}\n#{Exception.format_stacktrace(stacktrace)}"
+        )
+
+        # Return enhanced error with debug info
+        ErrorHandler.create_error(
+          :evaluation_error,
+          "Failed to evaluate command: #{Exception.message(e)}",
+          stack_trace: stacktrace,
+          original_error: e,
+          error_location: "Arca.Cli.Repl.eval/3"
+        )
     end
   end
 
@@ -556,14 +637,24 @@ defmodule Arca.Cli.Repl do
     - {:ok, args_list} with the tokenized arguments
     - {:error, error_type, reason} on tokenization failure
   """
-  @spec split_args(String.t()) :: result([String.t()])
+  @spec split_args(String.t()) :: result([String.t()]) | ErrorHandler.enhanced_error()
   def split_args(input) do
     try do
       args_list = split_preserving_quotes(input)
       {:ok, args_list}
     rescue
       e ->
-        {:error, :tokenization_error, "Failed to parse command: #{Exception.message(e)}"}
+        # Capture stack trace for debugging
+        stacktrace = __STACKTRACE__
+
+        # Create enhanced error with debug info
+        ErrorHandler.create_error(
+          :tokenization_error,
+          "Failed to parse command: #{Exception.message(e)}",
+          stack_trace: stacktrace,
+          original_error: e,
+          error_location: "Arca.Cli.Repl.split_args/1"
+        )
     end
   end
 
@@ -812,7 +903,8 @@ defmodule Arca.Cli.Repl do
   def eval_for_redo({_history_id, history_cmd}, settings, optimus) when is_binary(history_cmd) do
     case eval(history_cmd, settings, optimus) do
       {:ok, result} -> result
-      {:error, _error_type, reason} -> "Error redoing command: #{reason}"
+      # Handle enhanced error format
+      {:error, _error_type, reason, _debug_info} -> "Error redoing command: #{reason}"
     end
   end
 
@@ -833,11 +925,12 @@ defmodule Arca.Cli.Repl do
     - For other {:ok, _} or {:error, _, _} tuples, returns without printing
     - For all other values, prints the result and returns it
   """
-  @spec print_result(any()) :: result(any())
+  @spec print_result(any()) :: result(any()) | ErrorHandler.enhanced_error()
   def print_result({:nooutput, _} = result), do: {:ok, result}
   def print_result({:ok, :quit} = result), do: {:ok, result}
   def print_result({:ok, _} = result), do: {:ok, result}
   def print_result({:error, _, _} = result), do: {:ok, result}
+  def print_result({:error, _, _, _} = result), do: {:ok, result}
 
   def print_result(result) do
     try do
@@ -845,7 +938,17 @@ defmodule Arca.Cli.Repl do
       {:ok, printed}
     rescue
       e ->
-        {:error, :output_error, "Failed to display output: #{Exception.message(e)}"}
+        # Capture stack trace for debugging
+        stacktrace = __STACKTRACE__
+
+        # Create enhanced error with debug info
+        ErrorHandler.create_error(
+          :output_error,
+          "Failed to display output: #{Exception.message(e)}",
+          stack_trace: stacktrace,
+          original_error: e,
+          error_location: "Arca.Cli.Repl.print_result/1"
+        )
     end
   end
 
