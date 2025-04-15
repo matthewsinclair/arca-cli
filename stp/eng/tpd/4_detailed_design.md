@@ -281,6 +281,71 @@ Future improvements to the error handling system could include:
 1. **Command-specific error handlers** using protocols to allow custom error formatting
 2. **Enhanced formatting** with ANSI colors for better visual hierarchy
 3. **Clickable file paths** in stack traces for improved developer experience
+4. **Error handling macros** to simplify error creation and formatting with automatic location tracking
+
+### Error Handling Macros
+
+To simplify error creation and formatting, a macro-based approach can be implemented:
+
+```elixir
+defmodule Arca.Cli.ErrorHandler do
+  # Existing code...
+  
+  defmacro __using__(_) do
+    quote do
+      import Arca.Cli.ErrorHandler, only: [create_and_format_error: 2, create_and_format_error: 3]
+    end
+  end
+  
+  defmacro create_and_format_error(error_type, message, opts \\ []) do
+    quote do
+      error_location = "#{__MODULE__}.#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
+      
+      unquote(opts)
+      |> Keyword.put(:error_location, error_location)
+      |> (&Arca.Cli.ErrorHandler.create_error(unquote(error_type), unquote(message), &1)).()
+      |> Arca.Cli.ErrorHandler.format_error()
+    end
+  end
+end
+```
+
+This approach provides several benefits:
+
+1. **Automatic location tracking**: The macro automatically captures the current module and function name
+2. **Simplified usage**: Reduces boilerplate code when creating and formatting errors
+3. **Consistency**: Ensures standardized error formatting across the codebase
+
+Example usage:
+
+```elixir
+# Before: Manual error creation and formatting
+defp validate_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
+  module = __MODULE__
+  function = "#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
+  error_location = "#{module}.#{function}"
+  
+  error = ErrorHandler.create_error(
+    :validation_error,
+    "Limit must be a positive integer",
+    error_location: error_location
+  )
+  
+  ctx
+  |> Ctx.add_error(:validation, ErrorHandler.format_error(error))
+  |> Ctx.complete()
+end
+
+# After: Using the macro
+defp validate_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
+  ctx
+  |> Ctx.add_error(:validation, create_and_format_error(
+       :validation_error, 
+       "Limit must be a positive integer"
+     ))
+  |> Ctx.complete()
+end
+```
 
 ## 4.2 REPL System
 

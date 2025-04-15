@@ -2,6 +2,9 @@ defmodule Arca.Cli.ErrorHandlerTest do
   use ExUnit.Case, async: true
   alias Arca.Cli.ErrorHandler
 
+  # Import the macro for testing
+  require Arca.Cli.ErrorHandler
+
   describe "create_error/3" do
     test "creates an enhanced error tuple with debug info" do
       error = ErrorHandler.create_error(:command_failed, "Test error")
@@ -157,6 +160,42 @@ defmodule Arca.Cli.ErrorHandlerTest do
     test "passes through non-error values unchanged" do
       assert ErrorHandler.to_legacy_error("success") == "success"
       assert ErrorHandler.to_legacy_error({:ok, "result"}) == {:ok, "result"}
+    end
+  end
+
+  describe "create_and_format_error/3" do
+    test "creates and formats an error with location information" do
+      # Use the macro
+      formatted = ErrorHandler.create_and_format_error(:validation_error, "Test error")
+
+      # Verify the formatted output contains the error info
+      assert formatted =~ "Error (validation_error): Test error"
+
+      # Would automatically include the current module and function as location
+      # but we can't easily test that in a static test
+    end
+
+    test "respects additional options" do
+      # Use the macro with extra options
+      formatted =
+        ErrorHandler.create_and_format_error(
+          :config_error,
+          "Configuration error",
+          original_error: ArgumentError.exception("Invalid config")
+        )
+
+      assert formatted =~ "Error (config_error): Configuration error"
+
+      # Test with debug mode to see if original_error was properly included
+      debug_formatted =
+        ErrorHandler.create_error(
+          :config_error,
+          "Configuration error",
+          original_error: ArgumentError.exception("Invalid config")
+        )
+        |> ErrorHandler.format_error(debug: true)
+
+      assert debug_formatted =~ "Original error: %ArgumentError{message: \"Invalid config\"}"
     end
   end
 end

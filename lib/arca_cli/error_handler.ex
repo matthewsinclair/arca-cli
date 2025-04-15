@@ -12,9 +12,16 @@ defmodule Arca.Cli.ErrorHandler do
   - Debug mode support
   - Stack trace formatting
   - Legacy error format support
+  - Macros for simplified error creation and formatting
   """
 
   require Logger
+
+  defmacro __using__(_) do
+    quote do
+      import Arca.Cli.ErrorHandler, only: [create_and_format_error: 2, create_and_format_error: 3]
+    end
+  end
 
   @typedoc """
   Types of errors that can occur in CLI operations.
@@ -303,5 +310,36 @@ defmodule Arca.Cli.ErrorHandler do
       line = Keyword.get(location, :line, "<unknown>")
       "    #{inspect(module)}.#{function}/#{arity} (#{file}:#{line})"
     end)
+  end
+
+  @doc """
+  Creates and formats an error with automatic location tracking.
+
+  This macro automatically adds the current module and function name 
+  to the error location, simplifying error creation and formatting
+  in a single operation.
+
+  ## Parameters
+    - error_type: The type of error (atom)
+    - message: Description of the error
+    - opts: Additional options for create_error (optional)
+
+  ## Returns
+    - A formatted error string ready for display
+
+  ## Examples
+
+      iex> create_and_format_error(:validation_error, "Invalid input")
+      "Error (validation_error): Invalid input"
+  """
+  defmacro create_and_format_error(error_type, message, opts \\ []) do
+    quote do
+      error_location = "#{__MODULE__}.#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
+
+      unquote(opts)
+      |> Keyword.put(:error_location, error_location)
+      |> (&Arca.Cli.ErrorHandler.create_error(unquote(error_type), unquote(message), &1)).()
+      |> Arca.Cli.ErrorHandler.format_error()
+    end
   end
 end
