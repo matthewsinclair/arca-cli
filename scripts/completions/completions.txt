@@ -1,4 +1,5 @@
 about
+cli.debug
 cli.history
 cli.redo
 cli.status
