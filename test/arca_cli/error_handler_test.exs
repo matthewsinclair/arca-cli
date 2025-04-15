@@ -163,10 +163,48 @@ defmodule Arca.Cli.ErrorHandlerTest do
     end
   end
 
-  describe "create_and_format_error/3" do
+  describe "create_error_with_location/3" do
+    test "creates an error with automatic location information" do
+      # Use the macro
+      error = ErrorHandler.create_error_with_location(:validation_error, "Test error")
+
+      # Verify the error structure
+      assert match?(
+               {:error, :validation_error, "Test error", %{error_location: _location}},
+               error
+             )
+
+      # Extract the debug info to verify contents
+      {:error, _, _, debug_info} = error
+      assert debug_info.error_location =~ "Arca.Cli.ErrorHandlerTest"
+    end
+
+    test "respects additional options when creating error" do
+      # Use the macro with extra options
+      original_error = ArgumentError.exception("Invalid config")
+
+      error =
+        ErrorHandler.create_error_with_location(
+          :config_error,
+          "Configuration error",
+          original_error: original_error
+        )
+
+      # Verify error structure with extra options
+      assert match?({:error, :config_error, "Configuration error", %{}}, error)
+
+      # Extract debug info to check original_error was included
+      {:error, _, _, debug_info} = error
+      assert debug_info.error_location =~ "Arca.Cli.ErrorHandlerTest"
+      assert debug_info.original_error == original_error
+    end
+  end
+
+  describe "create_and_format_error_with_location/3" do
     test "creates and formats an error with location information" do
       # Use the macro
-      formatted = ErrorHandler.create_and_format_error(:validation_error, "Test error")
+      formatted =
+        ErrorHandler.create_and_format_error_with_location(:validation_error, "Test error")
 
       # Verify the formatted output contains the error info
       assert formatted =~ "Error (validation_error): Test error"
@@ -178,7 +216,7 @@ defmodule Arca.Cli.ErrorHandlerTest do
     test "respects additional options" do
       # Use the macro with extra options
       formatted =
-        ErrorHandler.create_and_format_error(
+        ErrorHandler.create_and_format_error_with_location(
           :config_error,
           "Configuration error",
           original_error: ArgumentError.exception("Invalid config")
@@ -187,6 +225,74 @@ defmodule Arca.Cli.ErrorHandlerTest do
       assert formatted =~ "Error (config_error): Configuration error"
 
       # Test with debug mode to see if original_error was properly included
+      debug_formatted =
+        ErrorHandler.create_error(
+          :config_error,
+          "Configuration error",
+          original_error: ArgumentError.exception("Invalid config")
+        )
+        |> ErrorHandler.format_error(debug: true)
+
+      assert debug_formatted =~ "Original error: %ArgumentError{message: \"Invalid config\"}"
+    end
+  end
+
+  describe "cloc/3 (shorthand for create_error_with_location)" do
+    test "provides a shorthand for create_error_with_location" do
+      # Use the shorthand macro
+      error = ErrorHandler.cloc(:validation_error, "Test error")
+
+      # Verify the error structure is the same as with the long form
+      assert match?(
+               {:error, :validation_error, "Test error", %{error_location: _location}},
+               error
+             )
+
+      # Extract the debug info to verify contents
+      {:error, _, _, debug_info} = error
+      assert debug_info.error_location =~ "Arca.Cli.ErrorHandlerTest"
+    end
+
+    test "accepts options and passes them through" do
+      original_error = ArgumentError.exception("Invalid config")
+
+      error =
+        ErrorHandler.cloc(
+          :config_error,
+          "Configuration error",
+          original_error: original_error
+        )
+
+      # Check that options were passed through correctly
+      {:error, _, _, debug_info} = error
+      assert debug_info.error_location =~ "Arca.Cli.ErrorHandlerTest"
+      assert debug_info.original_error == original_error
+    end
+  end
+
+  describe "cfloc/3 (shorthand for create_and_format_error_with_location)" do
+    test "provides a shorthand for create_and_format_error_with_location" do
+      # Use the shorthand macro
+      formatted = ErrorHandler.cfloc(:validation_error, "Test error")
+
+      # Verify the formatted output is the same as with the long form
+      assert formatted =~ "Error (validation_error): Test error"
+    end
+
+    test "accepts options and passes them through" do
+      original_error = ArgumentError.exception("Invalid config")
+
+      formatted =
+        ErrorHandler.cfloc(
+          :config_error,
+          "Configuration error",
+          original_error: original_error
+        )
+
+      # Verify it works the same as the long form
+      assert formatted =~ "Error (config_error): Configuration error"
+
+      # Test with debug output to see if the options were passed through
       debug_formatted =
         ErrorHandler.create_error(
           :config_error,

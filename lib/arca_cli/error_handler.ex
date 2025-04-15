@@ -19,7 +19,17 @@ defmodule Arca.Cli.ErrorHandler do
 
   defmacro __using__(_) do
     quote do
-      import Arca.Cli.ErrorHandler, only: [create_and_format_error: 2, create_and_format_error: 3]
+      import Arca.Cli.ErrorHandler,
+        only: [
+          create_error_with_location: 2,
+          create_error_with_location: 3,
+          create_and_format_error_with_location: 2,
+          create_and_format_error_with_location: 3,
+          cloc: 2,
+          cloc: 3,
+          cfloc: 2,
+          cfloc: 3
+        ]
     end
   end
 
@@ -313,6 +323,35 @@ defmodule Arca.Cli.ErrorHandler do
   end
 
   @doc """
+  Creates an enhanced error tuple with automatic location tracking.
+
+  This macro automatically adds the current module and function name 
+  to the error location, simplifying error creation.
+
+  ## Parameters
+    - error_type: The type of error (atom)
+    - message: Description of the error
+    - opts: Additional options for create_error (optional)
+
+  ## Returns
+    - An enhanced error tuple with automatically populated location
+
+  ## Examples
+
+      iex> create_error_with_location(:validation_error, "Invalid input")
+      {:error, :validation_error, "Invalid input", %{error_location: "CurrentModule.current_function/1", ...}}
+  """
+  defmacro create_error_with_location(error_type, message, opts \\ []) do
+    quote do
+      error_location = "#{__MODULE__}.#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
+
+      unquote(opts)
+      |> Keyword.put(:error_location, error_location)
+      |> (&Arca.Cli.ErrorHandler.create_error(unquote(error_type), unquote(message), &1)).()
+    end
+  end
+
+  @doc """
   Creates and formats an error with automatic location tracking.
 
   This macro automatically adds the current module and function name 
@@ -329,10 +368,10 @@ defmodule Arca.Cli.ErrorHandler do
 
   ## Examples
 
-      iex> create_and_format_error(:validation_error, "Invalid input")
+      iex> create_and_format_error_with_location(:validation_error, "Invalid input")
       "Error (validation_error): Invalid input"
   """
-  defmacro create_and_format_error(error_type, message, opts \\ []) do
+  defmacro create_and_format_error_with_location(error_type, message, opts \\ []) do
     quote do
       error_location = "#{__MODULE__}.#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
 
@@ -340,6 +379,52 @@ defmodule Arca.Cli.ErrorHandler do
       |> Keyword.put(:error_location, error_location)
       |> (&Arca.Cli.ErrorHandler.create_error(unquote(error_type), unquote(message), &1)).()
       |> Arca.Cli.ErrorHandler.format_error()
+    end
+  end
+
+  @doc """
+  Shorthand alias for create_error_with_location/3.
+
+  This macro provides a shorter name for the create_error_with_location macro.
+
+  ## Parameters
+    - error_type: The type of error (atom)
+    - message: Description of the error
+    - opts: Additional options for create_error (optional)
+    
+  ## Returns
+    - An enhanced error tuple with automatically populated location
+  """
+  defmacro cloc(error_type, message, opts \\ []) do
+    quote do
+      Arca.Cli.ErrorHandler.create_error_with_location(
+        unquote(error_type),
+        unquote(message),
+        unquote(opts)
+      )
+    end
+  end
+
+  @doc """
+  Shorthand alias for create_and_format_error_with_location/3.
+
+  This macro provides a shorter name for the create_and_format_error_with_location macro.
+
+  ## Parameters
+    - error_type: The type of error (atom)
+    - message: Description of the error
+    - opts: Additional options for create_error (optional)
+    
+  ## Returns
+    - A formatted error string ready for display
+  """
+  defmacro cfloc(error_type, message, opts \\ []) do
+    quote do
+      Arca.Cli.ErrorHandler.create_and_format_error_with_location(
+        unquote(error_type),
+        unquote(message),
+        unquote(opts)
+      )
     end
   end
 end
