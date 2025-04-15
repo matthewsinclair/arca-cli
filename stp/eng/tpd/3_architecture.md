@@ -37,6 +37,7 @@ The CLI Core is responsible for:
 - Coordinating between system components
 
 Key modules:
+
 - `Arca.Cli`: Main entry point and coordination
 - `Arca.Cli.Supervisor.HistorySupervisor`: Supervision tree for stateful components
 
@@ -45,6 +46,7 @@ Key modules:
 Commands are self-contained modules that implement specific functionality. They follow a consistent interface defined by the `CommandBehaviour`.
 
 Key modules:
+
 - `Arca.Cli.Command.CommandBehaviour`: Protocol for command implementation
 - `Arca.Cli.Command.BaseCommand`: Base implementation for standard commands
 - `Arca.Cli.Command.BaseSubCommand`: Base implementation for subcommands
@@ -55,6 +57,7 @@ Key modules:
 Configurators are responsible for defining CLI configuration, including command registration and system settings.
 
 Key modules:
+
 - `Arca.Cli.Configurator.ConfiguratorBehaviour`: Protocol for configurator implementation
 - `Arca.Cli.Configurator.BaseConfigurator`: Base implementation for configurators
 - `Arca.Cli.Configurator.DftConfigurator`: Default configurator with standard commands
@@ -65,6 +68,7 @@ Key modules:
 The REPL system provides an interactive command execution environment with features like command history and tab completion.
 
 Key modules:
+
 - `Arca.Cli.Repl.Repl`: Main REPL implementation
 - Integration with `rlwrap` for enhanced terminal capabilities
 
@@ -73,6 +77,7 @@ Key modules:
 The History component tracks and persists command execution history.
 
 Key modules:
+
 - `Arca.Cli.History.History`: GenServer implementation for history tracking
 - Persistence mechanisms for history storage
 
@@ -81,6 +86,7 @@ Key modules:
 Utilities provide common functionality used across the system.
 
 Key modules:
+
 - `Arca.Cli.Utils.Utils`: General utility functions
 - String manipulation and type conversion helpers
 
@@ -109,18 +115,21 @@ Key modules:
 ### 3.4.1 Command Line Interface
 
 The system provides a command-line interface through:
+
 - Direct invocation via `arca_cli [command] [args]`
 - Interactive mode via `arca_cli repl`
 
 ### 3.4.2 Configuration Files
 
 The system uses JSON configuration files stored in:
+
 - Default location: `~/.arca/arca_cli.json`
 - Custom location specified by environment variables
 
 ### 3.4.3 Application Integration
 
 Applications can integrate with Arca.Cli by:
+
 - Adding it as a dependency
 - Creating custom configurators
 - Defining application-specific commands
@@ -130,6 +139,7 @@ Applications can integrate with Arca.Cli by:
 ### 3.5.1 Behaviour-Driven Design
 
 Arca.Cli uses Elixir behaviours extensively to define clear interfaces between components. This approach:
+
 - Enables loose coupling between components
 - Facilitates extension through custom implementations
 - Simplifies testing through interface contracts
@@ -137,6 +147,7 @@ Arca.Cli uses Elixir behaviours extensively to define clear interfaces between c
 ### 3.5.2 Command Registration via Configurators
 
 The system uses Configurators to register commands rather than direct registration. This approach:
+
 - Allows grouping related commands
 - Enables prioritized command resolution
 - Supports multiple command sources (core, application, plugins)
@@ -144,6 +155,7 @@ The system uses Configurators to register commands rather than direct registrati
 ### 3.5.3 History as a Supervised GenServer
 
 Command history is implemented as a supervised GenServer rather than simple file persistence. This approach:
+
 - Ensures fault tolerance through the supervision tree
 - Optimizes performance by caching history in memory
 - Facilitates synchronized access from multiple components
@@ -151,6 +163,7 @@ Command history is implemented as a supervised GenServer rather than simple file
 ### 3.5.4 Hierarchical Command Organization
 
 Commands are organized hierarchically using dot notation. This approach:
+
 - Creates a more intuitive command structure
 - Avoids command name collisions
 - Improves discoverability through logical grouping

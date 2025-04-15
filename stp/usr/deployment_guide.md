@@ -1,9 +1,5 @@
 ---
-verblock: "23 Mar 2025:v0.5: Claude - Updated with automatic config path determination
-23 Mar 2025:v0.4: Claude - Added Arca.Config registry integration section
-19 Mar 2025:v0.3: Claude - Added output formatting integration section
-06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific deployment content
-06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
+verblock: "17 Apr 2025:v0.6: Claude - Added error handling and debug mode documentation"
 ---
 # Arca.Cli Deployment Guide
 
@@ -115,10 +111,14 @@ Configure Arca.Cli in your Elixir application:
 
 ```elixir
 # In config/config.exs
-config :arca_cli, :configurators, [
-  YourApp.Cli.Configurator,
-  Arca.Cli.Configurator.DftConfigurator
-]
+config :arca_cli, 
+  # Register configurators
+  configurators: [
+    YourApp.Cli.Configurator,
+    Arca.Cli.Configurator.DftConfigurator
+  ],
+  # Enable or disable debug mode (for detailed error information)
+  debug_mode: false  # Set to true for development environments
 
 # Configure Arca.Config with registry and file watching options
 config :arca_config,
@@ -369,6 +369,7 @@ mix deps.update arca_cli
 When upgrading to the latest version of Arca.Config with Registry integration:
 
 1. Update the dependency in mix.exs:
+
    ```elixir
    def deps do
      [
@@ -379,6 +380,7 @@ When upgrading to the latest version of Arca.Config with Registry integration:
    ```
 
 2. Ensure your application properly starts the Arca.Config supervisor:
+
    ```elixir
    # In your application.ex
    children = [
@@ -388,6 +390,7 @@ When upgrading to the latest version of Arca.Config with Registry integration:
    ```
 
 3. Update any code that directly interacts with Arca.Config to use the public API:
+
    ```elixir
    # Use public API functions
    Arca.Config.get("key.path")
@@ -396,6 +399,7 @@ When upgrading to the latest version of Arca.Config with Registry integration:
    ```
 
 4. Take advantage of the new features:
+
    ```elixir
    # Register for configuration changes
    Arca.Config.register_change_callback(:component_id, fn config -> 
@@ -429,7 +433,8 @@ When upgrading between major versions:
 
 **Problem**: The CLI reports that a command cannot be found.
 
-**Solution**: 
+**Solution**:
+
 - Verify the command is registered in your configurator
 - Check for typos in the command name
 - Ensure your configurator is registered in the application configuration
@@ -439,6 +444,7 @@ When upgrading between major versions:
 **Problem**: The CLI cannot find or load the configuration file.
 
 **Solution**:
+
 - Check that the configuration directory exists (`.app_name/` in the current directory by default, e.g., `.arca_cli/`)
 - Verify the configuration file exists and is named `config.json`
 - Set the application-specific environment variables (e.g., `ARCA_CLI_CONFIG_PATH` and `ARCA_CLI_CONFIG_FILE` for the arca_cli app) if using custom locations
@@ -448,6 +454,7 @@ When upgrading between major versions:
 **Problem**: You see errors related to the Arca.Config Registry.
 
 **Solution**:
+
 - Ensure the Arca.Config.Supervisor is started correctly
 - Check that you don't have multiple instances of Arca.Config running
 - Verify registry configuration in config.exs
@@ -457,8 +464,42 @@ When upgrading between major versions:
 **Problem**: Tab completion doesn't work in REPL mode.
 
 **Solution**:
+
 - Install `rlwrap` for improved REPL experience (`brew install rlwrap` on macOS)
 - Some terminals may require additional configuration for proper tab completion
+
+### Debug Mode for Troubleshooting
+
+Arca CLI includes an enhanced error handling system with debug mode that provides detailed error information:
+
+```bash
+# Check the current debug mode status
+arca_cli cli.debug
+Debug mode is currently OFF
+
+# Enable debug mode for detailed error information
+arca_cli cli.debug on
+Debug mode is now ON
+
+# When debug mode is enabled, errors show more detailed information:
+arca_cli some_command_with_error
+Error (command_failed): Failed to execute command
+Debug Information:
+  Time: 2025-04-17 15:30:45.123Z
+  Location: Arca.Cli.Commands.SomeCommand.handle/3
+  Original error: %RuntimeError{message: "Something went wrong"}
+  Stack trace:
+    Elixir.Arca.Cli.Commands.SomeCommand.handle/3 (lib/arca_cli/commands/some_command.ex:25)
+    Elixir.Arca.Cli.execute_command/5 (lib/arca_cli.ex:672)
+    Elixir.Arca.Cli.handle_subcommand/4 (lib/arca_cli.ex:614)
+    Elixir.Arca.Cli.main/1 (lib/arca_cli.ex:233)
+
+# Disable debug mode when finished troubleshooting
+arca_cli cli.debug off
+Debug mode is now OFF
+```
+
+The debug mode setting persists between CLI sessions, so you only need to enable it once while troubleshooting.
 
 ### Diagnostic Commands
 
@@ -473,6 +514,9 @@ arca_cli sys.info
 
 # List all settings
 arca_cli settings.all
+
+# Toggle debug mode for detailed error information
+arca_cli cli.debug on
 ```
 
 ### Getting Help

@@ -1,5 +1,6 @@
 ---
-verblock: "25 Mar 2025:v0.8: Claude - Fixed command sorting implementation"
+verblock: "17 Apr 2025:v0.9: Claude - Added error handling and debug mode documentation
+25 Mar 2025:v0.8: Claude - Fixed command sorting implementation"
 ---
 # Arca.Cli User Guide
 
@@ -336,6 +337,71 @@ end
 This is particularly useful for applications that need to react to configuration changes at runtime without polling or manual reload commands.
 
 ## Troubleshooting
+
+### Error Handling and Debug Mode
+
+Arca CLI includes an enhanced error handling system with an optional debug mode for detailed error information.
+
+#### Basic Error Messages
+
+By default, the CLI displays concise error messages that include the error type and a descriptive message:
+
+```
+Error (invalid_argument): Invalid value provided for parameter 'count', expected an integer
+```
+
+This format makes it clear what went wrong without overwhelming you with technical details.
+
+#### Using Debug Mode
+
+For more complex issues, you can enable debug mode to see detailed error information:
+
+1. **Check debug mode status**:
+   ```bash
+   $ arca_cli cli.debug
+   Debug mode is currently OFF
+   ```
+
+2. **Enable debug mode**:
+   ```bash
+   $ arca_cli cli.debug on
+   Debug mode is now ON
+   ```
+
+3. **Run commands with enhanced error details**:
+   When debug mode is enabled, errors include additional information such as stack traces, error locations, and timestamps:
+   ```
+   Error (command_failed): Error executing command example
+   Debug Information:
+     Time: 2025-04-17 15:30:45.123Z
+     Location: Arca.Cli.Commands.ExampleCommand.handle/3
+     Original error: %RuntimeError{message: "Example error message"}
+     Stack trace:
+       Elixir.Arca.Cli.execute_command/5 (lib/arca_cli.ex:672)
+       Elixir.Arca.Cli.handle_subcommand/4 (lib/arca_cli.ex:614)
+       Elixir.Arca.Cli.main/1 (lib/arca_cli.ex:233)
+   ```
+
+4. **Disable debug mode when done**:
+   ```bash
+   $ arca_cli cli.debug off
+   Debug mode is now OFF
+   ```
+
+The debug mode setting persists between CLI sessions, so you only need to enable it once while troubleshooting.
+
+#### Error Types
+
+Common error types you might encounter:
+
+| Error Type           | Description                               | Typical Solution                                |
+|----------------------|-------------------------------------------|------------------------------------------------|
+| `command_not_found`  | Command doesn't exist                     | Check command name and registration             |
+| `invalid_argument`   | Invalid parameter provided                | Check parameter format and constraints          |
+| `command_failed`     | Command execution failed                  | See error message for specific issue            |
+| `config_error`       | Configuration error                       | Verify configuration file format and values     |
+| `file_not_found`     | A required file is missing                | Check file paths and permissions                |
+| `validation_error`   | Command validation failed                 | Ensure all required parameters are provided     |
 
 ### Common Issues
 

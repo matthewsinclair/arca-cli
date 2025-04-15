@@ -12,6 +12,7 @@ Different terminal environments support different capabilities for features like
 ### 7.1.2 Mitigation Strategies
 
 1. **Feature Detection**: Detect terminal capabilities at runtime and adjust behavior accordingly
+
    ```elixir
    def detect_terminal_capabilities do
      tty? = IO.ANSI.enabled?()
@@ -43,6 +44,7 @@ As the number of commands grows, especially with third-party extensions, the ris
 ### 7.2.2 Mitigation Strategies
 
 1. **Hierarchical Namespace**: Use dot notation to organize commands into namespaces
+
    ```elixir
    # Instead of generic names:
    # - status
@@ -61,6 +63,7 @@ As the number of commands grows, especially with third-party extensions, the ris
    - Log warnings for potential collisions
 
 3. **Command Registration Validation**: Validate command names during registration
+
    ```elixir
    def register_command(commands, new_command) do
      name = new_command.config.name
@@ -87,6 +90,7 @@ As the number of commands increases, particularly with complex namespaces and su
 ### 7.3.2 Mitigation Strategies
 
 1. **Optimized Data Structures**: Use efficient data structures for command lookup
+
    ```elixir
    # Use a map for O(1) command lookup instead of lists with O(n) lookup
    def build_command_map(commands) do
@@ -119,6 +123,7 @@ Configuration comes from multiple sources (environment variables, files, applica
 ### 7.4.2 Mitigation Strategies
 
 1. **Clear Precedence Rules**: Establish and document configuration precedence
+
    ```elixir
    def resolve_setting(key, opts) do
      cond do
@@ -160,6 +165,7 @@ Ensuring consistent behavior across different operating systems (Linux, macOS, W
 ### 7.5.2 Mitigation Strategies
 
 1. **Platform Detection**: Detect the platform and adjust behavior accordingly
+
    ```elixir
    def get_platform do
      case :os.type() do
@@ -200,6 +206,7 @@ As the system evolves, maintaining backward compatibility presents challenges, p
    - Patch version changes for backward-compatible fixes
 
 2. **Deprecation Process**: Use a formal deprecation process
+
    ```elixir
    # Instead of removing immediately:
    def old_function(args) do
@@ -232,6 +239,7 @@ Integrating Arca.Cli into various host applications with different architectures
    - Encapsulate internal implementation details
 
 2. **Dependency Injection**: Use dependency injection for flexible integration
+
    ```elixir
    # Allow injecting custom implementations
    def start(opts \\ []) do

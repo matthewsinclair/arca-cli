@@ -1,12 +1,5 @@
 ---
-verblock: "25 Mar 2025:v0.8: Claude - Fixed command sorting documentation
-24 Mar 2025:v0.7: Claude - Added command sorting documentation
-23 Mar 2025:v0.6: Claude - Updated with automatic config path determination
-23 Mar 2025:v0.5: Claude - Added Arca.Config registry integration documentation
-20 Mar 2025:v0.4: Claude - Added help system documentation
-19 Mar 2025:v0.3: Claude - Added callback system documentation
-06 Mar 2025:v0.2: Matthew Sinclair - Updated with Arca.Cli specific reference content
-06 Mar 2025:v0.1: Matthew Sinclair - Initial version"
+verblock: "17 Apr 2025:v0.9: Claude - Added error handling system documentation"
 ---
 # Arca.Cli Reference Guide
 
@@ -19,7 +12,8 @@ This reference guide provides comprehensive information about the Arca.Cli syste
 3. [Directory Structure](#directory-structure)
 4. [Configuration Options](#configuration-options)
 5. [Extension Points](#extension-points)
-6. [Concepts and Terminology](#concepts-and-terminology)
+6. [Error Handling System](#error-handling-system)
+7. [Concepts and Terminology](#concepts-and-terminology)
 
 ## Command Reference
 
@@ -429,17 +423,17 @@ config :arca_config,
 
 Available command configuration options:
 
-| Option      | Description                                   | Type             |
-|-------------|-----------------------------------------------|------------------|
-| name        | Command name                                  | String           |
-| about       | Short description                             | String           |
-| description | Detailed description                          | String           |
-| args        | Command arguments                             | Keyword list     |
-| options     | Command options                               | Keyword list     |
-| flags       | Command flags                                 | Keyword list     |
-| hidden      | Whether command is hidden in help             | Boolean          |
-| show_help_on_empty | Whether to show help when invoked without args | Boolean  |
-| sorted      | Whether commands should be sorted alphabetically (configurator option) | Boolean |
+| Option             | Description                                                            | Type         |
+|--------------------|------------------------------------------------------------------------|--------------|
+| name               | Command name                                                           | String       |
+| about              | Short description                                                      | String       |
+| description        | Detailed description                                                   | String       |
+| args               | Command arguments                                                      | Keyword list |
+| options            | Command options                                                        | Keyword list |
+| flags              | Command flags                                                          | Keyword list |
+| hidden             | Whether command is hidden in help                                      | Boolean      |
+| show_help_on_empty | Whether to show help when invoked without args                         | Boolean      |
+| sorted             | Whether commands should be sorted alphabetically (configurator option) | Boolean      |
 
 ## Extension Points
 
@@ -543,20 +537,273 @@ if Code.ensure_loaded?(Arca.Config) && function_exported?(Arca.Config, :subscrib
 end
 ```
 
+## Error Handling System
+
+The Arca CLI includes a comprehensive error handling system designed to provide consistent and informative error messages across all parts of the application.
+
+### Error Handler Module
+
+The `Arca.Cli.ErrorHandler` module provides the core functionality for the error handling system:
+
+```elixir
+defmodule Arca.Cli.ErrorHandler do
+  @type error_type :: :command_not_found | :command_failed | :invalid_argument | # ...
+  
+  @type debug_info :: %{
+    stack_trace: list() | nil,
+    error_location: String.t() | nil,
+    original_error: any() | nil,
+    timestamp: DateTime.t()
+  }
+  
+  @type enhanced_error :: {:error, error_type(), String.t(), debug_info() | nil}
+  
+  # Creates an enhanced error tuple with debug information
+  @spec create_error(error_type(), String.t(), Keyword.t()) :: enhanced_error()
+  def create_error(error_type, reason, opts \\ []) do
+    # Implementation details
+  end
+  
+  # Formats errors for display, optionally including debug information
+  @spec format_error(
+    enhanced_error() | {:error, error_type(), String.t()} | {:error, String.t()} | any(),
+    Keyword.t()
+  ) :: String.t()
+  def format_error(error, opts \\ []) do
+    # Implementation details
+  end
+  
+  # Normalizes different error formats to the enhanced format
+  @spec normalize_error(
+    {:error, error_type(), String.t()} | {:error, String.t()} | any(),
+    Keyword.t()
+  ) :: enhanced_error() | any()
+  def normalize_error(error, opts \\ []) do
+    # Implementation details
+  end
+  
+  # Converts an enhanced error to a standard error (for backward compatibility)
+  @spec to_standard_error(enhanced_error()) :: {:error, error_type(), String.t()}
+  def to_standard_error({:error, error_type, reason, _debug_info}) do
+    {:error, error_type, reason}
+  end
+  
+  # Converts an enhanced or standard error to a legacy error
+  @spec to_legacy_error(enhanced_error() | {:error, error_type(), String.t()}) :: {:error, String.t()}
+  def to_legacy_error({:error, _error_type, reason, _debug_info}) do
+    {:error, reason}
+  end
+end
+```
+
+### Debug Mode Command
+
+The `cli.debug` command allows users to toggle detailed error information:
+
+```elixir
+defmodule Arca.Cli.Commands.CliDebugCommand do
+  use Arca.Cli.Command.BaseCommand
+  
+  config :"cli.debug",
+    name: "cli.debug",
+    about: "Show or toggle debug mode for detailed error information",
+    args: [
+      toggle: [
+        value_name: "on|off",
+        help: "Turn debug mode on or off",
+        required: false
+      ]
+    ]
+  
+  @impl true
+  def handle(args, _settings, _optimus) do
+    toggle = args.args.toggle
+    current = Application.get_env(:arca_cli, :debug_mode, false)
+    
+    case toggle do
+      nil -> "Debug mode is currently #{if current, do: "ON", else: "OFF"}"
+      "on" -> 
+        Application.put_env(:arca_cli, :debug_mode, true)
+        "Debug mode is now ON"
+      "off" -> 
+        Application.put_env(:arca_cli, :debug_mode, false)
+        "Debug mode is now OFF"
+      _ -> 
+        {:error, :invalid_argument, "Invalid value '#{toggle}'. Use 'on' or 'off'."}
+    end
+  end
+end
+```
+
+### Standard Error Types
+
+The system defines standardized error types for consistent error classification:
+
+| Error Type           | Description                                               |
+|----------------------|-----------------------------------------------------------|
+| `:command_not_found` | No command was found matching the given name              |
+| `:command_failed`    | A command failed during execution                         |
+| `:invalid_argument`  | An invalid argument was provided to a command             |
+| `:config_error`      | An error occurred in the configuration system             |
+| `:file_not_found`    | A requested file could not be found                       |
+| `:file_not_readable` | A file exists but cannot be read due to permissions       |
+| `:file_not_writable` | A file cannot be written to due to permissions            |
+| `:decode_error`      | Error decoding data (e.g., JSON parsing)                  |
+| `:encode_error`      | Error encoding data (e.g., JSON serialization)            |
+| `:validation_error`  | Command validation failed                                 |
+| `:command_mismatch`  | Command name mismatch between registration and execution  |
+| `:help_requested`    | User requested help for a command                         |
+| `:unknown_error`     | Unclassified error without a specific type                |
+
+### Enhanced Error Format
+
+The enhanced error format provides comprehensive error information:
+
+```elixir
+{:error, :command_failed, "Failed to execute command", %{
+  stack_trace: [
+    {Arca.Cli.Commands.ExampleCommand, :handle, 3, [file: "lib/arca_cli/commands/example_command.ex", line: 25]},
+    {Arca.Cli, :execute_command, 5, [file: "lib/arca_cli.ex", line: 672]},
+    {Arca.Cli, :handle_subcommand, 4, [file: "lib/arca_cli.ex", line: 614]},
+    {Arca.Cli, :main, 1, [file: "lib/arca_cli.ex", line: 233]}
+  ],
+  error_location: "Arca.Cli.Commands.ExampleCommand.handle/3",
+  original_error: %RuntimeError{message: "Something went wrong"},
+  timestamp: ~U[2025-04-17 15:30:45.123Z]
+}}
+```
+
+When debug mode is enabled, the formatted output includes this detailed information:
+
+```
+Error (command_failed): Failed to execute command
+Debug Information:
+  Time: 2025-04-17 15:30:45.123Z
+  Location: Arca.Cli.Commands.ExampleCommand.handle/3
+  Original error: %RuntimeError{message: "Something went wrong"}
+  Stack trace:
+    Elixir.Arca.Cli.Commands.ExampleCommand.handle/3 (lib/arca_cli/commands/example_command.ex:25)
+    Elixir.Arca.Cli.execute_command/5 (lib/arca_cli.ex:672)
+    Elixir.Arca.Cli.handle_subcommand/4 (lib/arca_cli.ex:614)
+    Elixir.Arca.Cli.main/1 (lib/arca_cli.ex:233)
+```
+
+### Using Error Handling in Custom Commands
+
+When implementing custom commands, you can leverage the error handling system:
+
+```elixir
+defmodule YourApp.Cli.Commands.CustomCommand do
+  use Arca.Cli.Command.BaseCommand
+  alias Arca.Cli.ErrorHandler
+  
+  config :custom,
+    name: "custom",
+    about: "Example custom command"
+    
+  @impl true
+  def handle(_args, _settings, _optimus) do
+    case perform_operation() do
+      {:ok, result} ->
+        # Success case
+        result
+        
+      {:error, reason} when is_binary(reason) ->
+        # Convert legacy error to enhanced error
+        ErrorHandler.create_error(
+          :command_failed,
+          reason,
+          error_location: "#{__MODULE__}.handle/3"
+        )
+        
+      error = {:error, _type, _reason} ->
+        # Already using standard error format, convert to enhanced
+        ErrorHandler.normalize_error(error, error_location: "#{__MODULE__}.handle/3")
+        
+      error = {:error, _type, _reason, _debug} ->
+        # Already using enhanced format
+        error
+    end
+  rescue
+    e ->
+      # Create enhanced error with stack trace
+      ErrorHandler.create_error(
+        :command_failed,
+        "Custom command failed: #{Exception.message(e)}",
+        stack_trace: __STACKTRACE__,
+        original_error: e,
+        error_location: "#{__MODULE__}.handle/3"
+      )
+  end
+  
+  defp perform_operation do
+    # Your implementation...
+  end
+end
+```
+
+### Error Handler Testing
+
+When testing commands that use the error handling system:
+
+```elixir
+defmodule YourApp.Test.CustomCommandTest do
+  use ExUnit.Case
+  import ExUnit.CaptureIO
+  
+  test "handle/3 returns enhanced error tuple for invalid input" do
+    result = YourApp.Cli.Commands.CustomCommand.handle(
+      %{args: %{value: "invalid"}},
+      %{},
+      nil
+    )
+    
+    # Test the error structure
+    assert {:error, :invalid_argument, "Invalid value", debug_info} = result
+    assert is_map(debug_info)
+    assert debug_info.error_location == "YourApp.Cli.Commands.CustomCommand.handle/3"
+    
+    # Test the formatted output with debug enabled
+    Application.put_env(:arca_cli, :debug_mode, true)
+    output = capture_io(fn ->
+      Arca.Cli.ErrorHandler.format_error(result, debug: true)
+      |> IO.puts()
+    end)
+    
+    assert output =~ "Error (invalid_argument): Invalid value"
+    assert output =~ "Debug Information:"
+    assert output =~ "Location: YourApp.Cli.Commands.CustomCommand.handle/3"
+  end
+end
+```
+
+### Planned Future Enhancements
+
+Future versions of the error handling system may include:
+
+1. Command-specific error handling protocols
+2. ANSI color formatting for improved readability
+3. Interactive debugging capabilities
+4. Clickable file paths in terminal output
+
 ## Concepts and Terminology
 
-| Term         | Definition                                                                          |
-|--------------|------------------------------------------------------------------------------------|
-| Command      | A self-contained unit of functionality that can be executed from the CLI            |
-| Configurator | A module that registers commands and defines CLI configuration                      |
-| REPL         | Read-Eval-Print Loop, an interactive shell for running commands                     |
-| Dot Notation | A naming convention for organizing commands hierarchically (e.g., `sys.info`)       |
-| NamespaceCommandHelper | A helper module for defining multiple commands in the same namespace      |
-| BaseCommand  | The base module for defining commands                                               |
-| BaseSubCommand | The base module for defining subcommands                                          |
-| Callbacks    | Extension system allowing external applications to customize behavior               |
-| Callback Chain | Multiple callbacks executed in reverse registration order (last registered, first executed) |
-| Registry     | Elixir's built-in process registry, used by Arca.Config for process management      |
-| File Watching | Mechanism to detect and automatically reload configuration file changes            |
-| Application-based Config | The system of deriving configuration paths from the application name    |
-| Command Sorting | Feature that determines whether commands are displayed in alphabetical order (case-insensitive, default) or in the order they were defined |
+| Term                     | Definition                                                                                  |
+|--------------------------|---------------------------------------------------------------------------------------------|
+| Command                  | A self-contained unit of functionality that can be executed from the CLI                    |
+| Configurator             | A module that registers commands and defines CLI configuration                              |
+| REPL                     | Read-Eval-Print Loop, an interactive shell for running commands                             |
+| Dot Notation             | A naming convention for organizing commands hierarchically (e.g., `sys.info`)               |
+| NamespaceCommandHelper   | A helper module for defining multiple commands in the same namespace                        |
+| BaseCommand              | The base module for defining commands                                                       |
+| BaseSubCommand           | The base module for defining subcommands                                                    |
+| Callbacks                | Extension system allowing external applications to customize behavior                       |
+| Callback Chain           | Multiple callbacks executed in reverse registration order (last registered, first executed) |
+| Registry                 | Elixir's built-in process registry, used by Arca.Config for process management              |
+| File Watching            | Mechanism to detect and automatically reload configuration file changes                     |
+| Application-based Config | The system of deriving configuration paths from the application name                        |
+| Command Sorting          | Feature that determines whether commands are displayed in alphabetical order                |
+|                          | (case-insensitive, default) or in the order they were defined                               |
+| ErrorHandler             | Central module for standardized error handling, formatting, and normalization               |
+| Enhanced Error Tuple     | Four-element error tuple with debug information: `{:error, error_type, reason, debug_info}` |
+| Debug Mode               | Optional mode that displays detailed error information including stack traces               |

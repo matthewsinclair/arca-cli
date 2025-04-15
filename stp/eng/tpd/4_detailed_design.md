@@ -69,7 +69,218 @@ The command dispatch process involves:
 2. Identifying the target command from registered commands
 3. Validating inputs against the command's argument specification
 4. Invoking the command's `handle/3` function with the parsed arguments
-5. Formatting and returning the result
+5. Handling any errors that occur during execution
+6. Formatting and returning the result
+
+## 4.1.5 Error Handling System
+
+The error handling system is designed to provide consistent, informative error messages across both CLI and REPL modes, with support for detailed debugging information when needed.
+
+### Error Handler Module
+
+The `Arca.Cli.ErrorHandler` module centralizes error handling logic:
+
+```elixir
+defmodule Arca.Cli.ErrorHandler do
+  @moduledoc """
+  Central module for handling and formatting errors in Arca CLI.
+  """
+
+  require Logger
+
+  @typedoc "Types of errors that can occur in CLI operations"
+  @type error_type ::
+          :command_not_found
+          | :command_failed
+          | :invalid_argument
+          | :config_error
+          | :file_not_found
+          | :file_not_readable
+          | :file_not_writable
+          | :decode_error
+          | :encode_error
+          | :unknown_error
+          # From Command.BaseCommand
+          | :validation_error
+          | :command_mismatch
+          | :not_implemented
+          | :invalid_module_name
+          | :invalid_command_name
+          | :help_requested
+
+  @typedoc "Debug information attached to errors"
+  @type debug_info :: %{
+          stack_trace: list() | nil,
+          error_location: String.t() | nil,
+          original_error: any() | nil,
+          timestamp: DateTime.t()
+        }
+
+  @typedoc "Enhanced error tuple with debug information"
+  @type enhanced_error :: {:error, error_type(), String.t(), debug_info() | nil}
+
+  @doc "Create an enhanced error with debug information"
+  @spec create_error(error_type(), String.t(), Keyword.t()) :: enhanced_error()
+
+  @doc "Format errors for display with optional debug information"
+  @spec format_error(
+          enhanced_error() | {:error, error_type(), String.t()} | {:error, String.t()} | any(),
+          Keyword.t()
+        ) :: String.t()
+
+  @doc "Normalize error format to enhanced format"
+  @spec normalize_error(
+          {:error, error_type(), String.t()} | {:error, String.t()} | any(),
+          Keyword.t()
+        ) :: enhanced_error() | any()
+
+  # Implementation details...
+end
+```
+
+### Debug Mode Command
+
+A dedicated command allows users to toggle debug mode on or off:
+
+```elixir
+defmodule Arca.Cli.Commands.CliDebugCommand do
+  use Arca.Cli.Command.BaseCommand
+
+  config :"cli.debug",
+    name: "cli.debug",
+    about: "Show or toggle debug mode for detailed error information",
+    args: [
+      toggle: [
+        value_name: "on|off",
+        help: "Turn debug mode on or off",
+        required: false
+      ]
+    ]
+
+  @impl true
+  def handle(args, _settings, _optimus) do
+    toggle = args.args.toggle
+    current = Application.get_env(:arca_cli, :debug_mode, false)
+    
+    case toggle do
+      nil -> "Debug mode is currently #{if current, do: "ON", else: "OFF"}"
+      "on" -> 
+        Application.put_env(:arca_cli, :debug_mode, true)
+        save_debug_setting(true)
+        "Debug mode is now ON"
+      "off" -> 
+        Application.put_env(:arca_cli, :debug_mode, false)
+        save_debug_setting(false)
+        "Debug mode is now OFF"
+      _ -> {:error, :invalid_argument, "Invalid value '#{toggle}'. Use 'on' or 'off'."}
+    end
+  end
+  
+  # Helper for persisting the setting
+  defp save_debug_setting(value) do
+    if Code.ensure_loaded?(Arca.Config) && function_exported?(Arca.Config, :put, 2) do
+      Arca.Config.put("cli.debug_mode", value)
+    end
+  end
+end
+```
+
+### Error Flow
+
+The error handling flow ensures consistent processing of errors:
+
+1. **Command Execution**
+
+   ```elixir
+   def execute_command(cmd, args, settings, optimus, handler) do
+     try do
+       result = handler.handle(args, settings, optimus)
+       # Normalize error formats to enhanced format
+       case result do
+         {:error, reason} when is_binary(reason) ->
+           ErrorHandler.create_error(:command_failed, reason, error_location: "#{handler}.handle/3")
+         {:error, error_type, reason} ->
+           ErrorHandler.create_error(error_type, reason, error_location: "#{handler}.handle/3")
+         {:error, error_type, reason, _debug_info} = enhanced_error ->
+           enhanced_error
+         other ->
+           {:ok, other}
+       end
+     rescue
+       e ->
+         stacktrace = __STACKTRACE__
+         Logger.error("Error executing command #{cmd}: #{inspect(e)}\n#{Exception.format_stacktrace(stacktrace)}")
+         ErrorHandler.create_error(
+           :command_failed,
+           "Error executing command #{cmd}: #{Exception.message(e)}",
+           stack_trace: stacktrace,
+           original_error: e,
+           error_location: "#{__MODULE__}.execute_command/5"
+         )
+     end
+   end
+   ```
+
+2. **Error Display**
+
+   ```elixir
+   def handle_error(error_tuple) do
+     debug_enabled = Application.get_env(:arca_cli, :debug_mode, false)
+     formatted = ErrorHandler.format_error(error_tuple, debug: debug_enabled)
+     IO.puts(formatted)
+   end
+   ```
+
+### Error Types
+
+The system defines standardized error types to provide context about failures:
+
+| Error Type           | Description                                  |
+|----------------------|----------------------------------------------|
+| `:command_not_found` | No registered command matches the input      |
+| `:command_failed`    | Command execution failed                     |
+| `:invalid_argument`  | Invalid argument provided to command         |
+| `:config_error`      | Error in configuration system                |
+| `:file_not_found`    | Referenced file doesn't exist                |
+| `:decode_error`      | Failed to decode data (e.g., JSON parsing)   |
+| `:validation_error`  | Command input validation failed              |
+| `:help_requested`    | User requested help for a command            |
+| `:unknown_error`     | Unspecified error type                       |
+
+### Debug Information
+
+The enhanced error format includes debug information when enabled:
+
+```elixir
+{:error, :command_failed, "Error executing command", %{
+  stack_trace: [...stack_trace_entries...],
+  error_location: "Arca.Cli.Commands.ExampleCommand.handle/3",
+  original_error: %RuntimeError{message: "Original error message"},
+  timestamp: ~U[2025-04-17 15:30:45.123Z]
+}}
+```
+
+This debug information is formatted for display when debug mode is enabled:
+
+```
+Error (command_failed): Error executing command
+Debug Information:
+  Time: 2025-04-17 15:30:45.123Z
+  Location: Arca.Cli.Commands.ExampleCommand.handle/3
+  Original error: %RuntimeError{message: "Original error message"}
+  Stack trace:
+    Elixir.Arca.Cli.execute_command/5 (lib/arca_cli.ex:672)
+    Elixir.Arca.Cli.handle_subcommand/4 (lib/arca_cli.ex:614)
+    Elixir.Arca.Cli.main/1 (lib/arca_cli.ex:233)
+```
+
+### Outstanding Enhancements
+
+Future improvements to the error handling system could include:
+
+1. **Command-specific error handlers** using protocols to allow custom error formatting
+2. **Enhanced formatting** with ANSI colors for better visual hierarchy
+3. **Clickable file paths** in stack traces for improved developer experience
 
 ## 4.2 REPL System
 
@@ -276,6 +487,7 @@ end
 The command sorting system works at two levels:
 
 1. In `BaseConfigurator` during command registration and processing:
+
 ```elixir
 # Sort commands alphabetically if sorted is true (default)
 defp maybe_sort_commands(commands) do
@@ -301,6 +513,7 @@ end
 ```
 
 2. In help text generation in `Arca.Cli`:
+
 ```elixir
 # Check if sorting is enabled (default: true)
 should_sort = 
@@ -327,6 +540,7 @@ command_list =
 ```
 
 This implementation provides two command display modes:
+
 1. **Alphabetical order** (default): Makes commands easier to find, especially as the command list grows
 2. **Defined order**: Preserves the order in which commands were defined, useful for logical grouping or workflows
 
