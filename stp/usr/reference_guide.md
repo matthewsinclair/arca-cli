@@ -886,5 +886,5 @@ Future versions of the error handling system may include:
 | Debug Mode               | Optional mode that displays detailed error information including stack traces               |
 | create_error_with_location | Macro that creates errors with automatic location tracking                            |
 | create_and_format_error_with_location | Macro that creates and formats errors with automatic location tracking              |
-| cloc                     | Shorthand alias for create_error_with_location                                        |
-| cfloc                    | Shorthand alias for create_and_format_error_with_location                             |
+| err_cloc                 | Shorthand alias for create_error_with_location                                        |
+| err_cfloc                | Shorthand alias for create_and_format_error_with_location                             |

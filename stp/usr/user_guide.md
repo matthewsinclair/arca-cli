@@ -364,11 +364,11 @@ defmodule YourApp.Cli.Commands.ExampleCommand do
   # Command implementation...
   
   defp validate_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
-    # Using the shorthand macro (cfloc) for cleaner code
+    # Using the shorthand macro (err_cfloc) for cleaner code
     # This automatically captures the current module and function name
     # and formats the error in a consistent way
     ctx
-    |> Ctx.add_error(:validation, cfloc(
+    |> Ctx.add_error(:validation, err_cfloc(
          :validation_error, 
          "Limit must be a positive integer"
        ))
@@ -377,7 +377,7 @@ defmodule YourApp.Cli.Commands.ExampleCommand do
   
   defp validate_and_store_error(ctx, input) do
     # For cases where you need the error object without formatting
-    error = cloc(:invalid_input, "Invalid input format")
+    error = err_cloc(:invalid_input, "Invalid input format")
     
     # Store the error for later use
     ctx

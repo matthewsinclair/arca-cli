@@ -25,10 +25,10 @@ defmodule Arca.Cli.ErrorHandler do
           create_error_with_location: 3,
           create_and_format_error_with_location: 2,
           create_and_format_error_with_location: 3,
-          cloc: 2,
-          cloc: 3,
-          cfloc: 2,
-          cfloc: 3
+          err_cloc: 2,
+          err_cloc: 3,
+          err_cfloc: 2,
+          err_cfloc: 3
         ]
     end
   end
@@ -385,7 +385,8 @@ defmodule Arca.Cli.ErrorHandler do
   @doc """
   Shorthand alias for create_error_with_location/3.
 
-  This macro provides a shorter name for the create_error_with_location macro.
+  This macro provides a shorter name for the create_error_with_location macro,
+  with an 'err_' prefix to clearly identify it as an error-related function.
 
   ## Parameters
     - error_type: The type of error (atom)
@@ -395,7 +396,7 @@ defmodule Arca.Cli.ErrorHandler do
   ## Returns
     - An enhanced error tuple with automatically populated location
   """
-  defmacro cloc(error_type, message, opts \\ []) do
+  defmacro err_cloc(error_type, message, opts \\ []) do
     quote do
       Arca.Cli.ErrorHandler.create_error_with_location(
         unquote(error_type),
@@ -408,7 +409,8 @@ defmodule Arca.Cli.ErrorHandler do
   @doc """
   Shorthand alias for create_and_format_error_with_location/3.
 
-  This macro provides a shorter name for the create_and_format_error_with_location macro.
+  This macro provides a shorter name for the create_and_format_error_with_location macro,
+  with an 'err_' prefix to clearly identify it as an error-related function.
 
   ## Parameters
     - error_type: The type of error (atom)
@@ -418,7 +420,7 @@ defmodule Arca.Cli.ErrorHandler do
   ## Returns
     - A formatted error string ready for display
   """
-  defmacro cfloc(error_type, message, opts \\ []) do
+  defmacro err_cfloc(error_type, message, opts \\ []) do
     quote do
       Arca.Cli.ErrorHandler.create_and_format_error_with_location(
         unquote(error_type),
