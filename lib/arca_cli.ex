@@ -248,9 +248,28 @@ defmodule Arca.Cli do
         {:nooutput, _} ->
           :ok
 
+        # Handle enhanced error tuples specially
+        {:error, error_type, reason, debug_info} ->
+          # Format and display the enhanced error with debug information if enabled
+          debug_enabled = Application.get_env(:arca_cli, :debug_mode, false)
+
+          formatted =
+            Arca.Cli.ErrorHandler.format_error(
+              {:error, error_type, reason, debug_info},
+              debug: debug_enabled
+            )
+
+          put_lines(formatted)
+
+        # Handle standard error tuples
+        {:error, _error_type, _reason} ->
+          # Format and display the error
+          formatted = handle_error(response)
+          put_lines(formatted)
+
         # For any other response, process it normally
         _ ->
-          # Only display non-error responses
+          # Display regular responses
           response
           |> filter_blank_lines
           |> put_lines
@@ -595,6 +614,11 @@ defmodule Arca.Cli do
          {:ok, result} <- execute_command(cmd, args, settings, optimus, handler) do
       result
     else
+      # Handle enhanced error format
+      {:error, error_type, reason, debug_info} ->
+        handle_error({:error, error_type, reason, debug_info})
+
+      # Handle standard error format for backward compatibility
       {:error, error_type, reason} ->
         handle_error({:error, error_type, reason})
     end
@@ -636,7 +660,7 @@ defmodule Arca.Cli do
     - {:error, error_type, reason} on execution failure
   """
   @spec execute_command(atom(), map(), map(), term(), module()) ::
-          result(String.t() | [String.t()])
+          result(String.t() | [String.t()]) | Arca.Cli.ErrorHandler.enhanced_error()
   def execute_command(cmd, args, settings, optimus, handler) do
     try do
       # Use the centralized help system to check if help should be shown
@@ -651,12 +675,24 @@ defmodule Arca.Cli do
         # normalize them here for consistent error handling
         case result do
           {:error, reason} when is_binary(reason) ->
-            # Convert legacy error format to new format
-            create_error(:command_failed, reason)
+            # Convert legacy error format to enhanced format with debug info
+            Arca.Cli.ErrorHandler.create_error(
+              :command_failed,
+              reason,
+              error_location: "#{handler}.handle/3"
+            )
 
           {:error, error_type, reason} ->
-            # Already using new format, pass through
-            create_error(error_type, reason)
+            # Convert standard error format to enhanced format with debug info
+            Arca.Cli.ErrorHandler.create_error(
+              error_type,
+              reason,
+              error_location: "#{handler}.handle/3"
+            )
+
+          # Already using enhanced format, pass through
+          {:error, _type, _reason, _debug} = enhanced_error ->
+            enhanced_error
 
           other ->
             # All other returns (string, list, etc.) considered success
@@ -665,8 +701,21 @@ defmodule Arca.Cli do
       end
     rescue
       e ->
-        Logger.error("Error executing command #{cmd}: #{inspect(e)}")
-        create_error(:command_failed, "Error executing command #{cmd}: #{inspect(e)}")
+        stacktrace = __STACKTRACE__
+
+        # Log the detailed error with stack trace for server logs
+        Logger.error(
+          "Error executing command #{cmd}: #{inspect(e)}\n#{Exception.format_stacktrace(stacktrace)}"
+        )
+
+        # Create an enhanced error with both error message and debug info
+        Arca.Cli.ErrorHandler.create_error(
+          :command_failed,
+          "Error executing command #{cmd}: #{Exception.message(e)}",
+          stack_trace: stacktrace,
+          original_error: e,
+          error_location: "#{__MODULE__}.execute_command/5"
+        )
     end
   end
 
@@ -865,9 +914,22 @@ defmodule Arca.Cli do
     |> String.trim()
   end
 
-  # Handle error tuple directly (new pattern for Railway-Oriented Programming)
+  # Handle enhanced error tuple with debug information
+  @spec handle_error(Arca.Cli.ErrorHandler.enhanced_error()) :: String.t()
+  def handle_error({:error, error_type, reason, debug_info}) do
+    # Check if debug mode is enabled
+    debug_enabled = Application.get_env(:arca_cli, :debug_mode, false)
+
+    # Use the ErrorHandler to format the error with debug information when enabled
+    Arca.Cli.ErrorHandler.format_error({:error, error_type, reason, debug_info},
+      debug: debug_enabled
+    )
+  end
+
+  # Handle standard error tuple (Railway-Oriented Programming)
   @spec handle_error(error_tuple()) :: String.t()
   def handle_error({:error, error_type, reason}) do
+    # For backward compatibility, use the existing format_error_with_type function
     format_error_with_type(reason, error_type)
   end
 

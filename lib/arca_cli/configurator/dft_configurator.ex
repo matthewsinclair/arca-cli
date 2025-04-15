@@ -12,6 +12,8 @@ defmodule Arca.Cli.Configurator.DftConfigurator do
       Arca.Cli.Commands.CliHistoryCommand,
       # cli.debug - Control debug mode for detailed error information
       Arca.Cli.Commands.CliDebugCommand,
+      # cli.error - Test command for error handling
+      Arca.Cli.Commands.CliErrorCommand,
       # redo -> cli.redo
       Arca.Cli.Commands.CliRedoCommand,
       # status -> cli.status
