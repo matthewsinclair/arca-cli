@@ -10,6 +10,7 @@ verblock: "06 Mar 2025:v0.1: Matthew Sinclair - Initial creation"
 The primary deployment model for Arca.Cli is as a library dependency in Elixir projects:
 
 1. Add Arca.Cli to the project's dependencies in `mix.exs`:
+
    ```elixir
    def deps do
      [
@@ -19,6 +20,7 @@ The primary deployment model for Arca.Cli is as a library dependency in Elixir p
    ```
 
 2. Configure the CLI in the application's configuration:
+
    ```elixir
    # In config/config.exs
    config :arca_cli, :configurators, [
@@ -36,6 +38,7 @@ The primary deployment model for Arca.Cli is as a library dependency in Elixir p
 Arca.Cli can also be deployed as a standalone executable:
 
 1. Build the executable using Mix:
+
    ```bash
    mix escript.build
    ```
@@ -77,12 +80,14 @@ Optional components for enhanced functionality:
 Recommended environment configuration:
 
 1. Configure environment variables (if using custom paths):
+
    ```bash
    export ARCA_CONFIG_PATH="$HOME/.config/arca/"
    export ARCA_CONFIG_FILE="config.json"
    ```
 
 2. Ensure adequate file permissions for configuration directories:
+
    ```bash
    mkdir -p "$HOME/.config/arca"
    chmod 700 "$HOME/.config/arca"
