@@ -298,10 +298,10 @@ defmodule Arca.Cli.ErrorHandler do
         create_error_with_location: 3,
         create_and_format_error_with_location: 2, 
         create_and_format_error_with_location: 3,
-        cloc: 2,
-        cloc: 3,
-        cfloc: 2,
-        cfloc: 3
+        err_cloc: 2,
+        err_cloc: 3,
+        err_cfloc: 2,
+        err_cfloc: 3
       ]
     end
   end
@@ -330,7 +330,7 @@ defmodule Arca.Cli.ErrorHandler do
   end
   
   # Shorthand alias for create_error_with_location
-  defmacro cloc(error_type, message, opts \\ []) do
+  defmacro err_cloc(error_type, message, opts \\ []) do
     quote do
       Arca.Cli.ErrorHandler.create_error_with_location(
         unquote(error_type), 
@@ -341,7 +341,7 @@ defmodule Arca.Cli.ErrorHandler do
   end
   
   # Shorthand alias for create_and_format_error_with_location
-  defmacro cfloc(error_type, message, opts \\ []) do
+  defmacro err_cfloc(error_type, message, opts \\ []) do
     quote do
       Arca.Cli.ErrorHandler.create_and_format_error_with_location(
         unquote(error_type), 
@@ -391,16 +391,16 @@ end
 
 # Simplified: Using shorthand aliases
 defp validate_limit_short(ctx, limit) when not is_integer(limit) or limit <= 0 do
-  # The cfloc macro provides a shorter name with the same functionality
+  # The err_cfloc macro provides a shorter name with the same functionality
   ctx
-  |> Ctx.add_error(:validation, cfloc(:validation_error, "Limit must be a positive integer"))
+  |> Ctx.add_error(:validation, err_cfloc(:validation_error, "Limit must be a positive integer"))
   |> Ctx.complete()
 end
 
 # For cases where formatting is needed separately
 defp validate_and_store_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
   # Create the error with automatic location tracking using shorthand
-  error = cloc(:validation_error, "Limit must be a positive integer")
+  error = err_cloc(:validation_error, "Limit must be a positive integer")
   
   # Store the error for later or format it conditionally
   ctx

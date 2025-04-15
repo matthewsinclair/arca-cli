@@ -237,10 +237,10 @@ defmodule Arca.Cli.ErrorHandlerTest do
     end
   end
 
-  describe "cloc/3 (shorthand for create_error_with_location)" do
+  describe "err_cloc/3 (shorthand for create_error_with_location)" do
     test "provides a shorthand for create_error_with_location" do
       # Use the shorthand macro
-      error = ErrorHandler.cloc(:validation_error, "Test error")
+      error = ErrorHandler.err_cloc(:validation_error, "Test error")
 
       # Verify the error structure is the same as with the long form
       assert match?(
@@ -257,7 +257,7 @@ defmodule Arca.Cli.ErrorHandlerTest do
       original_error = ArgumentError.exception("Invalid config")
 
       error =
-        ErrorHandler.cloc(
+        ErrorHandler.err_cloc(
           :config_error,
           "Configuration error",
           original_error: original_error
@@ -270,10 +270,10 @@ defmodule Arca.Cli.ErrorHandlerTest do
     end
   end
 
-  describe "cfloc/3 (shorthand for create_and_format_error_with_location)" do
+  describe "err_cfloc/3 (shorthand for create_and_format_error_with_location)" do
     test "provides a shorthand for create_and_format_error_with_location" do
       # Use the shorthand macro
-      formatted = ErrorHandler.cfloc(:validation_error, "Test error")
+      formatted = ErrorHandler.err_cfloc(:validation_error, "Test error")
 
       # Verify the formatted output is the same as with the long form
       assert formatted =~ "Error (validation_error): Test error"
@@ -283,7 +283,7 @@ defmodule Arca.Cli.ErrorHandlerTest do
       original_error = ArgumentError.exception("Invalid config")
 
       formatted =
-        ErrorHandler.cfloc(
+        ErrorHandler.err_cfloc(
           :config_error,
           "Configuration error",
           original_error: original_error
