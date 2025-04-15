@@ -884,4 +884,7 @@ Future versions of the error handling system may include:
 | ErrorHandler             | Central module for standardized error handling, formatting, and normalization               |
 | Enhanced Error Tuple     | Four-element error tuple with debug information: `{:error, error_type, reason, debug_info}` |
 | Debug Mode               | Optional mode that displays detailed error information including stack traces               |
-| create_and_format_error | Macro that creates and formats errors with automatic location tracking                       |
+| create_error_with_location | Macro that creates errors with automatic location tracking                            |
+| create_and_format_error_with_location | Macro that creates and formats errors with automatic location tracking              |
+| cloc                     | Shorthand alias for create_error_with_location                                        |
+| cfloc                    | Shorthand alias for create_and_format_error_with_location                             |

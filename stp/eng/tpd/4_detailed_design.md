@@ -293,11 +293,32 @@ defmodule Arca.Cli.ErrorHandler do
   
   defmacro __using__(_) do
     quote do
-      import Arca.Cli.ErrorHandler, only: [create_and_format_error: 2, create_and_format_error: 3]
+      import Arca.Cli.ErrorHandler, only: [
+        create_error_with_location: 2, 
+        create_error_with_location: 3,
+        create_and_format_error_with_location: 2, 
+        create_and_format_error_with_location: 3,
+        cloc: 2,
+        cloc: 3,
+        cfloc: 2,
+        cfloc: 3
+      ]
     end
   end
   
-  defmacro create_and_format_error(error_type, message, opts \\ []) do
+  # Creates an error with automatic location tracking
+  defmacro create_error_with_location(error_type, message, opts \\ []) do
+    quote do
+      error_location = "#{__MODULE__}.#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
+      
+      unquote(opts)
+      |> Keyword.put(:error_location, error_location)
+      |> (&Arca.Cli.ErrorHandler.create_error(unquote(error_type), unquote(message), &1)).()
+    end
+  end
+  
+  # Creates and formats an error with automatic location tracking
+  defmacro create_and_format_error_with_location(error_type, message, opts \\ []) do
     quote do
       error_location = "#{__MODULE__}.#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
       
@@ -305,6 +326,28 @@ defmodule Arca.Cli.ErrorHandler do
       |> Keyword.put(:error_location, error_location)
       |> (&Arca.Cli.ErrorHandler.create_error(unquote(error_type), unquote(message), &1)).()
       |> Arca.Cli.ErrorHandler.format_error()
+    end
+  end
+  
+  # Shorthand alias for create_error_with_location
+  defmacro cloc(error_type, message, opts \\ []) do
+    quote do
+      Arca.Cli.ErrorHandler.create_error_with_location(
+        unquote(error_type), 
+        unquote(message), 
+        unquote(opts)
+      )
+    end
+  end
+  
+  # Shorthand alias for create_and_format_error_with_location
+  defmacro cfloc(error_type, message, opts \\ []) do
+    quote do
+      Arca.Cli.ErrorHandler.create_and_format_error_with_location(
+        unquote(error_type), 
+        unquote(message), 
+        unquote(opts)
+      )
     end
   end
 end
@@ -336,13 +379,32 @@ defp validate_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
   |> Ctx.complete()
 end
 
-# After: Using the macro
+# After: Using the verbose macro
 defp validate_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
   ctx
-  |> Ctx.add_error(:validation, create_and_format_error(
+  |> Ctx.add_error(:validation, create_and_format_error_with_location(
        :validation_error, 
        "Limit must be a positive integer"
      ))
+  |> Ctx.complete()
+end
+
+# Simplified: Using shorthand aliases
+defp validate_limit_short(ctx, limit) when not is_integer(limit) or limit <= 0 do
+  # The cfloc macro provides a shorter name with the same functionality
+  ctx
+  |> Ctx.add_error(:validation, cfloc(:validation_error, "Limit must be a positive integer"))
+  |> Ctx.complete()
+end
+
+# For cases where formatting is needed separately
+defp validate_and_store_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
+  # Create the error with automatic location tracking using shorthand
+  error = cloc(:validation_error, "Limit must be a positive integer")
+  
+  # Store the error for later or format it conditionally
+  ctx
+  |> Ctx.store_error(error)
   |> Ctx.complete()
 end
 ```
