@@ -352,6 +352,32 @@ Error (invalid_argument): Invalid value provided for parameter 'count', expected
 
 This format makes it clear what went wrong without overwhelming you with technical details.
 
+#### Simplified Error Handling for Developers
+
+For developers implementing commands or integrating with Arca CLI, the error handling system provides macros that simplify creating and formatting errors:
+
+```elixir
+defmodule YourApp.Cli.Commands.ExampleCommand do
+  use Arca.Cli.Command.BaseCommand
+  use Arca.Cli.ErrorHandler  # Import error handling macros
+  
+  # Command implementation...
+  
+  defp validate_limit(ctx, limit) when not is_integer(limit) or limit <= 0 do
+    # Using the macro automatically captures the current module and function name
+    # and formats the error in a consistent way
+    ctx
+    |> Ctx.add_error(:validation, create_and_format_error(
+         :validation_error, 
+         "Limit must be a positive integer"
+       ))
+    |> Ctx.complete()
+  end
+end
+```
+
+This approach reduces boilerplate code and ensures consistent error handling across your application.
+
 #### Using Debug Mode
 
 For more complex issues, you can enable debug mode to see detailed error information:

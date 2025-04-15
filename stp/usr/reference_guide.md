@@ -777,6 +777,82 @@ defmodule YourApp.Test.CustomCommandTest do
 end
 ```
 
+### Error Handling Macros
+
+The error handling system includes macros to simplify the creation and formatting of errors with automatic location tracking:
+
+```elixir
+defmodule Arca.Cli.ErrorHandler do
+  # Existing functions...
+  
+  defmacro __using__(_) do
+    quote do
+      import Arca.Cli.ErrorHandler, only: [create_and_format_error: 2, create_and_format_error: 3]
+    end
+  end
+  
+  @doc """
+  Creates and formats an error with automatic location tracking.
+  
+  This macro automatically adds the current module and function name 
+  to the error location, simplifying error creation and formatting
+  in a single operation.
+  """
+  defmacro create_and_format_error(error_type, message, opts \\ []) do
+    quote do
+      error_location = "#{__MODULE__}.#{elem(__ENV__.function, 0)}/#{elem(__ENV__.function, 1)}"
+      
+      unquote(opts)
+      |> Keyword.put(:error_location, error_location)
+      |> (&Arca.Cli.ErrorHandler.create_error(unquote(error_type), unquote(message), &1)).()
+      |> Arca.Cli.ErrorHandler.format_error()
+    end
+  end
+end
+```
+
+Using this macro in your commands dramatically simplifies error handling:
+
+```elixir
+defmodule YourApp.Cli.Commands.ExampleCommand do
+  use Arca.Cli.Command.BaseCommand
+  use Arca.Cli.ErrorHandler  # Import the error handling macros
+  
+  config :example,
+    name: "example",
+    about: "Example command"
+    
+  @impl true
+  def handle(args, _settings, _optimus) do
+    case validate_args(args) do
+      :ok -> 
+        execute_command(args)
+        
+      {:error, reason} ->
+        # Use the macro for simplified error handling
+        create_and_format_error(:validation_error, reason)
+    end
+  end
+  
+  defp validate_args(%{args: %{limit: limit}}) when not is_integer(limit) or limit <= 0 do
+    {:error, "Limit must be a positive integer"}
+  end
+  
+  defp validate_args(_), do: :ok
+  
+  defp execute_command(args) do
+    # Command implementation
+  end
+end
+```
+
+The benefits of using the macro include:
+
+1. **Automatic location tracking**: No need to manually construct error locations
+2. **Reduced boilerplate**: Single function call instead of multiple steps
+3. **Consistent formatting**: Ensures all errors are handled similarly
+4. **Less error-prone**: Eliminates potential errors in manual location construction
+
 ### Planned Future Enhancements
 
 Future versions of the error handling system may include:
@@ -785,6 +861,7 @@ Future versions of the error handling system may include:
 2. ANSI color formatting for improved readability
 3. Interactive debugging capabilities
 4. Clickable file paths in terminal output
+5. Additional error handling macros for specialized use cases
 
 ## Concepts and Terminology
 
@@ -807,3 +884,4 @@ Future versions of the error handling system may include:
 | ErrorHandler             | Central module for standardized error handling, formatting, and normalization               |
 | Enhanced Error Tuple     | Four-element error tuple with debug information: `{:error, error_type, reason, debug_info}` |
 | Debug Mode               | Optional mode that displays detailed error information including stack traces               |
+| create_and_format_error | Macro that creates and formats errors with automatic location tracking                       |
