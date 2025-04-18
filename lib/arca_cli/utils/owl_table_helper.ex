@@ -52,7 +52,9 @@ defmodule Arca.Cli.Utils.OwlHelper do
 
     # Account for borders and padding in width calculations
     # We assume default padding_x of 1, which means 2 chars per column for padding
-    available_width = max_width - 1 - map_size(column_preferences) * 3
+    # For many columns, reduce padding allocation to avoid excessive constraints
+    padding_per_column = if map_size(column_preferences) > 4, do: 2, else: 3
+    available_width = max_width - 1 - map_size(column_preferences) * padding_per_column
 
     # Separate fixed width columns from percentage-based
     {fixed_columns, percent_columns} =
@@ -69,7 +71,7 @@ defmodule Arca.Cli.Utils.OwlHelper do
     # Calculate actual widths for percent-based columns
     percent_widths =
       Enum.map(percent_columns, fn {col, {percent, :percent}} ->
-        {col, max(3, floor(remaining_width * percent))}
+        {col, max(1, floor(remaining_width * percent))}
       end)
 
     # Combine fixed and calculated widths
@@ -78,7 +80,9 @@ defmodule Arca.Cli.Utils.OwlHelper do
     # Return a function that Owl.Table can use for max_column_widths
     fn col ->
       # Default column width if not specified
-      Map.get(all_widths, col, 10)
+      # Use a smaller default width when many columns are present
+      default_width = if map_size(column_preferences) > 4, do: 6, else: 10
+      Map.get(all_widths, col, default_width)
     end
   end
 
