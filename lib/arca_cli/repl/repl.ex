@@ -266,7 +266,7 @@ defmodule Arca.Cli.Repl do
         {:ok, input} ->
           {:ok, input <> "\n"}
 
-        # Both get_input_with_completion and get_standard_input now 
+        # Both get_input_with_completion and get_standard_input now
         # return enhanced error format by default, so we just pass through
         error = {:error, _, _, _} ->
           error
@@ -903,7 +903,6 @@ defmodule Arca.Cli.Repl do
   def eval_for_redo({_history_id, history_cmd}, settings, optimus) when is_binary(history_cmd) do
     case eval(history_cmd, settings, optimus) do
       {:ok, result} -> result
-      # Handle enhanced error format
       {:error, _error_type, reason, _debug_info} -> "Error redoing command: #{reason}"
     end
   end
@@ -914,11 +913,11 @@ defmodule Arca.Cli.Repl do
 
   ## Parameters
     - result: The command result to process
-    
+
   ## Returns
     - {:ok, result} on success
     - {:error, error_type, reason} on failure
-    
+
   ## Cases
     - For {:nooutput, _}, skips printing and returns the result as-is
     - For {:ok, :quit}, returns the result without printing

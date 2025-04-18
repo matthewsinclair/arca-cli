@@ -1,0 +1,13 @@
+# This is a test script for cli.script command
+# Lines starting with # are comments and will be ignored
+
+# Show help for the cli.script command
+help cli.script
+
+# Get about information
+about
+
+# Show status
+status
+
+# Empty lines are skipped

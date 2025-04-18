@@ -3,6 +3,7 @@ cli.debug
 cli.error
 cli.history
 cli.redo
+cli.script
 cli.status
 config.get
 config.help
