@@ -100,9 +100,18 @@ defmodule Arca.Cli do
 
   # For test environment where History is already running, don't start the HistorySupervisor
   defp history_maybe_child_spec do
-    case {Mix.env(), Process.whereis(Arca.Cli.History)} do
-      {:test, pid} when is_pid(pid) -> []
-      _ -> [{Arca.Cli.HistorySupervisor, []}]
+    cond do
+      # Check if we're in a release where Mix is not available
+      Code.ensure_loaded?(Mix) == false ->
+        [{Arca.Cli.HistorySupervisor, []}]
+
+      # In test environment with History already running
+      Mix.env() == :test && is_pid(Process.whereis(Arca.Cli.History)) ->
+        []
+
+      # Default case - start the HistorySupervisor
+      true ->
+        [{Arca.Cli.HistorySupervisor, []}]
     end
   end
 
@@ -130,14 +139,24 @@ defmodule Arca.Cli do
 
   # Check if Arca.Config is available for callback registration
   defp config_available? do
-    # In test environment, we don't need Arca.Config
-    if Mix.env() == :test do
-      true
-    else
-      # Check if the Arca.Config module is loaded and the Server process is running
-      Code.ensure_loaded?(Arca.Config) &&
-        function_exported?(Arca.Config, :register_change_callback, 2) &&
-        Process.whereis(Arca.Config.Server) != nil
+    cond do
+      # In a release where Mix is not available
+      Code.ensure_loaded?(Mix) == false ->
+        # Just check if Arca.Config is available
+        Code.ensure_loaded?(Arca.Config) &&
+          function_exported?(Arca.Config, :register_change_callback, 2) &&
+          Process.whereis(Arca.Config.Server) != nil
+
+      # In test environment, we don't need Arca.Config
+      Mix.env() == :test ->
+        true
+
+      # Normal development environment
+      true ->
+        # Check if the Arca.Config module is loaded and the Server process is running
+        Code.ensure_loaded?(Arca.Config) &&
+          function_exported?(Arca.Config, :register_change_callback, 2) &&
+          Process.whereis(Arca.Config.Server) != nil
     end
   end
 
@@ -232,8 +251,8 @@ defmodule Arca.Cli do
     # Use a case-based approach for cleaner flow
     response = parse_command_line(argv, settings, optimus)
 
-    # In test environment, always display the response to allow test assertions
-    if Mix.env() == :test do
+    # Check if we should always display the response (for test environment)
+    if Code.ensure_loaded?(Mix) && Mix.env() == :test do
       response
       |> filter_blank_lines
       |> put_lines
@@ -961,7 +980,7 @@ defmodule Arca.Cli do
   @spec load_settings() :: {:ok, map()} | {:error, String.t()}
   def load_settings() do
     # In test environment, try to use a simpler approach to avoid external dependencies
-    if Mix.env() == :test do
+    if Code.ensure_loaded?(Mix) && Mix.env() == :test do
       test_settings = Application.get_env(:arca_cli, :test_settings, %{})
       {:ok, test_settings}
     else
@@ -1041,7 +1060,17 @@ defmodule Arca.Cli do
   # Check if we're in an initialization phase
   # Pattern matching approach for different environments
   defp is_initialization_phase? do
-    is_initialization_phase?(Mix.env())
+    # First check if Mix is available
+    if Code.ensure_loaded?(Mix) do
+      is_initialization_phase?(Mix.env())
+    else
+      # In a release (Mix not available), check process conditions
+      initializer_pid = Process.whereis(Arca.Cli.Configurator.Initializer)
+      current_pid = self()
+      process_flag = Process.get(@initialization_phase_key)
+
+      check_initialization_state(initializer_pid, current_pid, process_flag)
+    end
   end
 
   # Test environment - never consider as initialization phase
@@ -1086,7 +1115,7 @@ defmodule Arca.Cli do
     id_str = to_string(id)
 
     # In test environment, get from application env
-    if Mix.env() == :test do
+    if Code.ensure_loaded?(Mix) && Mix.env() == :test do
       test_settings = Application.get_env(:arca_cli, :test_settings, %{})
 
       case Map.fetch(test_settings, id_str) do
@@ -1160,7 +1189,7 @@ defmodule Arca.Cli do
   @spec save_settings(map()) :: {:ok, map()} | {:error, String.t()}
   def save_settings(new_settings) do
     # In test environment, store settings in application env for tests
-    if Mix.env() == :test do
+    if Code.ensure_loaded?(Mix) && Mix.env() == :test do
       current_settings = Application.get_env(:arca_cli, :test_settings, %{})
       updated_settings = Map.merge(current_settings, new_settings)
       Application.put_env(:arca_cli, :test_settings, updated_settings)
