@@ -95,7 +95,7 @@ defmodule Arca.Cli do
   # In test mode, we avoid starting the History GenServer through the supervisor
   # if it's already running (started by the test helper).
   defp build_child_specs do
-    history_maybe_child_spec() ++ [{Arca.Cli.Configurator.Initializer, []}]
+    history_maybe_child_spec()
   end
 
   # For test environment where History is already running, don't start the HistorySupervisor
@@ -969,9 +969,7 @@ defmodule Arca.Cli do
   Load settings from configuration.
 
   Uses the Arca.Config server to retrieve the entire configuration.
-
-  Includes identity checks to prevent circular dependencies during application startup.
-  If called during initialization phase, it will safely return empty settings.
+  Assumes all configuration dependencies are properly initialized.
 
   ## Returns
     - {:ok, settings} with settings map on success
@@ -979,123 +977,71 @@ defmodule Arca.Cli do
   """
   @spec load_settings() :: {:ok, map()} | {:error, String.t()}
   def load_settings() do
-    # In test environment, try to use a simpler approach to avoid external dependencies
     if Code.ensure_loaded?(Mix) && Mix.env() == :test do
       test_settings = Application.get_env(:arca_cli, :test_settings, %{})
       {:ok, test_settings}
     else
-      # Check if we're in an application initialization phase
-      # by examining the process dictionary for initialization markers
-      # or by checking the calling process's ancestry
-      if is_initialization_phase?() do
-        # During initialization, return conservative defaults
-        # Logger.debug("Arca.Cli.load_settings called during initialization phase - using defaults")
-        {:ok, %{}}
-      else
-        try do
-          # First, make sure our server is up
-          unless Process.whereis(Arca.Config.Server) do
-            # Logger.debug("Arca.Config.Server not started - returning empty settings")
-            return_empty_settings()
-          else
-            case Arca.Config.Server.reload() do
-              {:ok, config} ->
-                {:ok, config}
-
-              {:error, reason} ->
-                Logger.warning("Failed to load configuration: #{inspect(reason)}")
-                # Return empty config rather than error to ensure app can continue
-                {:ok, %{}}
-            end
-          end
-        rescue
-          e in [KeyError] ->
-            if e.key == :load_error do
-              # Handle KeyError specifically for the :load_error key
-              Logger.warning(
-                "Failed to load configuration due to missing :load_error key in Arca.Config.Server state"
-              )
-
-              {:ok, %{}}
-            else
-              Logger.error("KeyError in load_settings: #{inspect(e)}")
-              {:ok, %{}}
-            end
-
-          e ->
-            Logger.error("Error loading settings: #{inspect(e)}")
-            # Return empty settings to ensure app can continue
-            {:ok, %{}}
-        end
+      case Arca.Config.Server.reload() do
+        {:ok, config} -> {:ok, config}
+        {:error, reason} -> {:error, "Failed to load configuration: #{inspect(reason)}"}
       end
     end
   rescue
     e ->
       Logger.error("Error loading settings: #{inspect(e)}")
-      # Return empty settings to ensure app can continue
-      {:ok, %{}}
+      {:error, "Configuration loading failed: #{inspect(e)}"}
   end
 
   # Helper function to safely return empty settings
-  defp return_empty_settings, do: {:ok, %{}}
-
-  @initialization_phase_key :arca_cli_initialization_phase
-
   @doc """
-  Mark the current process as being in the initialization phase.
-  Should only be called by the Initializer.
-  """
-  def mark_initialization_phase(value \\ true) do
-    Process.put(@initialization_phase_key, value)
-  end
+  Load configuration phase for OTP start phases.
 
-  @doc """
-  Mark the current process as no longer being in the initialization phase.
-  Should only be called by the Initializer when initialization is complete.
-  """
-  def clear_initialization_phase do
-    Process.delete(@initialization_phase_key)
-  end
+  This function should be called during the :load_config start phase to:
+  - Load settings from Arca.Config
+  - Load settings from Multiplyer.Config
+  - Register config callbacks
+  - Initialize CLI configuration state
 
-  # Check if we're in an initialization phase
-  # Pattern matching approach for different environments
-  defp is_initialization_phase? do
-    # First check if Mix is available
-    if Code.ensure_loaded?(Mix) do
-      is_initialization_phase?(Mix.env())
+  ## Returns
+    - :ok on success
+    - {:error, reason} on failure
+  """
+  @spec load_config_phase() :: :ok | {:error, term()}
+  def load_config_phase do
+    with :ok <- ensure_dependency_phases_loaded(),
+         {:ok, _settings} <- load_settings(),
+         :ok <- register_config_callbacks() do
+      :ok
     else
-      # In a release (Mix not available), check process conditions
-      initializer_pid = Process.whereis(Arca.Cli.Configurator.Initializer)
-      current_pid = self()
-      process_flag = Process.get(@initialization_phase_key)
+      {:error, reason} -> {:error, reason}
+      error -> {:error, error}
+    end
+  rescue
+    e -> {:error, {"Configuration phase failed", e}}
+  end
 
-      check_initialization_state(initializer_pid, current_pid, process_flag)
+  # Ensure dependency configuration phases are loaded
+  defp ensure_dependency_phases_loaded do
+    with :ok <- call_if_available(Arca.Config, :load_config_phase, []),
+         :ok <- call_if_available(Multiplyer.Config.Server, :load_config_phase, []) do
+      :ok
+    else
+      error -> error
     end
   end
 
-  # Test environment - never consider as initialization phase
-  defp is_initialization_phase?(:test), do: false
-
-  # All other environments - check process conditions
-  defp is_initialization_phase?(_env) do
-    initializer_pid = Process.whereis(Arca.Cli.Configurator.Initializer)
-    current_pid = self()
-    process_flag = Process.get(@initialization_phase_key)
-
-    check_initialization_state(initializer_pid, current_pid, process_flag)
+  # Safely call a function if the module is available
+  defp call_if_available(module, function, args) do
+    if Code.ensure_loaded?(module) && function_exported?(module, function, length(args)) do
+      try do
+        apply(module, function, args)
+      rescue
+        e -> {:error, e}
+      end
+    else
+      :ok
+    end
   end
-
-  # When flag is explicitly set in process dictionary, use that value
-  defp check_initialization_state(_, _, flag) when not is_nil(flag), do: flag
-
-  # When current process is the Initializer itself
-  defp check_initialization_state(pid, pid, _) when is_pid(pid), do: true
-
-  # When Initializer is not running yet
-  defp check_initialization_state(nil, _, _), do: true
-
-  # Default case - not in initialization phase
-  defp check_initialization_state(_, _, _), do: false
 
   @doc """
   Get a setting by its id.
@@ -1126,37 +1072,22 @@ defmodule Arca.Cli do
           {:error, "Setting not found: #{id_str}"}
       end
     else
-      # Check if we're in an initialization phase
-      if is_initialization_phase?() do
-        # During initialization, return appropriate defaults for known settings
-        # or a generic error for unknown settings
-        get_default_setting(id_str)
-      else
-        # Normal operation - use Arca.Config safely
-        try do
-          # Check if Arca.Config is available
-          if config_available?() do
-            id_str
-            |> Arca.Config.get()
-            |> case do
-              {:ok, value} ->
-                {:ok, value}
-
-              {:error, :not_found} ->
-                {:error, "Setting not found: #{id_str}"}
-
-              {:error, reason} ->
-                {:error, "Failed to get setting #{id_str}: #{inspect(reason)}"}
-            end
-          else
-            # Arca.Config not available, return default
-            get_default_setting(id_str)
+      try do
+        if config_available?() do
+          id_str
+          |> Arca.Config.get()
+          |> case do
+            {:ok, value} -> {:ok, value}
+            {:error, :not_found} -> {:error, "Setting not found: #{id_str}"}
+            {:error, reason} -> {:error, "Failed to get setting #{id_str}: #{inspect(reason)}"}
           end
-        rescue
-          e ->
-            Logger.error("Error getting setting #{id_str}: #{inspect(e)}")
-            get_default_setting(id_str)
+        else
+          get_default_setting(id_str)
         end
+      rescue
+        e ->
+          Logger.error("Error getting setting #{id_str}: #{inspect(e)}")
+          get_default_setting(id_str)
       end
     end
   end
@@ -1188,34 +1119,21 @@ defmodule Arca.Cli do
   """
   @spec save_settings(map()) :: {:ok, map()} | {:error, String.t()}
   def save_settings(new_settings) do
-    # In test environment, store settings in application env for tests
     if Code.ensure_loaded?(Mix) && Mix.env() == :test do
       current_settings = Application.get_env(:arca_cli, :test_settings, %{})
       updated_settings = Map.merge(current_settings, new_settings)
       Application.put_env(:arca_cli, :test_settings, updated_settings)
       {:ok, updated_settings}
     else
-      # Check if we're in initialization phase
-      if is_initialization_phase?() do
-        Logger.debug("Skipping save_settings during initialization phase")
-        {:ok, new_settings}
-      else
-        # Check if Arca.Config is available
-        if config_available?() do
-          # Normal operation
-          new_settings
-          |> save_settings_individually()
-          |> case do
-            :ok ->
-              {:ok, new_settings}
-
-            {:error, reason} ->
-              {:error, "Failed to save settings: #{inspect(reason)}"}
-          end
-        else
-          Logger.warning("Arca.Config not available - settings not saved")
-          {:ok, new_settings}
+      if config_available?() do
+        new_settings
+        |> save_settings_individually()
+        |> case do
+          :ok -> {:ok, new_settings}
+          {:error, reason} -> {:error, "Failed to save settings: #{inspect(reason)}"}
         end
+      else
+        {:error, "Arca.Config not available - settings not saved"}
       end
     end
   end
