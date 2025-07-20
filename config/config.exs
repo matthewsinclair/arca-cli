@@ -1,6 +1,9 @@
 # General application configuration
 import Config
 
+# Load environment variables early
+import_config "dotenv.exs"
+
 # Configure Arca.Cli
 #
 # Note: Configuration paths are now automatically derived by Arca.Config based on the application name.
