@@ -55,7 +55,7 @@ defmodule Arca.Cli.Test do
     test "cli commands smoke test" do
       # Run through each command (except 'repl') and smoke test each one
       Enum.each(@cli_commands, fn cmd ->
-        IO.puts("\nSmoke testing command: #{Enum.join(cmd, " ")}")
+        # Smoke testing command: #{Enum.join(cmd, " ")}
 
         capture_io(fn ->
           try do

@@ -29,4 +29,4 @@ arca_cli-*.tar
 .arca/data/links
 
 # Ignore application logs
-.arca/logs/
+.arca_cli/logs/

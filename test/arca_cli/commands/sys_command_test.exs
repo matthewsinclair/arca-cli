@@ -68,10 +68,10 @@ defmodule Arca.Cli.Commands.SysCommandTest do
     test "SysCommand.handle/3 handles command errors" do
       args = %{args: %{args: "nonexistentcommand"}, unknown: []}
 
-      # assert capture_io(fn ->
-      {error, _reason} = SysCommand.handle(args, nil, nil)
-      assert error =~ "nonexistentcommand"
-      #  end)
+      capture_io(fn ->
+        {error, _reason} = SysCommand.handle(args, nil, nil)
+        assert error =~ "nonexistentcommand"
+      end)
     end
   end
 end

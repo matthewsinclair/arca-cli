@@ -68,7 +68,10 @@ defmodule Arca.Cli.History do
 
   ## Examples
       iex> # Ensure the GenServer is started
-      iex> {:ok, _} = Arca.Cli.History.start_link()
+      iex> case Process.whereis(Arca.Cli.History) do
+      ...>   nil -> {:ok, _} = Arca.Cli.History.start_link()
+      ...>   pid -> {:ok, pid}
+      ...> end
       iex> is_pid(Process.whereis(Arca.Cli.History))
       true
   """
@@ -86,7 +89,10 @@ defmodule Arca.Cli.History do
 
   ## Examples
       iex> # Ensure the GenServer is started
-      iex> {:ok, _} = Arca.Cli.History.start_link()
+      iex> case Process.whereis(Arca.Cli.History) do
+      ...>   nil -> {:ok, _} = Arca.Cli.History.start_link()
+      ...>   pid -> {:ok, pid}
+      ...> end
       iex> {:ok, %Arca.Cli.History.CliHistory{}} = Arca.Cli.History.get_state()
   """
   @spec get_state() :: result(state())
@@ -113,7 +119,10 @@ defmodule Arca.Cli.History do
 
   ## Examples
       iex> # Ensure the GenServer is started
-      iex> {:ok, _} = Arca.Cli.History.start_link()
+      iex> case Process.whereis(Arca.Cli.History) do
+      ...>   nil -> {:ok, _} = Arca.Cli.History.start_link()
+      ...>   pid -> {:ok, pid}
+      ...> end
       iex> Arca.Cli.History.flush_history()
       iex> {:ok, [{0, "echo 'Hello World'"}]} = Arca.Cli.History.push_cmd("echo 'Hello World'")
   """
@@ -143,7 +152,10 @@ defmodule Arca.Cli.History do
 
   ## Examples
       iex> # Ensure the GenServer is started
-      iex> {:ok, _} = Arca.Cli.History.start_link()
+      iex> case Process.whereis(Arca.Cli.History) do
+      ...>   nil -> {:ok, _} = Arca.Cli.History.start_link()
+      ...>   pid -> {:ok, pid}
+      ...> end
       iex> Arca.Cli.History.flush_history()
       iex> Arca.Cli.History.push_cmd("echo 'Hello World'")
       iex> {:ok, 1} = Arca.Cli.History.get_history_length()
@@ -169,7 +181,10 @@ defmodule Arca.Cli.History do
 
   ## Examples
       iex> # Ensure the GenServer is started
-      iex> {:ok, _} = Arca.Cli.History.start_link()
+      iex> case Process.whereis(Arca.Cli.History) do
+      ...>   nil -> {:ok, _} = Arca.Cli.History.start_link()
+      ...>   pid -> {:ok, pid}
+      ...> end
       iex> Arca.Cli.History.flush_history()
       iex> Arca.Cli.History.push_cmd("echo 'Hello World'")
       iex> Arca.Cli.History.push_cmd("ls -l")
@@ -198,7 +213,10 @@ defmodule Arca.Cli.History do
 
   ## Examples
       iex> # Ensure the GenServer is started
-      iex> {:ok, _} = Arca.Cli.History.start_link()
+      iex> case Process.whereis(Arca.Cli.History) do
+      ...>   nil -> {:ok, _} = Arca.Cli.History.start_link()
+      ...>   pid -> {:ok, pid}
+      ...> end
       iex> Arca.Cli.History.push_cmd("echo 'Hello World'")
       iex> {:ok, []} = Arca.Cli.History.flush_history()
   """

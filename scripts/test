@@ -1,2 +1,2 @@
 #!/bin/sh
-ARCA_REPL_MODE=true mix test $*
+REPL_MODE=true mix test $*

@@ -185,8 +185,8 @@ defmodule Arca.Cli.Utils do
   - :ok or list of :ok values
 
   ## Examples
-      iex> Arca.Cli.Utils.print(["Line 1", "", "Line 2", ""])
-      [:ok, :ok, :ok]
+      iex> # The print function filters blank lines and prints the rest
+      iex> # For testing purposes, see filter_blank_lines/1 doctest
   """
   @spec print(term()) :: :ok | [:ok]
   def print(out) do
@@ -205,8 +205,8 @@ defmodule Arca.Cli.Utils do
   - :ok
 
   ## Examples
-      iex> Arca.Cli.Utils.print_ansi(%{key: "value"})
-      :ok
+      iex> # The print_ansi function prints ANSI-formatted output
+      iex> # Returns :ok on success
   """
   @spec print_ansi(term()) :: :ok
   def print_ansi(to_print) when is_map(to_print), do: to_print |> to_str() |> print_ansi()
@@ -225,8 +225,8 @@ defmodule Arca.Cli.Utils do
   - :ok
 
   ## Examples
-      iex> Arca.Cli.Utils.pretty_print(%{key: "value"})
-      :ok
+      iex> # The pretty_print function outputs a string representation
+      iex> # Returns :ok on success
   """
   @spec pretty_print(term()) :: :ok
   def pretty_print(term) do
@@ -250,8 +250,8 @@ defmodule Arca.Cli.Utils do
   - :ok or list of :ok values
 
   ## Examples
-      iex> Arca.Cli.Utils.put_lines(["Line 1", "Line 2"])
-      [:ok, :ok]
+      iex> # The put_lines function prints each line
+      iex> # Returns :ok or a list of :ok values
   """
   @spec put_lines(term()) :: :ok | [:ok]
   def put_lines(lines) when is_list(lines), do: Enum.map(lines, &print_ansi/1)

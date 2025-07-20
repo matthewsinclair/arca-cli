@@ -1,2 +1,2 @@
 #!/bin/sh
-ARCA_REPL_MODE=true iex -S mix Arca.Cli $*
+REPL_MODE=true iex -S mix Arca.Cli $*

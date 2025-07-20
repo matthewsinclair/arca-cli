@@ -178,7 +178,7 @@ defmodule Eg.Cli.Test do
       # Run through each command and smoke test each one
       Enum.each(@cli_commands, fn cmd ->
         [cmd_string | _] = cmd
-        IO.puts("\nSmoke testing example command: #{Enum.join(cmd, " ")}")
+        # Smoke testing example command: #{Enum.join(cmd, " ")}
 
         res =
           capture_io(fn ->
