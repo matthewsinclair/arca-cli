@@ -1,10 +1,5 @@
 #!/bin/sh
 
-# Load environment variables from .env file if it exists
-if [ -f ./config/.env ]; then
-  export $(cat ./config/.env | grep -v "^#" | xargs)
-fi
-
 # Set current directory to the script's directory
 cd "$(dirname "$0")/.." || exit
 
@@ -25,8 +20,8 @@ else
   echo "Warning: rlwrap not found. Install rlwrap for command history and completion."
 fi
 
-# Define the original command
-ORIGINAL_COMMAND="mix Arca.Cli repl $*"
+# Define the original command with REPL_MODE
+ORIGINAL_COMMAND="REPL_MODE=true mix Arca.Cli repl $*"
 
 # Run the command with rlwrap if available
 if [ -n "$RLWRAP_CMD" ]; then

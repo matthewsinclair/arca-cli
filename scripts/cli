@@ -1,1 +1,1 @@
-export $(cat ./config/.env | grep -v "^#" | xargs) && mix Arca.Cli $*
+REPL_MODE=true mix Arca.Cli $*
