@@ -40,7 +40,8 @@ defmodule Arca.Cli.MixProject do
       {:pathex, "~> 2.5"},
       {:table_rex, "~> 4.1"},
       {:elixir_uuid, "~> 1.2"},
-      {:ex_prompt, "~> 0.1.3"}
+      {:ex_prompt, "~> 0.1.3"},
+      {:dotenv, "~> 3.0", only: [:dev, :test], runtime: false}
     ]
   end
 end

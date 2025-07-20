@@ -1,37 +1,38 @@
-# Arca CLI Development Guidelines
+# Project Project Guidelines
 
-## Build Commands
+This is an Intent v2.0.0 project (formerly STP).
 
-- Format code: `mix format`
-- Run all tests: `./scripts/test`
-- Run single test: `./scripts/test test/path/to/test_file.exs:line_number`
-- Build escript: `mix escript.build`
-- Generate docs: `mix docs`
+## Project Structure
 
-## Code Style
+- `intent/` - Project artifacts (steel threads, docs, work tracking)
+  - `st/` - Steel threads organized as directories
+  - `docs/` - Technical documentation
+  - `llm/` - LLM-specific guidelines
+- `backlog/` - Task management (if using Backlog.md)
+- `.intent/` - Configuration and metadata
 
-### Organization
+## Steel Threads
 
-- Commands in `lib/arca_cli/commands/`
-- Behaviours use `*_behaviour.ex` naming
-- Base classes use `base_*.ex` naming
+Steel threads are organized as directories under `intent/st/`:
+- Each steel thread has its own directory (e.g., ST0001/)
+- Minimum required file is `info.md` with metadata
+- Optional files: design.md, impl.md, tasks.md, results.md
 
-### Types & Documentation
+## Commands
 
-- Document modules with `@moduledoc`
-- Specify types with `@type` and type specs with `@spec`
-- Use `@callback` for behaviour definitions
+- `intent st new "Title"` - Create a new steel thread
+- `intent st list` - List all steel threads
+- `intent st show <id>` - Show steel thread details
+- `intent doctor` - Check configuration
+- `intent help` - Get help
 
-### Naming & Formatting
+## Migration Notes
 
-- Use snake_case for variables and functions
-- Module names in PascalCase
-- Return tuples as `{:ok, result}` or `{:error, reason}`
-- Handle configuration via configurator modules
+This project was migrated from STP to Intent v2.0.0 on 2025-07-20.
+- Old structure: `stp/prj/st/`, `stp/eng/`, etc.
+- New structure: `intent/st/`, `intent/docs/`, etc.
+- Configuration moved from YAML to JSON format
 
-### Testing
+## Author
 
-- Tests match module structure in `test/` directory
-- Use ExUnit with descriptive test names
-- Set up test environment in `setup` blocks
-- Clean up with `on_exit` callbacks
+Unknown
