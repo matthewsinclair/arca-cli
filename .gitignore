@@ -30,3 +30,10 @@ arca_cli-*.tar
 
 # Ignore application logs
 .arca_cli/logs/
+
+# Ignore any .env files 
+.env 
+.env.*
+
+# Ignore logs directory
+.arca_cli/logs/
