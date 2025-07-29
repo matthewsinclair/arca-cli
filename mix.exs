@@ -32,15 +32,15 @@ defmodule Arca.Cli.MixProject do
       {:arca_config, github: "matthewsinclair/arca-config", branch: "main", override: true},
       {:castore, "~> 1.0"},
       {:jason, "~> 1.4"},
-      {:tesla, "~> 1.5"},
+      {:tesla, "~> 1.15"},
       {:certifi, "~> 2.9"},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false},
       {:owl, "~> 0.12"},
       {:ucwidth, "~> 0.2"},
-      {:pathex, "~> 2.5"},
+      {:pathex, "~> 2.6"},
       {:table_rex, "~> 4.1"},
       {:elixir_uuid, "~> 1.2"},
-      {:ex_prompt, "~> 0.1.3"},
+      {:ex_prompt, "~> 0.2"},
       {:dotenv, "~> 3.0", only: [:dev, :test], runtime: false},
       {:logger_file_backend, "~> 0.0.14"}
     ]
