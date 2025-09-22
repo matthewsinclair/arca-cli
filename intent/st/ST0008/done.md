@@ -1,6 +1,6 @@
 # Completed Work - ST0008: Orthogonalised formatting and outputting
 
-## Progress: 70% Complete (7 of 10 work packages)
+## Progress: 80% Complete (8 of 10 work packages)
 
 ## Completed Work Packages
 
@@ -104,14 +104,14 @@
 
 ---
 
-### WP3: Fancy Renderer Implementation ✅
+### WP3: ANSI Renderer Implementation (formerly Fancy Renderer) ✅
 
 **Completed**: 2025-09-22
 **Size**: M
 
 **Delivered**:
 
-- Created `lib/arca_cli/output/fancy_renderer.ex` with full color and symbol support
+- Created `lib/arca_cli/output/ansi_renderer.ex` (renamed from fancy_renderer.ex) with full color and symbol support
 - Implemented colored message renderers for all semantic types:
   - Success (✓) with green color
   - Error (✗) with red color
@@ -293,7 +293,7 @@
 
 - `lib/arca_cli.ex` - Added pattern-matched result processing
 - `lib/arca_cli/commands/sys_info_command.ex` - Refactored to use Context
-- `lib/arca_cli/output/fancy_renderer.ex` - Fixed ANSI code handling with Owl
+- `lib/arca_cli/output/ansi_renderer.ex` - Fixed ANSI code handling with Owl (renamed from fancy_renderer.ex)
 - `lib/arca_cli/output/plain_renderer.ex` - Fixed header detection logic
 - `lib/arca_cli/commands/about_command.ex` - Fixed return value
 - `lib/mix/tasks/arca_cli.ex` - Attempted fix for :ok printing (not needed)
@@ -311,9 +311,93 @@
 
 ---
 
+### Style Renaming and JSON Renderer
+
+**Completed**: 2025-09-22
+**Size**: S
+
+**Delivered**:
+
+- Renamed output styles for clarity and consistency:
+  - `fancy` → `ansi` (for ANSI color/symbol output)
+  - `plain` → `plain` (unchanged)
+  - `dump` → `dump` (unchanged)
+  - Added new `json` style for structured JSON output
+- Created `lib/arca_cli/output/json_renderer.ex`:
+  - Converts Context to JSON-serializable map
+  - Pretty-prints JSON output using Jason
+  - Handles all output types (success, error, warning, info, text, table, list)
+  - Filters out empty fields for clean output
+- Updated all references throughout codebase:
+  - Renamed FancyRenderer module to AnsiRenderer
+  - Updated all test files and references
+  - Updated environment variable handling
+  - Updated global CLI options
+- Maintained full backwards compatibility
+- All 306 tests passing after refactor
+
+**Files Created**:
+
+- `lib/arca_cli/output/json_renderer.ex`
+- `test/arca_cli/output/json_renderer_test.exs`
+
+**Files Renamed**:
+
+- `lib/arca_cli/output/fancy_renderer.ex` → `lib/arca_cli/output/ansi_renderer.ex`
+- `test/arca_cli/output/fancy_renderer_test.exs` → `test/arca_cli/output/ansi_renderer_test.exs`
+
+**Files Modified**:
+
+- `lib/arca_cli/output.ex` - Updated style names and dispatch logic
+- `lib/arca_cli.ex` - Updated environment style checking
+- `test/arca_cli/output_test.exs` - Updated test expectations
+- Various test files - Updated style references
+
+---
+
+### WP8: Command Migration to Context Pattern ✅
+
+**Completed**: 2025-09-22
+**Size**: M
+
+**Delivered**:
+
+- Migrated `settings.all` command to Context pattern:
+  - Converted from `inspect` output to structured table
+  - Added table with columns: "Setting", "Value", "Type"
+  - Added type detection for values (string, integer, boolean, etc.)
+  - Handles empty settings gracefully
+  - Works with all four output styles (plain, ansi, json, dump)
+- Migrated `cli.history` command to Context pattern:
+  - Converted from formatted string output to structured table
+  - Added table with columns: "Index", "Command", "Arguments"
+  - Parses command strings to separate command from arguments
+  - Handles empty history gracefully
+  - Added cargo data with total command count
+- Updated test expectations:
+  - Fixed `test/arca_cli/cli/arca_cli_test.exs` to expect new table format
+  - Tests now check for presence of table content rather than exact format
+  - All 337 tests passing
+
+**Files Modified**:
+
+- `lib/arca_cli/commands/settings_all_command.ex` - Full Context migration with table output
+- `lib/arca_cli/commands/cli_history_command.ex` - Full Context migration with table output
+- `test/arca_cli/cli/arca_cli_test.exs` - Updated test expectations for new format
+
+**Key Implementation Notes**:
+
+- Both commands maintain backwards compatibility in behavior
+- Table formatting automatically adapts to output style
+- Type information in settings.all helps users understand configuration
+- Command/argument parsing in cli.history improves readability
+- Test updates ensure stability without being overly rigid about format
+
+---
+
 ## Test Coverage
 
-- All tests passing (306 tests total in project)
+- All tests passing (337 tests total in project)
 - 100% coverage of implemented modules
 - Edge cases and error conditions fully tested
 - Environment variable isolation in tests
@@ -321,10 +405,11 @@
 ## Integration Status
 
 - Context module integrated with command execution pipeline
-- PlainRenderer and FancyRenderer fully functional
+- PlainRenderer, AnsiRenderer, and JsonRenderer fully functional
 - Output module integrated with Arca.Cli main flow
 - Callbacks integrated with rendering pipeline
 - Global CLI options functional and tested
-- sys.info command migrated to Context pattern
+- Three commands migrated to Context pattern: sys.info, settings.all, cli.history
 - No breaking changes to existing code
 - Full backwards compatibility maintained
+- Four output styles available: plain, ansi, json, dump

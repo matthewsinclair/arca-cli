@@ -85,16 +85,22 @@ defmodule Arca.Cli.Test do
     end
 
     test "settings.all" do
-      # Dynamically check that the output is properly formatted as a map
+      # Check that the output is properly formatted as a table
       output =
         capture_io(fn ->
           Arca.Cli.main(["settings.all"])
         end)
         |> String.trim()
 
-      # Just validate it's a map (since the content will depend on the actual settings)
-      assert String.starts_with?(output, "%{")
-      assert String.ends_with?(output, "}")
+      # In test mode, should show "Test Configuration" with a simple table
+      # The output will be in plain mode (no ANSI) in test environment
+      assert String.contains?(output, "Test Configuration") or
+               String.contains?(output, "Current Configuration Settings") or
+               String.contains?(output, "No settings available")
+
+      # Should contain table structure (either actual table or message)
+      assert String.contains?(output, "Setting") or
+               String.contains?(output, "No settings")
     end
 
     test "settings.get" do
