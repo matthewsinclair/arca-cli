@@ -6,7 +6,7 @@ Leverage Arca.Cli's existing callback system (ST0003) to create an orthogonal ou
 
 1. Extends callbacks beyond REPL mode to ALL command execution
 2. Adds a context structure for carrying structured output data
-3. Provides style renderers for different output modes (fancy, plain, dump)
+3. Provides style renderers for different output modes (ansi, plain, json, dump)
 4. Maintains full backwards compatibility with existing commands
 
 The system follows pure functional Elixir idioms with composable functions and pattern matching throughout.
@@ -84,7 +84,7 @@ The system follows pure functional Elixir idioms with composable functions and p
       ┌────┴────┐
       ▼         ▼
 ┌──────────┐ ┌──────────┐
-│  Fancy   │ │  Plain   │
+│  ANSI    │ │  Plain   │
 │ Renderer │ │ Renderer │
 └──────────┘ └──────────┘
 ```
@@ -94,8 +94,9 @@ The system follows pure functional Elixir idioms with composable functions and p
 ```elixir
 Arca.Cli.Ctx           # Context struct and composition functions
 Arca.Cli.Output        # Main rendering pipeline
-Arca.Cli.Output.FancyRenderer  # Colored, formatted output
+Arca.Cli.Output.AnsiRenderer   # Colored, formatted output
 Arca.Cli.Output.PlainRenderer  # No ANSI codes
+Arca.Cli.Output.JsonRenderer   # JSON structured output
 Arca.Cli.Output.DumpRenderer   # Raw data inspection
 ```
 
@@ -137,7 +138,7 @@ Arca.Cli.Output.DumpRenderer   # Raw data inspection
 {:list, items, title: title}
 {:text, content}
 
-# Interactive elements (fancy mode only)
+# Interactive elements (ansi mode only)
 {:spinner, label, func}
 {:progress, label, func}
 ```
@@ -148,16 +149,16 @@ Arca.Cli.Output.DumpRenderer   # Raw data inspection
 
 1. Add `Arca.Cli.Ctx` module with composition functions
 2. Add `Arca.Cli.Output` module with rendering pipeline
-3. Implement FancyRenderer and PlainRenderer modules
+3. Implement AnsiRenderer and PlainRenderer modules
 4. Register `:format_command_result` callback point
 5. Update `execute_command` to handle Ctx returns
 
-### Phase 2: Global Options
+### Phase 2: Style Control
 
-1. Add `--style` option to global CLI options
-2. Add `--no-ansi` as alias for `--style plain`
-3. Add environment variable support (NO_COLOR)
-4. Update help text to document new options
+1. Add environment variable support:
+   - `ARCA_STYLE` to set output style (ansi, plain, json, dump)
+   - `NO_COLOR` to force plain output
+2. Automatic style detection based on environment
 
 ### Phase 3: Testing & Documentation
 
@@ -230,9 +231,11 @@ end
 mix my.cli command
 
 # Force plain style
-mix my.cli --style plain command
-mix my.cli --no-ansi command
+ARCA_STYLE=plain mix my.cli command
 NO_COLOR=1 mix my.cli command
+
+# Use JSON output
+ARCA_STYLE=json mix my.cli command
 
 # Test environment (automatic plain)
 MIX_ENV=test mix my.cli command

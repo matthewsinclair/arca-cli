@@ -317,7 +317,6 @@
   - Renamed FancyRenderer module to AnsiRenderer
   - Updated all test files and references
   - Updated environment variable handling
-  - Updated global CLI options
 - Maintained full backwards compatibility
 - All 306 tests passing after refactor
 
@@ -380,6 +379,12 @@
 
 ---
 
+## GitHub Actions Fix
+
+**Issue**: AnsiRenderer tests were failing in GitHub Actions because TERM environment variable wasn't set.
+
+**Solution**: Added `TERM: xterm` to `.github/workflows/ci_cd.yml` environment variables to ensure AnsiRenderer detects a terminal environment in CI.
+
 ## Test Coverage
 
 - All tests passing (337 tests total in project)
@@ -393,7 +398,7 @@
 - PlainRenderer, AnsiRenderer, and JsonRenderer fully functional
 - Output module integrated with Arca.Cli main flow
 - Callbacks integrated with rendering pipeline
-- Global CLI options functional and tested
+- Environment variable style control functional and tested
 - Three commands migrated to Context pattern: sys.info, settings.all, cli.history
 - No breaking changes to existing code
 - Full backwards compatibility maintained
