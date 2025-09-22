@@ -8,6 +8,7 @@ on:
 
 env:
   MIX_ENV: test
+  TERM: xterm
   ARCA_CLI_CONFIG_PATH: .arca_cli
   ARCA_CLI_CONFIG_FILE: config.json
 
