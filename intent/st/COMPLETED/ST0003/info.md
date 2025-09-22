@@ -3,7 +3,7 @@ verblock: "20 Mar 2025:v0.1: Matthew Sinclair - Updated via STP upgrade"
 stp_version: 1.0.0
 status: Completed
 created: 20250319
-completed: 20250319
+completed: 20250922
 ---
 # ST0003: REPL Output Callback System
 
@@ -39,22 +39,26 @@ We need to create a generic callback system within Arca.Cli that enables externa
 ## Implementation Notes
 
 The callback system was implemented with a chain of responsibility pattern, where:
+
 - Multiple callbacks can be registered for a specific event
 - Callbacks are executed in reverse registration order (last registered, first executed)
 - Each callback can decide to continue the chain or halt with a specific result
 - The system falls back to default behavior if no callbacks are registered
 
 For the REPL output formatting, the implementation:
+
 - Checks if any `:format_output` callbacks are registered
 - If yes, executes all callbacks with the output
 - If no, uses the original implementation
 
 The callbacks module provides three main functions:
+
 1. `register/2` - Registers a callback function for a specific event
 2. `execute/2` - Executes all callbacks for an event in reverse registration order
 3. `has_callbacks?/1` - Checks if any callbacks are registered for an event
 
 The REPL's print function was modified to use a `with` pattern for cleaner control flow:
+
 ```elixir
 defp print(out) do
   with true <- Code.ensure_loaded?(Callbacks),
@@ -83,11 +87,13 @@ The following benefits have been achieved:
 The callback system has been fully implemented and tested, providing a flexible mechanism for output customization. This enables Multiplyer to integrate its OutputContext system with Arca.Cli's REPL while maintaining proper separation of concerns.
 
 User documentation has been updated to reflect these changes:
+
 1. Added callback system details to user guides
 2. Added integration examples for external applications
 3. Updated the reference guide with detailed callback API documentation
 
 Remaining work includes:
+
 1. Integrating with Multiplyer's OutputContext system
 2. Potential enhancements to provide more specific formatting events for different output types
 
@@ -98,5 +104,5 @@ Remaining work includes:
 - [Callbacks Tests](/test/arca_cli/callbacks/callbacks_test.exs)
 - [Formatter Tests](/test/arca_cli/repl/repl_formatter_test.exs)
 - [Example Formatter](/test/arca_cli/callbacks/example_formatter.ex)
-- [Related ST0002: REPL Tab Completion Improvements](/stp/prj/st/ST0002.md) 
+- [Related ST0002: REPL Tab Completion Improvements](/stp/prj/st/ST0002.md)
 - [Instructions on what to do](./ST0003_arca_cli_changes.md)
