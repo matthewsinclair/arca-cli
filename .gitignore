@@ -37,3 +37,6 @@ arca_cli-*.tar
 
 # Ignore logs directory
 .arca_cli/logs/
+
+# Ignore Intent backups
+.backup

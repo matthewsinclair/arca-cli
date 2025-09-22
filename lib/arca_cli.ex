@@ -1240,7 +1240,90 @@ defmodule Arca.Cli do
   end
 
   def prompt_symbol do
-    Application.fetch_env!(:arca_cli, :prompt_symbol)
+    # Check if a prompt_fun is configured
+    case Application.get_env(:arca_cli, :prompt_fun) do
+      nil ->
+        # Fall back to static prompt_symbol
+        Application.fetch_env!(:arca_cli, :prompt_symbol)
+
+      fun when is_function(fun, 0) ->
+        # Call the function to get dynamic prompt
+        fun.()
+
+      _ ->
+        # Invalid prompt_fun, fall back to static
+        Application.fetch_env!(:arca_cli, :prompt_symbol)
+    end
+  end
+
+  @doc """
+  Generate the REPL prompt string with optional custom text.
+
+  This function supports three configuration modes:
+  1. Not configured (nil) - Returns default prompt format for backward compatibility
+  2. Static string - Prepends the string to the default prompt
+  3. Dynamic function - Delegates full prompt generation to the function
+
+  ## Parameters
+    - context: Map containing:
+      - config_domain: The configured domain (atom or nil)
+      - history_count: Current history count (integer)
+      - history_cmds: List of all history commands (list of strings)
+      - prompt_symbol: The configured prompt symbol (string)
+
+  ## Returns
+    - Complete prompt string ready for display
+
+  ## Examples
+      # No configuration - default behavior
+      iex> Arca.Cli.prompt_text(%{prompt_symbol: "🔥", history_count: 0})
+      "\\n🔥 0 > "
+
+      # Static string configuration would return:
+      # "\\nmyapp 🔥 0 > "
+
+      # Dynamic function configuration would delegate to the function:
+      # config :arca_cli, prompt_text: &MyApp.get_prompt/1
+      # Function receives full context and returns complete prompt string
+  """
+  @spec prompt_text(map()) :: String.t()
+  def prompt_text(context \\ %{}) do
+    # Extract values from context with defaults
+    prompt_symbol = Map.get(context, :prompt_symbol, ">")
+    history_count = Map.get(context, :history_count, 0)
+
+    case Application.get_env(:arca_cli, :prompt_text) do
+      nil ->
+        # Not configured - return default prompt format
+        "\n#{prompt_symbol} #{history_count} > "
+
+      text when is_binary(text) ->
+        # Static text configuration - prepend to default format
+        "\n#{text} #{prompt_symbol} #{history_count} > "
+
+      fun when is_function(fun, 1) ->
+        # Dynamic function configuration - function handles entire prompt
+        try do
+          result = fun.(context)
+
+          if is_binary(result) do
+            result
+          else
+            # Fallback to default if function returns non-string
+            "\n#{prompt_symbol} #{history_count} > "
+          end
+        rescue
+          error ->
+            Logger.warning("Error calling prompt_text function: #{inspect(error)}")
+            # Fallback to default prompt on error
+            "\n#{prompt_symbol} #{history_count} > "
+        end
+
+      _ ->
+        # Invalid configuration - fall back to default
+        Logger.warning("Invalid prompt_text configuration - must be nil, string, or function/1")
+        "\n#{prompt_symbol} #{history_count} > "
+    end
   end
 
   # Helper function to conditionally sort commands

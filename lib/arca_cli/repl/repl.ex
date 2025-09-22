@@ -1045,6 +1045,15 @@ defmodule Arca.Cli.Repl do
   # Provide the REPL's prompt
   @spec repl_prompt() :: String.t()
   defp repl_prompt() do
-    "\n#{Arca.Cli.prompt_symbol()} #{History.hlen()} > "
+    # Build context with everything needed for prompt generation
+    context = %{
+      config_domain: Application.get_env(:arca_config, :config_domain),
+      history_count: History.hlen(),
+      history_cmds: History.get_all(),
+      prompt_symbol: Arca.Cli.prompt_symbol()
+    }
+
+    # Get the complete prompt string
+    Arca.Cli.prompt_text(context)
   end
 end

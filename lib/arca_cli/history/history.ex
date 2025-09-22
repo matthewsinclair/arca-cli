@@ -205,6 +205,35 @@ defmodule Arca.Cli.History do
   end
 
   @doc """
+  Get all commands from history as a list of strings (without indices).
+
+  ## Returns
+    - List of command strings in chronological order (oldest first)
+
+  ## Examples
+      iex> # Ensure the GenServer is started
+      iex> case Process.whereis(Arca.Cli.History) do
+      ...>   nil -> {:ok, _} = Arca.Cli.History.start_link()
+      ...>   pid -> {:ok, pid}
+      ...> end
+      iex> Arca.Cli.History.flush_history()
+      iex> Arca.Cli.History.push_cmd("echo 'Hello World'")
+      iex> Arca.Cli.History.push_cmd("ls -l")
+      iex> Arca.Cli.History.get_all()
+      ["echo 'Hello World'", "ls -l"]
+  """
+  @spec get_all() :: [String.t()]
+  def get_all() do
+    case get_history() do
+      {:ok, history} ->
+        Enum.map(history, fn {_index, cmd} -> cmd end)
+
+      {:error, _, _} ->
+        []
+    end
+  end
+
+  @doc """
   Flush the history completely.
 
   ## Returns
