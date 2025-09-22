@@ -9,7 +9,10 @@ defmodule Arca.Cli.Callbacks do
 
   The following extension points are available:
 
-  * `:format_output` - Customize the formatting of output in the REPL
+  * `:format_output` - Customize the formatting of output
+    - Legacy: `(String.t() -> String.t())`
+    - Modern: `(Ctx.t() -> Ctx.t())`
+    - Automatically detects input type and applies appropriate transformation
   * `:format_help` - Customize the formatting of help text
 
   ## Usage Example
@@ -107,18 +110,64 @@ defmodule Arca.Cli.Callbacks do
     :arca_cli
     |> Application.get_env(:callbacks, %{})
     |> Map.get(event, [])
-    |> Enum.reduce_while({:cont, initial}, fn callback, {:cont, acc} ->
-      case callback.(acc) do
-        {:halt, result} -> {:halt, result}
-        {:cont, value} -> {:cont, {:cont, value}}
-        other -> {:cont, {:cont, other}}
-      end
-    end)
-    |> case do
-      {:cont, value} -> value
-      result -> result
+    |> apply_callbacks(initial, event)
+  end
+
+  # Apply callbacks with pattern matching based on event type
+  defp apply_callbacks(callbacks, initial, :format_output) do
+    # Support both simple returns and {:halt/:cont, value} tuples for format_output
+    Enum.reduce_while(callbacks, initial, &apply_format_callback_with_control/2)
+  end
+
+  defp apply_callbacks(callbacks, initial, _event) do
+    # Default callback application for other events
+    Enum.reduce_while(callbacks, {:cont, initial}, &apply_standard_callback/2)
+    |> extract_callback_result()
+  end
+
+  # Format output callback with halt/cont control flow
+  defp apply_format_callback_with_control(callback, acc) do
+    result = apply_format_callback(callback, acc)
+
+    case result do
+      {:halt, value} -> {:halt, value}
+      {:cont, value} -> {:cont, value}
+      value -> {:cont, value}
     end
   end
+
+  # Pattern matched format_output callback application
+  defp apply_format_callback(callback, acc) when is_binary(acc) do
+    apply_callback_safely(callback, acc)
+  end
+
+  defp apply_format_callback(callback, %{__struct__: Arca.Cli.Ctx} = acc) do
+    apply_callback_safely(callback, acc)
+  end
+
+  defp apply_format_callback(_callback, acc) do
+    # Pass through unchanged for unexpected types
+    acc
+  end
+
+  # Safe callback application with error handling
+  defp apply_callback_safely(callback, data) do
+    callback.(data)
+  rescue
+    _ -> data
+  end
+
+  # Standard callback application (for non-format_output callbacks)
+  defp apply_standard_callback(callback, {:cont, acc}) do
+    case callback.(acc) do
+      {:halt, result} -> {:halt, result}
+      {:cont, value} -> {:cont, {:cont, value}}
+      other -> {:cont, {:cont, other}}
+    end
+  end
+
+  defp extract_callback_result({:cont, value}), do: value
+  defp extract_callback_result(result), do: result
 
   @doc """
   Check if any callbacks are registered for a specific event.

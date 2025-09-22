@@ -2,30 +2,13 @@
 
 ## Progress Summary
 
-**Overall Status**: 50% Complete (5 of 10 work packages)
+**Overall Status**: 60% Complete (6 of 10 work packages)
 
-- ✅ Completed: WP1 (Context Module), WP2 (Plain Renderer), WP3 (Fancy Renderer), WP4 (Output Pipeline), WP7 (Global Options) - See done.md
-- 🎯 Ready to Start: WP5 (Callback Integration), WP6 (Command Execution Integration)
+- ✅ Completed: WP1 (Context Module), WP2 (Plain Renderer), WP3 (Fancy Renderer), WP4 (Output Pipeline), WP5 (Callback Integration), WP7 (Global Options) - See done.md
+- 🎯 Ready to Start: WP6 (Command Execution Integration)
 - ⏸️ Blocked: WP4-WP6, WP8-WP10 (waiting on dependencies)
 
 ## Remaining Work Packages
-
-### WP5: Callback Integration
-
-**Status**: Ready to Start
-**Size**: S
-**Description**: Register new callback points and integrate with existing callback system.
-
-**Tasks**:
-
-- [ ] Add `:format_command_result` callback documentation to Callbacks module
-- [ ] Create registration helper in application startup
-- [ ] Implement `format_result/1` function in Output module
-- [ ] Test callback chain with multiple formatters
-- [ ] Ensure backwards compatibility with existing `:format_output` callback
-- [ ] Add examples to callback documentation
-
----
 
 ### WP6: Command Execution Integration
 
@@ -120,7 +103,7 @@
 ## Dependencies Graph
 
 ```
-WP1 ✅ ──┬──> WP3 ✅ ──> WP4 ✅ ──┬──> WP5 🎯
+WP1 ✅ ──┬──> WP3 ✅ ──> WP4 ✅ ──┬──> WP5 ✅
         │                      ├──> WP6 🎯 ──┬──> WP8
 WP2 ✅ ──┘                      │          └──> WP9
                                └──> WP10
@@ -129,9 +112,9 @@ WP7 ✅ (completed)
 
 ## Next Steps
 
-1. **Start WP5 (Callback Integration)** - Register the new `:format_command_result` callback
-2. **Start WP6 (Command Execution Integration)** - Update execute_command to handle Ctx returns (can be done in parallel)
-3. **Then WP8 (Sample Command Migration)** - Migrate AboutCommand as proof of concept
+1. **Start WP6 (Command Execution Integration)** - Update execute_command to handle Ctx returns
+2. **Then WP8 (Sample Command Migration)** - Migrate AboutCommand as proof of concept
+3. **Then WP9 (Test Infrastructure)** - Update test helpers for both output styles
 
 ## Success Metrics
 

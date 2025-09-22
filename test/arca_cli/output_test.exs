@@ -136,6 +136,12 @@ defmodule Arca.Cli.OutputTest do
   end
 
   describe "dump renderer" do
+    setup do
+      # Clear any callbacks from other tests
+      Application.put_env(:arca_cli, :callbacks, %{})
+      :ok
+    end
+
     test "shows full context structure" do
       ctx = %Ctx{
         command: "test",

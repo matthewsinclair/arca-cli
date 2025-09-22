@@ -8,6 +8,7 @@ defmodule Arca.Cli.MixProject do
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env()),
       escript: [main_module: Arca.Cli, path: "_build/escript/arca_cli", name: "arca_cli"],
       mix_tasks: [
         arca_cli: Mix.Tasks.Arca.Cli,
@@ -45,4 +46,8 @@ defmodule Arca.Cli.MixProject do
       {:logger_file_backend, "~> 0.0.14"}
     ]
   end
+
+  # Specifies which paths to compile per environment
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end

@@ -1,6 +1,6 @@
 # Completed Work - ST0008: Orthogonalised formatting and outputting
 
-## Progress: 50% Complete (5 of 10 work packages)
+## Progress: 60% Complete (6 of 10 work packages)
 
 ## Completed Work Packages
 
@@ -210,9 +210,59 @@
 
 ---
 
+### WP5: Callback Integration ✅
+
+**Completed**: 2025-09-22
+**Size**: S
+
+**Delivered**:
+
+- Extended existing `:format_output` callback to be polymorphic:
+  - Supports legacy string formatting `(String.t() -> String.t())`
+  - Supports modern Context formatting `(Ctx.t() -> Ctx.t())`
+  - Automatically detects input type via pattern matching
+- Implemented pattern-matched callback handlers:
+  - `apply_format_callback/2` with type-specific dispatch
+  - Safe callback application with error handling
+  - Support for `{:halt, value}` control flow
+- Integrated callbacks into Output rendering pipeline:
+  - Added `apply_format_callbacks/1` to Output module
+  - Callbacks applied before style determination
+  - Maintains backwards compatibility
+- Created polymorphic formatter example:
+  - Demonstrates both string and Context handling
+  - Shows chaining and composition patterns
+  - Includes filtering and transformation examples
+- Fixed mix.exs to properly compile test/support files:
+  - Added `elixirc_paths/1` configuration
+  - Test environment includes "test/support" path
+- Created comprehensive test suite with 12 tests
+- All tests passing (337 total in project)
+
+**Files Modified**:
+
+- `lib/arca_cli/callbacks.ex` - Added polymorphic support with pattern matching
+- `lib/arca_cli/output.ex` - Integrated callback application
+- `mix.exs` - Added proper test support compilation
+
+**Files Created**:
+
+- `test/support/polymorphic_formatter.ex` - Example implementation
+- `test/arca_cli/callbacks/format_output_polymorphic_test.exs` - Test suite
+
+**Key Implementation Notes**:
+
+- Single callback serves both old and new patterns
+- No breaking changes - existing Multiplyer/MeetZaya callbacks work unchanged
+- Pattern matching ensures type safety without case statements
+- Callbacks can return simple values or `{:halt/:cont, value}` tuples
+- Error handling prevents callback failures from breaking the pipeline
+
+---
+
 ## Test Coverage
 
-- All tests passing (325 tests total in project)
+- All tests passing (337 tests total in project)
 - 100% coverage of implemented modules
 - Edge cases and error conditions fully tested
 - Environment variable isolation in tests
@@ -223,6 +273,7 @@
 - PlainRenderer ready for use via Output pipeline (WP4)
 - FancyRenderer integrated with Output pipeline
 - Output module fully functional and tested
+- Callbacks integrated with rendering pipeline
 - Global CLI options functional and tested
 - No breaking changes to existing code
 - Full backwards compatibility maintained

@@ -54,6 +54,26 @@ defmodule Arca.Cli.Output do
 
   def render(%Ctx{} = ctx) do
     ctx
+    |> apply_format_callbacks()
+    |> process_rendering()
+  end
+
+  @doc """
+  Applies format_output callbacks to transform the context.
+
+  Supports both legacy string callbacks and new Context transformations.
+  """
+  @spec apply_format_callbacks(Ctx.t() | String.t()) :: Ctx.t() | String.t()
+  def apply_format_callbacks(data) do
+    case Arca.Cli.Callbacks.has_callbacks?(:format_output) do
+      true -> Arca.Cli.Callbacks.execute(:format_output, data)
+      false -> data
+    end
+  end
+
+  # Process rendering pipeline
+  defp process_rendering(%Ctx{} = ctx) do
+    ctx
     |> determine_style()
     |> apply_renderer(ctx)
     |> format_for_output()
