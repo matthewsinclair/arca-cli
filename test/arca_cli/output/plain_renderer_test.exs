@@ -114,9 +114,12 @@ defmodule Arca.Cli.Output.PlainRendererTest do
         |> IO.iodata_to_binary()
 
       # Verify it contains box-drawing table elements
-      assert result =~ "┌"  # Top-left corner
-      assert result =~ "│"  # Vertical line
-      assert result =~ "─"  # Horizontal line
+      # Top-left corner
+      assert result =~ "┌"
+      # Vertical line
+      assert result =~ "│"
+      # Horizontal line
+      assert result =~ "─"
       assert result =~ "Name"
       assert result =~ "Age"
       assert result =~ "Alice"
@@ -260,7 +263,9 @@ defmodule Arca.Cli.Output.PlainRendererTest do
         Ctx.new(%{file: "data.csv"}, %{})
         |> Ctx.add_output({:info, "Processing file: data.csv"})
         |> Ctx.add_output({:info, "Reading 1000 rows"})
-        |> Ctx.add_output({:table, [["Count", "1000"], ["Status", "OK"]], headers: ["Metric", "Value"]})
+        |> Ctx.add_output(
+          {:table, [["Count", "1000"], ["Status", "OK"]], headers: ["Metric", "Value"]}
+        )
         |> Ctx.add_output({:success, "Processing complete"})
         |> Ctx.complete(:ok)
 
@@ -334,10 +339,14 @@ defmodule Arca.Cli.Output.PlainRendererTest do
         |> IO.iodata_to_binary()
 
       # Check for common ANSI escape sequences
-      refute result =~ ~r/\x1b\[/       # ESC[
-      refute result =~ ~r/\x1b\[[0-9;]*m/ # Color codes
-      refute result =~ ~r/\x1b\[K/      # Clear line
-      refute result =~ ~r/\x1b\[H/      # Home cursor
+      # ESC[
+      refute result =~ ~r/\x1b\[/
+      # Color codes
+      refute result =~ ~r/\x1b\[[0-9;]*m/
+      # Clear line
+      refute result =~ ~r/\x1b\[K/
+      # Home cursor
+      refute result =~ ~r/\x1b\[H/
     end
 
     test "strips any ANSI codes from Owl output" do
