@@ -363,6 +363,7 @@ defmodule Arca.Cli.CtxTest do
 
     test "formats table output items" do
       rows = [["A", "B"], ["C", "D"]]
+
       ctx =
         Ctx.new(%{}, %{})
         |> Ctx.add_output({:table, rows, headers: ["Col1", "Col2"]})
@@ -386,6 +387,7 @@ defmodule Arca.Cli.CtxTest do
 
     test "truncates long text content" do
       long_text = String.duplicate("x", 100)
+
       ctx =
         Ctx.new(%{}, %{})
         |> Ctx.add_output({:text, long_text})

@@ -1,50 +1,18 @@
 # Tasks - ST0008: Orthogonalised formatting and outputting
 
-## Work Packages
+## Progress Summary
 
-### WP1: Context Module Foundation
+**Overall Status**: 20% Complete (2 of 10 work packages)
 
-**Status**: Not Started
-**Size**: S
-**Description**: Create the core `Arca.Cli.Ctx` module with data structure and composition functions.
+- ✅ Completed: WP1 (Context Module), WP2 (Plain Renderer) - See done.md
+- 🎯 Ready to Start: WP3 (Fancy Renderer), WP7 (Global Options)
+- ⏸️ Blocked: WP4-WP6, WP8-WP10 (waiting on dependencies)
 
-**Tasks**:
-
-- [ ] Create `lib/arca_cli/ctx.ex` with defstruct
-- [ ] Implement `new/2` function for creating context from args and settings
-- [ ] Implement `add_output/2` for appending output items
-- [ ] Implement `add_error/2` for appending errors
-- [ ] Implement `with_cargo/2` for setting command-specific data
-- [ ] Implement `complete/2` for setting final status
-- [ ] Add comprehensive tests for all functions
-- [ ] Add @moduledoc and @doc documentation
-
----
-
-### WP2: Plain Renderer Implementation
-
-**Status**: Not Started
-**Size**: S
-**Description**: Implement the plain text renderer that outputs without ANSI codes or special formatting.
-
-**Tasks**:
-
-- [ ] Create `lib/arca_cli/output/plain_renderer.ex`
-- [ ] Implement `render/1` for `{:success, msg}` output type
-- [ ] Implement `render/1` for `{:error, msg}` output type
-- [ ] Implement `render/1` for `{:warning, msg}` output type
-- [ ] Implement `render/1` for `{:info, msg}` output type
-- [ ] Implement `render/1` for `{:table, rows, opts}` with ASCII table
-- [ ] Implement `render/1` for `{:list, items, opts}` with bullet points
-- [ ] Implement `render/1` for `{:text, content}` pass-through
-- [ ] Add tests for each output type
-- [ ] Handle edge cases (nil values, empty lists, etc.)
-
----
+## Remaining Work Packages
 
 ### WP3: Fancy Renderer Implementation
 
-**Status**: Not Started
+**Status**: Ready to Start
 **Size**: M
 **Description**: Implement the fancy renderer with colors, symbols, and Owl formatting.
 
@@ -63,7 +31,7 @@
 
 ### WP4: Output Module Pipeline
 
-**Status**: Not Started
+**Status**: Blocked (requires WP3)
 **Size**: M
 **Description**: Create the main `Arca.Cli.Output` module that orchestrates the rendering pipeline.
 
@@ -84,7 +52,7 @@
 
 ### WP5: Callback Integration
 
-**Status**: Not Started
+**Status**: Blocked (requires WP4)
 **Size**: S
 **Description**: Register new callback points and integrate with existing callback system.
 
@@ -101,7 +69,7 @@
 
 ### WP6: Command Execution Integration
 
-**Status**: Not Started
+**Status**: Blocked (requires WP4)
 **Size**: M
 **Description**: Update `Arca.Cli.execute_command/5` to handle Ctx returns while maintaining backwards compatibility.
 
@@ -120,7 +88,7 @@
 
 ### WP7: Global CLI Options
 
-**Status**: Not Started
+**Status**: Ready to Start (independent)
 **Size**: S
 **Description**: Add global `--style` and `--no-ansi` options to CLI configuration.
 
@@ -138,7 +106,7 @@
 
 ### WP8: Sample Command Migration
 
-**Status**: Not Started
+**Status**: Blocked (requires WP6)
 **Size**: S
 **Description**: Migrate `AboutCommand` to use Ctx as proof of concept and example.
 
@@ -155,7 +123,7 @@
 
 ### WP9: Test Infrastructure Updates
 
-**Status**: Not Started
+**Status**: Blocked (requires WP6)
 **Size**: M
 **Description**: Update test helpers and fixtures to support both output styles.
 
@@ -173,7 +141,7 @@
 
 ### WP10: Documentation Package
 
-**Status**: Not Started
+**Status**: Blocked (requires all other WPs)
 **Size**: S
 **Description**: Create comprehensive documentation for command authors.
 
@@ -189,33 +157,21 @@
 
 ---
 
-## Dependencies
+## Dependencies Graph
 
-- WP1 (Context Module) blocks all other work packages
-- WP2 (Plain) and WP3 (Fancy) can be done in parallel after WP1
-- WP4 (Pipeline) requires WP2 and WP3
-- WP5 (Callbacks) and WP6 (Execution) require WP4
-- WP7 (Options) can be done independently
-- WP8 (Migration) requires WP6
-- WP9 (Tests) should be done alongside or after WP6
-- WP10 (Docs) should be done last
+```
+WP1 ✅ ──┬──> WP3 🎯 ──> WP4 ──┬──> WP5
+        │                      ├──> WP6 ──┬──> WP8
+WP2 ✅ ──┘                      │          └──> WP9
+                               └──> WP10
+WP7 🎯 (independent)
+```
 
-## Estimated Effort
+## Next Steps
 
-**Total Size**: L-XL
-
-**Size Breakdown**:
-
-- Small (S) packages: WP1, WP2, WP5, WP7, WP8, WP10
-- Medium (M) packages: WP3, WP4, WP6, WP9
-
-**Relative Sequencing**:
-
-- First: WP1 (foundational)
-- Early: WP2, WP3 (can be parallel)
-- Middle: WP4, WP5, WP6
-- Late: WP7, WP8, WP9
-- Last: WP10
+1. **Start WP3 (Fancy Renderer)** - Build on PlainRenderer pattern with colors and formatting
+2. **Start WP7 (Global Options)** - Can be done in parallel, no dependencies
+3. **Then WP4 (Output Pipeline)** - Once WP3 is complete, create the orchestration layer
 
 ## Success Metrics
 
