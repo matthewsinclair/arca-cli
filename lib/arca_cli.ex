@@ -561,9 +561,7 @@ defmodule Arca.Cli do
   def handle_args(args, settings, optimus) do
     case args do
       {:ok, [subcmd], args} ->
-        # Extract global CLI options and merge into settings
-        settings_with_style = merge_style_settings(args, settings)
-        handle_subcommand(subcmd, args, settings_with_style, optimus)
+        handle_subcommand(subcmd, args, settings, optimus)
 
       {:ok, msg} when is_binary(msg) ->
         msg
@@ -770,65 +768,6 @@ defmodule Arca.Cli do
       Callbacks.execute(:format_output, output)
     else
       output
-    end
-  end
-
-  @doc """
-  Merges style-related settings from CLI options and environment variables.
-
-  Precedence order:
-  1. CLI flags (--cli-style, --cli-no-ansi)
-  2. Environment variables (NO_COLOR, ARCA_STYLE)
-  3. Existing settings
-
-  ## Parameters
-    - args: Parsed command arguments containing options and flags
-    - settings: Existing application settings
-
-  ## Returns
-    - Updated settings map with style preference
-  """
-  @spec merge_style_settings(map(), map()) :: map()
-  def merge_style_settings(args, settings) do
-    # Start with existing settings
-    settings
-    |> apply_env_style()
-    |> apply_cli_style(args)
-  end
-
-  # Apply style from environment variables
-  defp apply_env_style(settings) do
-    no_color = System.get_env("NO_COLOR")
-    arca_style = System.get_env("ARCA_STYLE")
-
-    cond do
-      # NO_COLOR takes precedence over ARCA_STYLE (when set to a truthy value)
-      no_color not in [nil, "", "0", "false"] ->
-        Map.put(settings, "style", "plain")
-
-      # ARCA_STYLE is set to a valid value
-      arca_style in ["ansi", "plain", "json", "dump"] ->
-        Map.put(settings, "style", arca_style)
-
-      # No environment variables set or invalid values
-      true ->
-        settings
-    end
-  end
-
-  # Apply style from CLI options (highest precedence)
-  defp apply_cli_style(settings, args) do
-    cond do
-      # Check if --cli-no-ansi flag is set
-      Map.get(args, :flags, %{}) |> Map.get(:cli_no_ansi, false) ->
-        Map.put(settings, "style", "plain")
-
-      # Check if --cli-style option is set
-      cli_style = Map.get(args, :options, %{}) |> Map.get(:cli_style) ->
-        Map.put(settings, "style", Atom.to_string(cli_style))
-
-      true ->
-        settings
     end
   end
 

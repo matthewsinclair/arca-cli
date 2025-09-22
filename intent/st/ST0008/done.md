@@ -68,39 +68,24 @@
 
 ---
 
-### WP7: Global CLI Options
+### WP7: Environment Variable Style Control
 
 **Completed**: 2025-09-22
 **Size**: S
 
 **Delivered**:
 
-- Added global `--cli-style` option with values: fancy, plain, dump
-- Added global `--cli-no-ansi` flag as alias for `--cli-style plain`
-- Implemented environment variable support:
-  - `NO_COLOR` sets style to plain
-  - `ARCA_STYLE` sets style to specified value
-- Established precedence order: CLI flags > CLI options > env vars > settings
-- Integrated style settings into command pipeline via `merge_style_settings/2`
-- Style automatically flows through to Context metadata
-- Prevented duplicate global options when multiple configurators are used
-
-**Files Modified**:
-
-- `lib/arca_cli/configurator/base_configurator.ex` - Added global options configuration
-- `lib/arca_cli/configurator/coordinator.ex` - Added single-point global option injection
-- `lib/arca_cli.ex` - Added merge_style_settings to pass style through pipeline
-
-**Files Created**:
-
-- `test/arca_cli/global_options_test.exs` - Comprehensive test suite (17 tests)
+- Implemented environment variable support for style control:
+  - `NO_COLOR` sets style to plain when set to non-falsy value
+  - `ARCA_STYLE` sets style to specified value (ansi, plain, json, dump)
+- Established precedence order: env vars > test environment > TTY detection
+- Style settings automatically flow through Context metadata
 
 **Key Implementation Notes**:
 
-- Used `--cli-` prefix to avoid conflicts with command-specific options
-- Global options added only once at Coordinator level to prevent duplicates
-- Environment variable handling includes proper precedence
-- Full test coverage including isolation of environment variables
+- NO_COLOR properly handles "0", "false", and empty string as false values
+- Environment variable handling is done in Output module
+- No global CLI options needed - simpler implementation using env vars only
 
 ---
 

@@ -94,10 +94,9 @@ defp apply_cell_color(_, cell), do: cell
 ### Style Precedence Chain
 
 1. Explicit style in Context metadata (highest priority)
-2. CLI flags (`--cli-style`, `--cli-no-ansi`)
-3. Environment variables (`NO_COLOR`, `ARCA_STYLE`)
-4. Test environment detection (`MIX_ENV=test`)
-5. TTY availability check (lowest priority)
+2. Environment variables (`NO_COLOR`, `ARCA_STYLE`)
+3. Test environment detection (`MIX_ENV=test`)
+4. TTY availability check (lowest priority)
 
 ### Output Types
 
@@ -113,30 +112,23 @@ Tables support two formats:
 
 Headers are indicated via the `has_headers: true` option.
 
-### Global CLI Options
+### Environment Variables for Style Control
 
-```elixir
-options: [
-  cli_style: [
-    value_name: "STYLE",
-    long: "--cli-style",
-    help: "Set output style (ansi, plain, json, dump)",
-    parser: fn s ->
-      case String.downcase(s) do
-        style when style in ["ansi", "plain", "json", "dump"] ->
-          {:ok, String.to_atom(style)}
-        _ ->
-          {:error, "Invalid style. Must be one of: ansi, plain, json, dump"}
-      end
-    end
-  ]
-],
-flags: [
-  cli_no_ansi: [
-    long: "--cli-no-ansi",
-    help: "Disable ANSI colors in output (same as --cli-style plain)"
-  ]
-]
+Output style is controlled via environment variables:
+
+- `ARCA_STYLE`: Set output style to `ansi`, `plain`, `json`, or `dump`
+- `NO_COLOR`: When set (to any value except "", "0", or "false"), forces plain style
+
+Examples:
+```bash
+# Use JSON output
+ARCA_STYLE=json arca.cli sys.info
+
+# Disable colors
+NO_COLOR=1 arca.cli sys.info
+
+# Use dump format for debugging
+ARCA_STYLE=dump arca.cli settings.all
 ```
 
 ## Challenges & Solutions

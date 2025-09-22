@@ -67,11 +67,8 @@ defmodule Arca.Cli.Configurator.Coordinator do
          {:ok, {combined_config, subcommand_names}} <- combine_configurator_data(unique_cfg8rs),
          :ok <- check_for_duplicated_commands(subcommand_names),
          {:ok, final_config} <- create_final_config(combined_config, unique_cfg8rs) do
-      # Add global options once at the coordinator level
-      final_config_with_options = add_global_cli_options(final_config)
-
       # Create the Optimus configuration
-      Optimus.new!(final_config_with_options)
+      Optimus.new!(final_config)
     else
       # Fallback to ensure we always return an Optimus configuration even if errors occurred
       {:error, _error_type, reason} ->
@@ -383,47 +380,6 @@ defmodule Arca.Cli.Configurator.Coordinator do
 
         {:error, :command_config_error, "Failed to get command configuration"}
     end
-  end
-
-  @doc """
-  Add global CLI options to the configuration.
-
-  These options are added at the coordinator level to ensure they're only added once,
-  even when multiple configurators are used.
-
-  ## Parameters
-    - config: Configuration keyword list
-
-  ## Returns
-    - Configuration with global options added
-  """
-  @spec add_global_cli_options(keyword()) :: keyword()
-  def add_global_cli_options(config) do
-    global_options = [
-      options: [
-        cli_style: [
-          value_name: "STYLE",
-          long: "--cli-style",
-          help: "Set output style (fancy, plain, dump)",
-          required: false,
-          parser: fn s ->
-            case String.downcase(s) do
-              style when style in ["fancy", "plain", "dump"] -> {:ok, String.to_atom(style)}
-              _ -> {:error, "Invalid style. Must be one of: fancy, plain, dump"}
-            end
-          end
-        ]
-      ],
-      flags: [
-        cli_no_ansi: [
-          long: "--cli-no-ansi",
-          help: "Disable ANSI colors in output (same as --cli-style plain)",
-          multiple: false
-        ]
-      ]
-    ]
-
-    Keyword.merge(config, global_options)
   end
 
   @doc """
