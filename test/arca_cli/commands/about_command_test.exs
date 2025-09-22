@@ -1,6 +1,5 @@
 defmodule Arca.Cli.Commands.AboutCommandTest do
   use ExUnit.Case
-  import ExUnit.CaptureIO
   alias Arca.Cli.Commands.AboutCommand
   alias Arca.Cli.Test.Support
   doctest Arca.Cli.Commands.AboutCommand
@@ -43,9 +42,7 @@ defmodule Arca.Cli.Commands.AboutCommandTest do
     end
 
     test "AboutCommand.handle/3" do
-      assert capture_io(fn ->
-               Arca.Cli.Commands.AboutCommand.handle()
-             end)
+      assert Arca.Cli.Commands.AboutCommand.handle()
              |> String.trim() ==
                """
                📦 Arca CLI

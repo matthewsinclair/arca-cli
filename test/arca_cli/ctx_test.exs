@@ -50,10 +50,10 @@ defmodule Arca.Cli.CtxTest do
     end
 
     test "extracts multiple meta values from settings" do
-      settings = %{"style" => "fancy", "no_color" => true}
+      settings = %{"style" => "ansi", "no_color" => true}
       ctx = Ctx.new(%{}, settings)
 
-      assert ctx.meta == %{style: :fancy, no_color: true}
+      assert ctx.meta == %{style: :ansi, no_color: true}
     end
   end
 
@@ -265,17 +265,17 @@ defmodule Arca.Cli.CtxTest do
     test "adds to existing metadata" do
       ctx =
         Ctx.new(%{}, %{})
-        |> Ctx.set_meta(:style, :fancy)
+        |> Ctx.set_meta(:style, :ansi)
 
       result = Ctx.set_meta(ctx, :no_color, true)
 
-      assert result.meta == %{style: :fancy, no_color: true}
+      assert result.meta == %{style: :ansi, no_color: true}
     end
 
     test "overwrites existing key" do
       ctx =
         Ctx.new(%{}, %{})
-        |> Ctx.set_meta(:style, :fancy)
+        |> Ctx.set_meta(:style, :ansi)
 
       result = Ctx.set_meta(ctx, :style, :plain)
 
@@ -297,7 +297,7 @@ defmodule Arca.Cli.CtxTest do
     test "overwrites existing keys during merge" do
       ctx =
         Ctx.new(%{}, %{})
-        |> Ctx.update_meta(%{style: :fancy, format: :text})
+        |> Ctx.update_meta(%{style: :ansi, format: :text})
 
       result = Ctx.update_meta(ctx, %{style: :plain})
 

@@ -77,7 +77,6 @@ end
 
 defmodule Arca.Cli.Configurator.ConfiguratorTest do
   use ExUnit.Case
-  import ExUnit.CaptureIO
   import ExUnit.CaptureLog
   require Logger
   alias Arca.Cli.Commands.AboutCommand
@@ -130,9 +129,7 @@ defmodule Arca.Cli.Configurator.ConfiguratorTest do
     end
 
     test "CommandBehaviour.handle/3 (as AboutCommand)" do
-      assert capture_io(fn ->
-               Arca.Cli.Commands.AboutCommand.handle()
-             end)
+      assert Arca.Cli.Commands.AboutCommand.handle()
              |> String.trim() ==
                """
                📦 Arca CLI

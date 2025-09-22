@@ -1,12 +1,12 @@
-defmodule Arca.Cli.Output.FancyRendererTest do
+defmodule Arca.Cli.Output.AnsiRendererTest do
   use ExUnit.Case
-  alias Arca.Cli.Output.FancyRenderer
+  alias Arca.Cli.Output.AnsiRenderer
   alias Arca.Cli.Ctx
 
   describe "render/1 with context" do
     test "renders success messages with green color and checkmark" do
       ctx = %Ctx{output: [{:success, "Operation completed"}]}
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       assert result =~ "✓"
       assert result =~ "Operation completed"
@@ -16,7 +16,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
 
     test "renders error messages with red color and cross" do
       ctx = %Ctx{output: [{:error, "Operation failed"}]}
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       assert result =~ "✗"
       assert result =~ "Operation failed"
@@ -26,7 +26,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
 
     test "renders warning messages with yellow color and warning symbol" do
       ctx = %Ctx{output: [{:warning, "This is a warning"}]}
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       assert result =~ "⚠"
       assert result =~ "This is a warning"
@@ -36,7 +36,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
 
     test "renders info messages with cyan color and info symbol" do
       ctx = %Ctx{output: [{:info, "Information message"}]}
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       assert result =~ "ℹ"
       assert result =~ "Information message"
@@ -46,7 +46,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
 
     test "renders text messages without formatting" do
       ctx = %Ctx{output: [{:text, "Plain text"}]}
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       assert result == "Plain text"
       refute result =~ IO.ANSI.green()
@@ -62,7 +62,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         ]
       }
 
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
       lines = String.split(result, "\n")
 
       assert length(lines) == 3
@@ -77,7 +77,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         meta: %{style: :plain}
       }
 
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       # Plain renderer returns a list, we need to join it
       output_string =
@@ -96,7 +96,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
 
   describe "render/1 with lists" do
     test "renders simple lists with colored bullets" do
-      result = FancyRenderer.render([{:list, ["Item 1", "Item 2", "Item 3"]}])
+      result = AnsiRenderer.render([{:list, ["Item 1", "Item 2", "Item 3"]}])
 
       # The bullets have ANSI codes between them and the items
       assert result =~ "Item 1"
@@ -108,7 +108,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
     end
 
     test "renders list with title" do
-      result = FancyRenderer.render([{:list, ["A", "B"], title: "Options"}])
+      result = AnsiRenderer.render([{:list, ["A", "B"], title: "Options"}])
 
       assert result =~ "Options:"
       assert result =~ "A"
@@ -118,7 +118,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
     end
 
     test "renders list with custom bullet color" do
-      result = FancyRenderer.render([{:list, ["Item"], bullet_color: :green}])
+      result = AnsiRenderer.render([{:list, ["Item"], bullet_color: :green}])
 
       assert result =~ "Item"
       assert result =~ "•"
@@ -126,7 +126,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
     end
 
     test "handles different data types in lists" do
-      result = FancyRenderer.render([{:list, [42, :atom, "string", nil]}])
+      result = AnsiRenderer.render([{:list, [42, :atom, "string", nil]}])
 
       assert result =~ "42"
       assert result =~ "atom"
@@ -143,7 +143,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         %{name: "Bob", status: "Inactive"}
       ]
 
-      result = FancyRenderer.render([{:table, data, []}])
+      result = AnsiRenderer.render([{:table, data, []}])
 
       # Should use rounded border style
       assert result =~ "Alice"
@@ -162,7 +162,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         ["Bob", "87"]
       ]
 
-      result = FancyRenderer.render([{:table, data, []}])
+      result = AnsiRenderer.render([{:table, data, []}])
 
       assert result =~ "Name"
       assert result =~ "Score"
@@ -176,7 +176,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         %{id: 2, active: false, score: 87.3, status: "pending"}
       ]
 
-      result = FancyRenderer.render([{:table, data, []}])
+      result = AnsiRenderer.render([{:table, data, []}])
 
       assert result =~ "1"
       assert result =~ "2"
@@ -193,7 +193,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         %{status: "warning", result: "ok"}
       ]
 
-      result = FancyRenderer.render([{:table, data, []}])
+      result = AnsiRenderer.render([{:table, data, []}])
 
       # Success should be green
       assert result =~ IO.ANSI.green()
@@ -207,7 +207,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
   describe "render/1 with interactive elements" do
     test "renders spinner with function execution" do
       func = fn -> {:ok, "Task completed"} end
-      result = FancyRenderer.render([{:spinner, "Processing", func}])
+      result = AnsiRenderer.render([{:spinner, "Processing", func}])
 
       assert result =~ "⠿"
       assert result =~ "Processing..."
@@ -219,7 +219,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
 
     test "renders spinner with error result" do
       func = fn -> {:error, "Task failed"} end
-      result = FancyRenderer.render([{:spinner, "Processing", func}])
+      result = AnsiRenderer.render([{:spinner, "Processing", func}])
 
       assert result =~ "⠿"
       assert result =~ "Processing..."
@@ -230,7 +230,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
 
     test "renders progress with function execution" do
       func = fn -> {:ok, "Download complete"} end
-      result = FancyRenderer.render([{:progress, "Downloading", func}])
+      result = AnsiRenderer.render([{:progress, "Downloading", func}])
 
       assert result =~ "▶"
       assert result =~ "Downloading..."
@@ -247,7 +247,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         {:info, "Info"}
       ]
 
-      result = FancyRenderer.render(items)
+      result = AnsiRenderer.render(items)
 
       assert result =~ "✓ Done"
       assert result =~ "✗ Failed"
@@ -261,7 +261,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
   describe "TTY detection and fallback" do
     test "uses colors when TERM is set" do
       # TERM should be set in test environment
-      result = FancyRenderer.render([{:success, "Done"}])
+      result = AnsiRenderer.render([{:success, "Done"}])
 
       # If TERM is set, should include colors
       if System.get_env("TERM") && System.get_env("TERM") != "dumb" do
@@ -270,7 +270,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
     end
 
     test "handles unknown output items gracefully" do
-      result = FancyRenderer.render([{:unknown, "data", "extra"}])
+      result = AnsiRenderer.render([{:unknown, "data", "extra"}])
 
       # Should render with faint style
       assert result =~ IO.ANSI.faint()
@@ -281,13 +281,13 @@ defmodule Arca.Cli.Output.FancyRendererTest do
   describe "edge cases" do
     test "handles empty output" do
       ctx = %Ctx{output: []}
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       assert result == ""
     end
 
     test "handles nil values properly" do
-      result = FancyRenderer.render([{:text, nil}])
+      result = AnsiRenderer.render([{:text, nil}])
       assert result == ""
     end
 
@@ -301,7 +301,7 @@ defmodule Arca.Cli.Output.FancyRendererTest do
         ]
       }
 
-      result = FancyRenderer.render(ctx)
+      result = AnsiRenderer.render(ctx)
 
       assert result =~ "✓ Start"
       # From table

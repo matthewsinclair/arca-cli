@@ -1,6 +1,6 @@
-defmodule Arca.Cli.Output.FancyRenderer do
+defmodule Arca.Cli.Output.AnsiRenderer do
   @moduledoc """
-  Fancy renderer for Arca.Cli output with colors, symbols, and enhanced formatting.
+  ANSI renderer for Arca.Cli output with colors, symbols, and enhanced formatting.
 
   This renderer produces visually rich terminal output with:
   - Colored text for different message types
@@ -15,7 +15,7 @@ defmodule Arca.Cli.Output.FancyRenderer do
   alias Arca.Cli.Output.PlainRenderer
 
   @doc """
-  Renders a context or output items with fancy formatting.
+  Renders a context or output items with ANSI formatting.
 
   ## Parameters
 
@@ -59,7 +59,7 @@ defmodule Arca.Cli.Output.FancyRenderer do
     case System.get_env("TERM") do
       nil -> {:plain, ctx}
       "dumb" -> {:plain, ctx}
-      _ -> {:fancy, ctx}
+      _ -> {:ansi, ctx}
     end
   end
 
@@ -69,7 +69,7 @@ defmodule Arca.Cli.Output.FancyRenderer do
     |> IO.iodata_to_binary()
   end
 
-  defp do_render({:fancy, ctx}) do
+  defp do_render({:ansi, ctx}) do
     # Handle nil or invalid output gracefully
     case ctx.output do
       output when is_list(output) ->
@@ -129,9 +129,10 @@ defmodule Arca.Cli.Output.FancyRenderer do
           )
 
         rows
-        |> prepare_table_data()
+        |> prepare_table_data(opts)
         |> Owl.Table.new(table_opts)
-        |> to_string()
+        |> Owl.Data.to_chardata()
+        |> IO.iodata_to_binary()
     end
   end
 
@@ -199,10 +200,10 @@ defmodule Arca.Cli.Output.FancyRenderer do
 
   # Helper functions
 
-  defp prepare_table_data(rows) when is_list(rows) do
+  defp prepare_table_data(rows, opts) when is_list(rows) do
     rows
     |> classify_rows()
-    |> process_rows()
+    |> process_rows(opts)
   end
 
   defp classify_rows(rows) do
@@ -217,14 +218,18 @@ defmodule Arca.Cli.Output.FancyRenderer do
     end
   end
 
-  defp process_rows({rows, :maps}) do
+  defp process_rows({rows, :maps}, _opts) do
     Enum.map(rows, &stringify_map_values/1)
   end
 
-  defp process_rows({rows, :lists}) do
-    # For list of lists, convert to list of maps using first row as headers
-    case rows do
-      [headers | data] when data != [] ->
+  defp process_rows({rows, :lists}, opts) do
+    # Check if first row should be treated as headers
+    # Default to true for fancy renderer
+    has_headers = Keyword.get(opts, :has_headers, true)
+
+    case {rows, has_headers} do
+      {[headers | data], true} when data != [] ->
+        # First row is headers
         headers_list = Enum.map(headers, &safe_to_string/1)
 
         Enum.map(data, fn row ->
@@ -235,8 +240,8 @@ defmodule Arca.Cli.Output.FancyRenderer do
           |> Map.new()
         end)
 
-      _ ->
-        # If no headers or single row, just convert to strings
+      {rows, _} ->
+        # No headers in first row, generate column names
         Enum.map(rows, fn row ->
           row
           |> Enum.with_index()
@@ -246,7 +251,7 @@ defmodule Arca.Cli.Output.FancyRenderer do
     end
   end
 
-  defp process_rows({rows, :mixed}) do
+  defp process_rows({rows, :mixed}, _opts) do
     Enum.map(rows, &process_mixed_row/1)
   end
 
@@ -300,10 +305,10 @@ defmodule Arca.Cli.Output.FancyRenderer do
     end
   end
 
-  defp apply_cell_color(:header, cell), do: IO.ANSI.bright() <> cell <> IO.ANSI.reset()
-  defp apply_cell_color(:number, cell), do: IO.ANSI.cyan() <> cell <> IO.ANSI.reset()
-  defp apply_cell_color(:success, cell), do: IO.ANSI.green() <> cell <> IO.ANSI.reset()
-  defp apply_cell_color(:error, cell), do: IO.ANSI.red() <> cell <> IO.ANSI.reset()
-  defp apply_cell_color(:warning, cell), do: IO.ANSI.yellow() <> cell <> IO.ANSI.reset()
+  defp apply_cell_color(:header, cell), do: Owl.Data.tag(cell, :bright)
+  defp apply_cell_color(:number, cell), do: Owl.Data.tag(cell, :cyan)
+  defp apply_cell_color(:success, cell), do: Owl.Data.tag(cell, :green)
+  defp apply_cell_color(:error, cell), do: Owl.Data.tag(cell, :red)
+  defp apply_cell_color(:warning, cell), do: Owl.Data.tag(cell, :yellow)
   defp apply_cell_color(:default, cell), do: cell
 end

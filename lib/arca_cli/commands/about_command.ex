@@ -40,7 +40,7 @@ defmodule Arca.Cli.Commands.AboutCommand do
   @spec handle(map(), map(), Optimus.t()) :: String.t()
   def handle(args, settings, _optimus) do
     with {:ok, about_text} <- get_about_text(args, settings) do
-      about_text |> put_lines()
+      about_text
     else
       {:error, _error_type, message} ->
         "Error: #{message}"

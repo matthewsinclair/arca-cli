@@ -200,12 +200,15 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
             cli_style: [
               value_name: "STYLE",
               long: "--cli-style",
-              help: "Set output style (fancy, plain, dump)",
+              help: "Set output style (ansi, plain, json, dump)",
               required: false,
               parser: fn s ->
                 case String.downcase(s) do
-                  style when style in ["fancy", "plain", "dump"] -> {:ok, String.to_atom(style)}
-                  _ -> {:error, "Invalid style. Must be one of: fancy, plain, dump"}
+                  style when style in ["ansi", "plain", "json", "dump"] ->
+                    {:ok, String.to_atom(style)}
+
+                  _ ->
+                    {:error, "Invalid style. Must be one of: ansi, plain, json, dump"}
                 end
               end
             ]

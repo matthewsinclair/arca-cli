@@ -1,11 +1,20 @@
 defmodule Arca.Cli.Callbacks.FormatOutputPolymorphicTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   alias Arca.Cli.{Ctx, Callbacks}
 
   describe "format_output callbacks with polymorphic support" do
     setup do
-      # Clear any existing callbacks
+      # Save existing callbacks
+      existing_callbacks = Application.get_env(:arca_cli, :callbacks, %{})
+
+      # Clear callbacks for test
       Application.put_env(:arca_cli, :callbacks, %{})
+
+      on_exit(fn ->
+        # Restore original callbacks
+        Application.put_env(:arca_cli, :callbacks, existing_callbacks)
+      end)
+
       :ok
     end
 
@@ -136,7 +145,17 @@ defmodule Arca.Cli.Callbacks.FormatOutputPolymorphicTest do
 
   describe "integration with Output module" do
     setup do
+      # Save existing callbacks
+      existing_callbacks = Application.get_env(:arca_cli, :callbacks, %{})
+
+      # Clear callbacks for test
       Application.put_env(:arca_cli, :callbacks, %{})
+
+      on_exit(fn ->
+        # Restore original callbacks
+        Application.put_env(:arca_cli, :callbacks, existing_callbacks)
+      end)
+
       :ok
     end
 

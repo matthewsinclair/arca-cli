@@ -14,11 +14,11 @@ defmodule Arca.Cli.Output do
   2. NO_COLOR environment variable (forces plain)
   3. ARCA_STYLE environment variable
   4. MIX_ENV=test (forces plain in test environment)
-  5. TTY availability (fancy if TTY, plain otherwise)
+  5. TTY availability (ansi if TTY, plain otherwise)
 
   ## Available Styles
 
-  - `:fancy` - Full colors, symbols, and enhanced formatting (TTY only)
+  - `:ansi` - Full colors, symbols, and enhanced formatting (TTY only)
   - `:plain` - No ANSI codes, plain text with Unicode symbols
   - `:dump` - Raw data dump for debugging, shows Context structure
 
@@ -34,7 +34,7 @@ defmodule Arca.Cli.Output do
   """
 
   alias Arca.Cli.Ctx
-  alias Arca.Cli.Output.{FancyRenderer, PlainRenderer}
+  alias Arca.Cli.Output.{AnsiRenderer, PlainRenderer, JsonRenderer}
   require Logger
 
   @doc """
@@ -80,7 +80,7 @@ defmodule Arca.Cli.Output do
   end
 
   # Style determination with precedence chain
-  defp determine_style(%Ctx{meta: %{style: style}}) when style in [:fancy, :plain, :dump] do
+  defp determine_style(%Ctx{meta: %{style: style}}) when style in [:ansi, :plain, :json, :dump] do
     style
   end
 
@@ -104,14 +104,15 @@ defmodule Arca.Cli.Output do
   # Auto-detect based on TTY availability
   defp auto_detect_style(_ctx) do
     case tty?() do
-      true -> :fancy
+      true -> :ansi
       false -> :plain
     end
   end
 
   # Renderer dispatch
-  defp apply_renderer(:fancy, ctx), do: FancyRenderer.render(ctx)
+  defp apply_renderer(:ansi, ctx), do: AnsiRenderer.render(ctx)
   defp apply_renderer(:plain, ctx), do: PlainRenderer.render(ctx) |> IO.iodata_to_binary()
+  defp apply_renderer(:json, ctx), do: JsonRenderer.render(ctx)
   defp apply_renderer(:dump, ctx), do: dump_context(ctx)
 
   # Dump renderer for debugging
@@ -149,8 +150,9 @@ defmodule Arca.Cli.Output do
 
   defp env_style do
     case System.get_env("ARCA_STYLE") do
-      "fancy" -> :fancy
+      "ansi" -> :ansi
       "plain" -> :plain
+      "json" -> :json
       "dump" -> :dump
       _ -> nil
     end
@@ -182,18 +184,18 @@ defmodule Arca.Cli.Output do
     - ctx: Optional context to check for style metadata
 
   ## Returns
-    - The style atom (:fancy, :plain, or :dump)
+    - The style atom (:ansi, :plain, or :dump)
 
   ## Examples
 
       iex> Output.current_style()
-      :fancy
+      :ansi
 
       iex> ctx = %Ctx{meta: %{style: :plain}}
       iex> Output.current_style(ctx)
       :plain
   """
-  @spec current_style(Ctx.t() | nil) :: :fancy | :plain | :dump
+  @spec current_style(Ctx.t() | nil) :: :ansi | :plain | :dump
   def current_style(ctx \\ nil) do
     case ctx do
       nil -> determine_style(%Ctx{})

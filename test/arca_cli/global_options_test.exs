@@ -33,12 +33,12 @@ defmodule Arca.Cli.GlobalOptionsTest do
     end
 
     test "adds style from --cli-style option" do
-      args = %{options: %{cli_style: :fancy}, flags: %{}}
+      args = %{options: %{cli_style: :ansi}, flags: %{}}
       settings = %{}
 
       result = Cli.merge_style_settings(args, settings)
 
-      assert result == %{"style" => "fancy"}
+      assert result == %{"style" => "ansi"}
     end
 
     test "adds plain style from --cli-no-ansi flag" do
@@ -51,7 +51,7 @@ defmodule Arca.Cli.GlobalOptionsTest do
     end
 
     test "--cli-no-ansi flag overrides --cli-style option" do
-      args = %{options: %{cli_style: :fancy}, flags: %{cli_no_ansi: true}}
+      args = %{options: %{cli_style: :ansi}, flags: %{cli_no_ansi: true}}
       settings = %{}
 
       result = Cli.merge_style_settings(args, settings)
@@ -61,7 +61,7 @@ defmodule Arca.Cli.GlobalOptionsTest do
 
     test "CLI options override existing settings" do
       args = %{options: %{cli_style: :dump}, flags: %{}}
-      settings = %{"style" => "fancy"}
+      settings = %{"style" => "ansi"}
 
       result = Cli.merge_style_settings(args, settings)
 
@@ -74,6 +74,10 @@ defmodule Arca.Cli.GlobalOptionsTest do
       # Save original env vars
       no_color = System.get_env("NO_COLOR")
       arca_style = System.get_env("ARCA_STYLE")
+
+      # Clear env vars before each test
+      System.delete_env("NO_COLOR")
+      System.delete_env("ARCA_STYLE")
 
       on_exit(fn ->
         # Restore original env vars
@@ -128,13 +132,13 @@ defmodule Arca.Cli.GlobalOptionsTest do
     end
 
     test "ARCA_STYLE sets style when valid" do
-      System.put_env("ARCA_STYLE", "fancy")
+      System.put_env("ARCA_STYLE", "ansi")
       args = %{options: %{}, flags: %{}}
       settings = %{}
 
       result = Cli.merge_style_settings(args, settings)
 
-      assert result == %{"style" => "fancy"}
+      assert result == %{"style" => "ansi"}
     end
 
     test "ARCA_STYLE ignores invalid values" do
@@ -149,7 +153,7 @@ defmodule Arca.Cli.GlobalOptionsTest do
 
     test "NO_COLOR takes precedence over ARCA_STYLE" do
       System.put_env("NO_COLOR", "1")
-      System.put_env("ARCA_STYLE", "fancy")
+      System.put_env("ARCA_STYLE", "ansi")
       args = %{options: %{}, flags: %{}}
       settings = %{}
 
@@ -161,16 +165,16 @@ defmodule Arca.Cli.GlobalOptionsTest do
     test "CLI options override environment variables" do
       System.put_env("NO_COLOR", "1")
       System.put_env("ARCA_STYLE", "plain")
-      args = %{options: %{cli_style: :fancy}, flags: %{}}
+      args = %{options: %{cli_style: :ansi}, flags: %{}}
       settings = %{}
 
       result = Cli.merge_style_settings(args, settings)
 
-      assert result == %{"style" => "fancy"}
+      assert result == %{"style" => "ansi"}
     end
 
     test "CLI flag overrides environment variables" do
-      System.put_env("ARCA_STYLE", "fancy")
+      System.put_env("ARCA_STYLE", "ansi")
       args = %{options: %{}, flags: %{cli_no_ansi: true}}
       settings = %{}
 
@@ -207,7 +211,7 @@ defmodule Arca.Cli.GlobalOptionsTest do
 
       # 1. Settings only
       args = %{options: %{}, flags: %{}}
-      settings = %{"style" => "fancy"}
+      settings = %{"style" => "ansi"}
       result = Cli.merge_style_settings(args, settings)
       assert result["style"] == "dump", "Env should override settings"
 
@@ -233,7 +237,8 @@ defmodule Arca.Cli.GlobalOptionsTest do
 
     test "multiple style values work with Ctx" do
       test_cases = [
-        {"fancy", :fancy},
+        {"ansi", :ansi},
+        {"json", :json},
         {"plain", :plain},
         {"dump", :dump}
       ]

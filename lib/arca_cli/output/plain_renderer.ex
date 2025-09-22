@@ -182,8 +182,20 @@ defmodule Arca.Cli.Output.PlainRenderer do
   end
 
   def render_table(rows, opts) do
+    # Check if we should treat first row as headers
+    {headers, data_rows} =
+      case {rows, Keyword.get(opts, :has_headers, false)} do
+        {[h | t], true} when is_list(h) ->
+          # First row is headers
+          {h, t}
+
+        {rows, _} ->
+          # No headers in data, may be provided separately or generated
+          {Keyword.get(opts, :headers), rows}
+      end
+
     # Convert rows to list of maps format for Owl
-    data = rows_to_maps(rows, Keyword.get(opts, :headers))
+    data = rows_to_maps(data_rows, headers)
 
     # Determine column preferences based on data
     column_prefs = build_column_preferences(data)
@@ -256,12 +268,12 @@ defmodule Arca.Cli.Output.PlainRenderer do
 
   # Convert list of lists to list of maps for Owl.Table
   defp rows_to_maps(rows, nil) when is_list(rows) do
-    # No headers provided, generate generic column names
-    case List.first(rows) do
-      nil ->
+    case rows do
+      [] ->
         []
 
-      first_row when is_list(first_row) ->
+      # Generate column names for list of lists
+      [first_row | _] when is_list(first_row) ->
         headers =
           first_row
           |> Enum.with_index(1)
@@ -269,8 +281,8 @@ defmodule Arca.Cli.Output.PlainRenderer do
 
         rows_to_maps(rows, headers)
 
-      first_row when is_map(first_row) ->
-        # Already in map format, but ensure all values are strings
+      # Already in map format
+      [first_row | _] when is_map(first_row) ->
         rows |> Enum.map(&stringify_map_values/1)
 
       _ ->

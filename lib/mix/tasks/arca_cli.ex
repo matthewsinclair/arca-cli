@@ -8,6 +8,8 @@ defmodule Mix.Tasks.Arca.Cli do
   @shortdoc "Runs the Arca CLI"
   @doc "Invokes the Arca CLI and passes it the supplied command line params."
   def run(args) do
-    Cli.main(args)
+    _ = Cli.main(args)
+    # Return nothing to avoid Mix printing the return value
+    nil
   end
 end

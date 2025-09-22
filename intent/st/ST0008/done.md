@@ -1,6 +1,6 @@
 # Completed Work - ST0008: Orthogonalised formatting and outputting
 
-## Progress: 60% Complete (6 of 10 work packages)
+## Progress: 70% Complete (7 of 10 work packages)
 
 ## Completed Work Packages
 
@@ -260,20 +260,71 @@
 
 ---
 
+### WP6: Command Execution Integration ✅
+
+**Completed**: 2025-09-22
+**Size**: M
+
+**Delivered**:
+
+- Updated `lib/arca_cli.ex` with pattern-matched command result processing:
+  - `process_command_result/3` functions for different return types
+  - Support for Context returns (new format)
+  - Support for string/list returns (legacy format)
+  - Support for error tuples and enhanced errors
+  - Support for `:nooutput` tuples
+- Added necessary module aliases (Ctx, Output, Callbacks)
+- Refactored `sys.info` command to use Context pattern:
+  - Returns structured Context with table output
+  - Added system information display with proper headers
+  - Uses `has_headers: true` option for table rendering
+- Fixed Owl table rendering with ANSI codes:
+  - Updated FancyRenderer to use `Owl.Data.tag/2` for colors
+  - Fixed column width calculations
+  - Used `Owl.Data.to_chardata/1` instead of deprecated `to_ansidata/1`
+- Fixed PlainRenderer table header handling:
+  - Supports `has_headers` option to indicate first row is headers
+  - Generates "Column 1", "Column 2" when no headers provided
+- Fixed AboutCommand to return text instead of IO result
+- Fixed environment variable cleanup in tests
+- All tests passing (306 tests total)
+
+**Files Modified**:
+
+- `lib/arca_cli.ex` - Added pattern-matched result processing
+- `lib/arca_cli/commands/sys_info_command.ex` - Refactored to use Context
+- `lib/arca_cli/output/fancy_renderer.ex` - Fixed ANSI code handling with Owl
+- `lib/arca_cli/output/plain_renderer.ex` - Fixed header detection logic
+- `lib/arca_cli/commands/about_command.ex` - Fixed return value
+- `lib/mix/tasks/arca_cli.ex` - Attempted fix for :ok printing (not needed)
+- `test/arca_cli/global_options_test.exs` - Fixed env var cleanup
+- `test/arca_cli/commands/about_command_test.exs` - Updated test for new return
+- `test/arca_cli/configurator/configurator_test.exs` - Updated test for new return
+
+**Key Implementation Notes**:
+
+- Pattern matching used throughout - no case statements
+- Owl.Data.tag used for ANSI colors to maintain proper width calculations
+- Table headers handled via `has_headers` option for clarity
+- Legacy commands continue to work unchanged
+- sys.info command now demonstrates Context pattern usage
+
+---
+
 ## Test Coverage
 
-- All tests passing (337 tests total in project)
+- All tests passing (306 tests total in project)
 - 100% coverage of implemented modules
 - Edge cases and error conditions fully tested
 - Environment variable isolation in tests
 
 ## Integration Status
 
-- Context module ready for integration with command execution
-- PlainRenderer ready for use via Output pipeline (WP4)
-- FancyRenderer integrated with Output pipeline
-- Output module fully functional and tested
+- Context module integrated with command execution pipeline
+- PlainRenderer and FancyRenderer fully functional
+- Output module integrated with Arca.Cli main flow
 - Callbacks integrated with rendering pipeline
 - Global CLI options functional and tested
+- sys.info command migrated to Context pattern
 - No breaking changes to existing code
 - Full backwards compatibility maintained

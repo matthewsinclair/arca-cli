@@ -75,6 +75,7 @@ defmodule Arca.Cli do
   use OK.Pipe
   import Arca.Cli.Utils
   alias Arca.Cli.Configurator.Coordinator
+  alias Arca.Cli.{Ctx, Output, Callbacks}
 
   @doc """
   Handle Application functionality to start the Arca.Cli subsystem.
@@ -690,35 +691,8 @@ defmodule Arca.Cli do
         {:ok, Arca.Cli.Help.show(cmd, args, optimus)}
       else
         # Normal command execution with proper error handling
-        result = handler.handle(args, settings, optimus)
-
-        # A command handler can return many different result formats;
-        # normalize them here for consistent error handling
-        case result do
-          {:error, reason} when is_binary(reason) ->
-            # Convert legacy error format to enhanced format with debug info
-            Arca.Cli.ErrorHandler.create_error(
-              :command_failed,
-              reason,
-              error_location: "#{handler}.handle/3"
-            )
-
-          {:error, error_type, reason} ->
-            # Convert standard error format to enhanced format with debug info
-            Arca.Cli.ErrorHandler.create_error(
-              error_type,
-              reason,
-              error_location: "#{handler}.handle/3"
-            )
-
-          # Already using enhanced format, pass through
-          {:error, _type, _reason, _debug} = enhanced_error ->
-            enhanced_error
-
-          other ->
-            # All other returns (string, list, etc.) considered success
-            {:ok, other}
-        end
+        handler.handle(args, settings, optimus)
+        |> process_command_result(handler, settings)
       end
     rescue
       e ->
@@ -737,6 +711,65 @@ defmodule Arca.Cli do
           original_error: e,
           error_location: "#{__MODULE__}.execute_command/5"
         )
+    end
+  end
+
+  # Process command results with pattern matching
+  # New: Handle Context returns
+  defp process_command_result(%Ctx{} = ctx, _handler, _settings) do
+    {:ok, Output.render(ctx)}
+  end
+
+  # Legacy: Handle string returns
+  defp process_command_result(result, _handler, settings) when is_binary(result) do
+    {:ok, apply_legacy_formatting(result, settings)}
+  end
+
+  # Legacy: Handle list returns
+  defp process_command_result(result, _handler, _settings) when is_list(result) do
+    {:ok, result}
+  end
+
+  # Existing: Handle nooutput tuples
+  defp process_command_result({:nooutput, _value} = result, _handler, _settings) do
+    {:ok, result}
+  end
+
+  # Existing: Handle error with binary reason
+  defp process_command_result({:error, reason}, handler, _settings) when is_binary(reason) do
+    Arca.Cli.ErrorHandler.create_error(
+      :command_failed,
+      reason,
+      error_location: "#{handler}.handle/3"
+    )
+  end
+
+  # Existing: Handle error with type and reason
+  defp process_command_result({:error, error_type, reason}, handler, _settings) do
+    Arca.Cli.ErrorHandler.create_error(
+      error_type,
+      reason,
+      error_location: "#{handler}.handle/3"
+    )
+  end
+
+  # Existing: Handle enhanced error format
+  defp process_command_result({:error, _type, _reason, _debug} = error, _handler, _settings) do
+    error
+  end
+
+  # Fallback: Convert other returns to string
+  defp process_command_result(other, _handler, _settings) do
+    {:ok, inspect(other)}
+  end
+
+  # Apply legacy formatting for string outputs
+  defp apply_legacy_formatting(output, _settings) when is_binary(output) do
+    # Apply callbacks if they exist
+    if Callbacks.has_callbacks?(:format_output) do
+      Callbacks.execute(:format_output, output)
+    else
+      output
     end
   end
 
@@ -765,18 +798,19 @@ defmodule Arca.Cli do
 
   # Apply style from environment variables
   defp apply_env_style(settings) do
+    no_color = System.get_env("NO_COLOR")
+    arca_style = System.get_env("ARCA_STYLE")
+
     cond do
-      # NO_COLOR takes precedence over ARCA_STYLE
-      System.get_env("NO_COLOR") not in [nil, "", "0", "false"] ->
+      # NO_COLOR takes precedence over ARCA_STYLE (when set to a truthy value)
+      no_color not in [nil, "", "0", "false"] ->
         Map.put(settings, "style", "plain")
 
-      arca_style = System.get_env("ARCA_STYLE") ->
-        if arca_style in ["fancy", "plain", "dump"] do
-          Map.put(settings, "style", arca_style)
-        else
-          settings
-        end
+      # ARCA_STYLE is set to a valid value
+      arca_style in ["ansi", "plain", "json", "dump"] ->
+        Map.put(settings, "style", arca_style)
 
+      # No environment variables set or invalid values
       true ->
         settings
     end

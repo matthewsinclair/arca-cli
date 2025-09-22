@@ -18,7 +18,7 @@ defmodule Arca.Cli.OutputTest do
       ctx = %Ctx{output: [{:success, "Operation complete"}]}
       result = Output.render(ctx)
       assert result =~ "Operation complete"
-      # Should contain checkmark in either fancy or plain mode
+      # Should contain checkmark in either ansi or plain mode
       assert result =~ "✓" or result =~ "Operation complete"
     end
 
@@ -26,7 +26,7 @@ defmodule Arca.Cli.OutputTest do
       ctx = %Ctx{output: [{:error, "Operation failed"}]}
       result = Output.render(ctx)
       assert result =~ "Operation failed"
-      # Should contain cross in either fancy or plain mode
+      # Should contain cross in either ansi or plain mode
       assert result =~ "✗" or result =~ "Operation failed"
     end
 
@@ -91,7 +91,7 @@ defmodule Arca.Cli.OutputTest do
 
     test "NO_COLOR takes precedence over ARCA_STYLE" do
       System.put_env("NO_COLOR", "1")
-      System.put_env("ARCA_STYLE", "fancy")
+      System.put_env("ARCA_STYLE", "ansi")
 
       assert Output.current_style() == :plain
     end
@@ -113,7 +113,7 @@ defmodule Arca.Cli.OutputTest do
       # This may still return plain depending on actual TTY detection
       # but should not error
       style = Output.current_style()
-      assert style in [:fancy, :plain]
+      assert style in [:ansi, :plain]
     end
 
     test "uses plain when TERM is dumb" do
@@ -184,7 +184,7 @@ defmodule Arca.Cli.OutputTest do
     test "dispatches to fancy renderer when style is fancy" do
       ctx = %Ctx{
         output: [{:success, "Test"}],
-        meta: %{style: :fancy}
+        meta: %{style: :ansi}
       }
 
       result = Output.render(ctx)
@@ -234,7 +234,7 @@ defmodule Arca.Cli.OutputTest do
   describe "current_style/1" do
     test "returns style for nil context" do
       style = Output.current_style(nil)
-      assert style in [:fancy, :plain, :dump]
+      assert style in [:ansi, :plain, :json, :dump]
     end
 
     test "returns style from context metadata" do
@@ -271,7 +271,7 @@ defmodule Arca.Cli.OutputTest do
         %Ctx{output: [{:table, [], []}]},
         %Ctx{meta: %{style: :dump}},
         %Ctx{meta: %{style: :plain}},
-        %Ctx{meta: %{style: :fancy}}
+        %Ctx{meta: %{style: :ansi}}
       ]
 
       for ctx <- test_cases do
@@ -300,20 +300,20 @@ defmodule Arca.Cli.OutputTest do
 
     test "NO_COLOR=0 does not force plain" do
       System.put_env("NO_COLOR", "0")
-      System.put_env("ARCA_STYLE", "fancy")
-      assert Output.current_style() == :fancy
+      System.put_env("ARCA_STYLE", "ansi")
+      assert Output.current_style() == :ansi
     end
 
     test "NO_COLOR=false does not force plain" do
       System.put_env("NO_COLOR", "false")
-      System.put_env("ARCA_STYLE", "fancy")
-      assert Output.current_style() == :fancy
+      System.put_env("ARCA_STYLE", "ansi")
+      assert Output.current_style() == :ansi
     end
 
     test "empty NO_COLOR does not force plain" do
       System.put_env("NO_COLOR", "")
-      System.put_env("ARCA_STYLE", "fancy")
-      assert Output.current_style() == :fancy
+      System.put_env("ARCA_STYLE", "ansi")
+      assert Output.current_style() == :ansi
     end
   end
 

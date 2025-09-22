@@ -30,7 +30,7 @@ defmodule Arca.Cli.Ctx do
       {:list, items, title: title}
       {:text, content}
 
-      # Interactive elements (fancy mode only)
+      # Interactive elements (ansi mode only)
       {:spinner, label, func}
       {:progress, label, func}
 
@@ -276,7 +276,7 @@ defmodule Arca.Cli.Ctx do
     - value: Metadata value
 
   ## Common metadata keys:
-    - :style - Force a specific rendering style (:fancy, :plain, :dump)
+    - :style - Force a specific rendering style (:ansi, :plain, :json, :dump)
     - :no_color - Disable color output
     - :format - Output format (:text, :json, :yaml)
 
