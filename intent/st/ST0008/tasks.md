@@ -2,38 +2,17 @@
 
 ## Progress Summary
 
-**Overall Status**: 40% Complete (4 of 10 work packages)
+**Overall Status**: 50% Complete (5 of 10 work packages)
 
-- ✅ Completed: WP1 (Context Module), WP2 (Plain Renderer), WP3 (Fancy Renderer), WP7 (Global Options) - See done.md
-- 🎯 Ready to Start: WP4 (Output Module Pipeline)
+- ✅ Completed: WP1 (Context Module), WP2 (Plain Renderer), WP3 (Fancy Renderer), WP4 (Output Pipeline), WP7 (Global Options) - See done.md
+- 🎯 Ready to Start: WP5 (Callback Integration), WP6 (Command Execution Integration)
 - ⏸️ Blocked: WP4-WP6, WP8-WP10 (waiting on dependencies)
 
 ## Remaining Work Packages
 
-### WP4: Output Module Pipeline
-
-**Status**: Ready to Start
-**Size**: M
-**Description**: Create the main `Arca.Cli.Output` module that orchestrates the rendering pipeline.
-
-**Tasks**:
-
-- [ ] Create `lib/arca_cli/output.ex`
-- [ ] Implement `render/1` main entry point
-- [ ] Implement `determine_style/1` for auto-detection logic
-- [ ] Implement `apply_renderer/1` to dispatch to correct renderer
-- [ ] Implement `format_for_output/1` to prepare final string
-- [ ] Add support for NO_COLOR environment variable
-- [ ] Add support for MIX_ENV=test detection
-- [ ] Add TTY detection via `Owl.IO.terminal?/0`
-- [ ] Create comprehensive pipeline tests
-- [ ] Test style detection in various environments
-
----
-
 ### WP5: Callback Integration
 
-**Status**: Blocked (requires WP4)
+**Status**: Ready to Start
 **Size**: S
 **Description**: Register new callback points and integrate with existing callback system.
 
@@ -50,7 +29,7 @@
 
 ### WP6: Command Execution Integration
 
-**Status**: Blocked (requires WP4)
+**Status**: Ready to Start (can be done in parallel with WP5)
 **Size**: M
 **Description**: Update `Arca.Cli.execute_command/5` to handle Ctx returns while maintaining backwards compatibility.
 
@@ -141,8 +120,8 @@
 ## Dependencies Graph
 
 ```
-WP1 ✅ ──┬──> WP3 ✅ ──> WP4 🎯 ──┬──> WP5
-        │                      ├──> WP6 ──┬──> WP8
+WP1 ✅ ──┬──> WP3 ✅ ──> WP4 ✅ ──┬──> WP5 🎯
+        │                      ├──> WP6 🎯 ──┬──> WP8
 WP2 ✅ ──┘                      │          └──> WP9
                                └──> WP10
 WP7 ✅ (completed)
@@ -150,9 +129,9 @@ WP7 ✅ (completed)
 
 ## Next Steps
 
-1. **Start WP4 (Output Module Pipeline)** - Create the main orchestration layer that uses the renderers
-2. **Then WP5 (Callback Integration)** - Register the new callback points
-3. **Then WP6 (Command Execution Integration)** - Update execute_command to handle Ctx returns
+1. **Start WP5 (Callback Integration)** - Register the new `:format_command_result` callback
+2. **Start WP6 (Command Execution Integration)** - Update execute_command to handle Ctx returns (can be done in parallel)
+3. **Then WP8 (Sample Command Migration)** - Migrate AboutCommand as proof of concept
 
 ## Success Metrics
 

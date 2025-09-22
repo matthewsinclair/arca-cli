@@ -70,9 +70,18 @@ defmodule Arca.Cli.Output.FancyRenderer do
   end
 
   defp do_render({:fancy, ctx}) do
-    ctx.output
-    |> Enum.map(&render_item/1)
-    |> Enum.join("\n")
+    # Handle nil or invalid output gracefully
+    case ctx.output do
+      output when is_list(output) ->
+        output
+        |> Enum.map(&render_item/1)
+        |> Enum.join("\n")
+      nil ->
+        ""
+      _ ->
+        # Fallback for non-list output
+        safe_to_string(ctx.output)
+    end
   end
 
   # Message renderers with colors and symbols
@@ -100,21 +109,26 @@ defmodule Arca.Cli.Output.FancyRenderer do
   # Table renderer with enhanced styling
 
   defp render_item({:table, rows, opts}) do
-    table_opts =
-      Keyword.merge(
-        [
-          border_style: :solid_rounded,
-          divide_body_rows: false,
-          padding_x: 1,
-          render_cell: &colorize_cell/1
-        ],
-        opts
-      )
+    # Handle empty tables gracefully
+    case rows do
+      [] -> ""
+      [_ | _] ->
+        table_opts =
+          Keyword.merge(
+            [
+              border_style: :solid_rounded,
+              divide_body_rows: false,
+              padding_x: 1,
+              render_cell: &colorize_cell/1
+            ],
+            opts
+          )
 
-    rows
-    |> prepare_table_data()
-    |> Owl.Table.new(table_opts)
-    |> to_string()
+        rows
+        |> prepare_table_data()
+        |> Owl.Table.new(table_opts)
+        |> to_string()
+    end
   end
 
   # List renderer with colored bullets

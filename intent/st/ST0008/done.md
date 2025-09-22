@@ -1,6 +1,6 @@
 # Completed Work - ST0008: Orthogonalised formatting and outputting
 
-## Progress: 40% Complete (4 of 10 work packages)
+## Progress: 50% Complete (5 of 10 work packages)
 
 ## Completed Work Packages
 
@@ -150,9 +150,69 @@
 
 ---
 
+### WP4: Output Module Pipeline ✅
+
+**Completed**: 2025-09-22
+**Size**: M
+
+**Delivered**:
+
+- Created `lib/arca_cli/output.ex` as main orchestration module
+- Implemented complete rendering pipeline:
+  - `render/1` main entry point
+  - Smart style determination with precedence chain
+  - Renderer dispatch to fancy, plain, or dump
+  - Final output formatting
+- Implemented style precedence (highest to lowest):
+  - Explicit style in context metadata
+  - NO_COLOR environment variable
+  - ARCA_STYLE environment variable
+  - MIX_ENV=test detection
+  - TTY availability check
+- Added dump renderer for debugging:
+  - Shows complete Context structure
+  - Uses `inspect/2` with pretty printing
+  - Useful for development and troubleshooting
+- Implemented environment detection helpers:
+  - `no_color?/0` - Checks NO_COLOR with proper value handling
+  - `env_style/0` - Gets style from ARCA_STYLE
+  - `test_env?/0` - Detects test environment
+  - `tty?/0` - Checks for TTY availability
+- Added `current_style/1` helper for testing and debugging
+- Enhanced error handling:
+  - Handles nil contexts gracefully
+  - Handles malformed output (non-list values)
+  - Always returns a string, never nil
+- Updated both renderers to handle edge cases:
+  - FancyRenderer handles nil/invalid output
+  - PlainRenderer handles nil/invalid output
+  - Fixed atom key handling in tables
+- Created comprehensive test suite with 30 tests
+- All tests passing (325 total in project)
+
+**Files Created**:
+
+- `lib/arca_cli/output.ex`
+- `test/arca_cli/output_test.exs`
+
+**Files Modified**:
+
+- `lib/arca_cli/output/fancy_renderer.ex` - Added nil/invalid output handling
+- `lib/arca_cli/output/plain_renderer.ex` - Fixed atom key handling and nil output
+
+**Key Implementation Notes**:
+
+- Style determination uses pure functional pattern matching
+- Dump format useful for debugging command output
+- NO_COLOR properly handles "0", "false", and empty string as false
+- Test environment automatically uses plain style
+- Renderers gracefully handle malformed data
+
+---
+
 ## Test Coverage
 
-- All tests passing (295 tests total in project)
+- All tests passing (325 tests total in project)
 - 100% coverage of implemented modules
 - Edge cases and error conditions fully tested
 - Environment variable isolation in tests
@@ -161,7 +221,8 @@
 
 - Context module ready for integration with command execution
 - PlainRenderer ready for use via Output pipeline (WP4)
-- FancyRenderer ready for use via Output pipeline (WP4)
+- FancyRenderer integrated with Output pipeline
+- Output module fully functional and tested
 - Global CLI options functional and tested
 - No breaking changes to existing code
 - Full backwards compatibility maintained

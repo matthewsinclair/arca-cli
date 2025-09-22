@@ -63,10 +63,18 @@ defmodule Arca.Cli.Output.PlainRenderer do
 
     # Render all output items in order
     main_output =
-      ctx.output
-      |> Enum.map(&render_item/1)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.intersperse("\n")
+      case ctx.output do
+        output when is_list(output) ->
+          output
+          |> Enum.map(&render_item/1)
+          |> Enum.reject(&is_nil/1)
+          |> Enum.intersperse("\n")
+        nil ->
+          []
+        other ->
+          # Fallback for non-list output
+          [safe_to_string(other)]
+      end
 
     # Combine error output and main output
     case {error_output, main_output} do
@@ -283,9 +291,11 @@ defmodule Arca.Cli.Output.PlainRenderer do
     end)
   end
 
-  # Convert all map values to strings safely
+  # Convert all map values to strings safely, and ensure keys are strings too
   defp stringify_map_values(map) when is_map(map) do
-    Map.new(map, fn {k, v} -> {k, safe_to_string(v)} end)
+    Map.new(map, fn {k, v} ->
+      {safe_to_string(k), safe_to_string(v)}
+    end)
   end
 
   # Safely convert any value to string
