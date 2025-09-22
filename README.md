@@ -10,7 +10,7 @@ by adding `arca_cli` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:arca_cli, "~> 0.3.0"}
+    {:arca_cli, "~> 0.4.1"}
   ]
 end
 ```
@@ -70,9 +70,75 @@ $ arca_cli repl
 ```
 
 Features:
+
 - Tab completion for commands (including dot notation)
 - Command history navigation
 - Easy access to grouped commands
+- Customizable prompt text (static or dynamic)
+
+### Customizing the REPL Prompt
+
+Arca CLI supports customizable prompt text that appears before the prompt symbol in the REPL. This allows you to display contextual information such as environment, user state, or any other relevant data.
+
+#### Configuration Options
+
+1. **No Configuration (default)** - Uses the standard prompt format:
+
+```elixir
+# Default behavior - no prompt_text configured
+config :arca_cli,
+  prompt_symbol: "🔥"
+# Results in: 🔥 0 >
+```
+
+2. **Static Text** - Prepends a fixed string to the prompt:
+
+```elixir
+config :arca_cli,
+  prompt_symbol: "🔥",
+  prompt_text: "myapp"
+# Results in: myapp 🔥 0 >
+```
+
+3. **Dynamic Function** - Delegates prompt generation to a custom function:
+
+```elixir
+config :arca_cli,
+  prompt_symbol: "🔥",
+  prompt_text: &MyApp.Prompt.generate/1
+```
+
+#### Dynamic Prompt Function
+
+When using a function for `prompt_text`, it receives a context map with:
+
+- `config_domain` - The configured domain (from `:arca_config`)
+- `history_count` - Current history index
+- `history_cmds` - List of all history commands
+- `prompt_symbol` - The configured prompt symbol
+
+The function is responsible for generating the entire prompt string:
+
+```elixir
+defmodule MyApp.Prompt do
+  def generate(%{prompt_symbol: symbol, history_count: count} = context) do
+    status = get_current_status()  # Your custom logic
+
+    case status do
+      %{env: "prod", user: user} ->
+        "\n⚠️  PRODUCTION (#{user}) #{symbol} #{count} > "
+
+      %{env: env, project: project} ->
+        "\n#{project}:#{env} #{symbol} #{count} > "
+
+      _ ->
+        "\n#{symbol} #{count} > "
+    end
+  end
+end
+```
+
+This allows you to create rich, context-aware prompts that help users understand their current state at a glance.
 
 ### Creating Namespaced Commands
 
