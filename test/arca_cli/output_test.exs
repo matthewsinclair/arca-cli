@@ -38,6 +38,7 @@ defmodule Arca.Cli.OutputTest do
           {:warning, "Check logs"}
         ]
       }
+
       result = Output.render(ctx)
       assert result =~ "Starting"
       assert result =~ "Done"
@@ -75,7 +76,8 @@ defmodule Arca.Cli.OutputTest do
 
     test "respects NO_COLOR environment variable" do
       System.put_env("NO_COLOR", "1")
-      System.put_env("TERM", "xterm-256color")  # Would normally trigger fancy
+      # Would normally trigger fancy
+      System.put_env("TERM", "xterm-256color")
 
       assert Output.current_style() == :plain
     end
@@ -178,6 +180,7 @@ defmodule Arca.Cli.OutputTest do
         output: [{:success, "Test"}],
         meta: %{style: :fancy}
       }
+
       result = Output.render(ctx)
 
       # Fancy renderer should include colors if properly mocked
@@ -190,6 +193,7 @@ defmodule Arca.Cli.OutputTest do
         output: [{:success, "Test"}],
         meta: %{style: :plain}
       }
+
       result = Output.render(ctx)
 
       # Plain renderer returns iodata, should be converted to binary
@@ -202,6 +206,7 @@ defmodule Arca.Cli.OutputTest do
       ctx = %Ctx{
         output: [{:table, [%{name: "Alice", age: 30}], []}]
       }
+
       result = Output.render(ctx)
 
       assert result =~ "Alice"
@@ -212,6 +217,7 @@ defmodule Arca.Cli.OutputTest do
       ctx = %Ctx{
         output: [{:list, ["Item 1", "Item 2"], title: "Items"}]
       }
+
       result = Output.render(ctx)
 
       assert result =~ "Item 1"

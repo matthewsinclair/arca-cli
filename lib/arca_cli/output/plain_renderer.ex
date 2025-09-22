@@ -69,8 +69,10 @@ defmodule Arca.Cli.Output.PlainRenderer do
           |> Enum.map(&render_item/1)
           |> Enum.reject(&is_nil/1)
           |> Enum.intersperse("\n")
+
         nil ->
           []
+
         other ->
           # Fallback for non-list output
           [safe_to_string(other)]

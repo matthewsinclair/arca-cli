@@ -76,8 +76,10 @@ defmodule Arca.Cli.Output.FancyRenderer do
         output
         |> Enum.map(&render_item/1)
         |> Enum.join("\n")
+
       nil ->
         ""
+
       _ ->
         # Fallback for non-list output
         safe_to_string(ctx.output)
@@ -111,7 +113,9 @@ defmodule Arca.Cli.Output.FancyRenderer do
   defp render_item({:table, rows, opts}) do
     # Handle empty tables gracefully
     case rows do
-      [] -> ""
+      [] ->
+        ""
+
       [_ | _] ->
         table_opts =
           Keyword.merge(
