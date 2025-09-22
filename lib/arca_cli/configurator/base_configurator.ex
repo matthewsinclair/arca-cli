@@ -140,6 +140,7 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
       @impl Arca.Cli.Configurator.ConfiguratorBehaviour
       def setup do
         create_base_config()
+        |> add_global_options()
         |> inject_subcommands()
         |> Optimus.new!()
       end
@@ -190,6 +191,33 @@ defmodule Arca.Cli.Configurator.BaseConfigurator do
           parse_double_dash: parse_double_dash(),
           subcommands: []
         ]
+      end
+
+      # Add global CLI options only once (will be called by setup/0 for single configurator)
+      def add_global_options(config) do
+        Keyword.merge(config,
+          options: [
+            cli_style: [
+              value_name: "STYLE",
+              long: "--cli-style",
+              help: "Set output style (fancy, plain, dump)",
+              required: false,
+              parser: fn s ->
+                case String.downcase(s) do
+                  style when style in ["fancy", "plain", "dump"] -> {:ok, String.to_atom(style)}
+                  _ -> {:error, "Invalid style. Must be one of: fancy, plain, dump"}
+                end
+              end
+            ]
+          ],
+          flags: [
+            cli_no_ansi: [
+              long: "--cli-no-ansi",
+              help: "Disable ANSI colors in output (same as --cli-style plain)",
+              multiple: false
+            ]
+          ]
+        )
       end
 
       def inject_subcommands(optimus, commands \\ commands()) do

@@ -2,36 +2,17 @@
 
 ## Progress Summary
 
-**Overall Status**: 20% Complete (2 of 10 work packages)
+**Overall Status**: 40% Complete (4 of 10 work packages)
 
-- ✅ Completed: WP1 (Context Module), WP2 (Plain Renderer) - See done.md
-- 🎯 Ready to Start: WP3 (Fancy Renderer), WP7 (Global Options)
+- ✅ Completed: WP1 (Context Module), WP2 (Plain Renderer), WP3 (Fancy Renderer), WP7 (Global Options) - See done.md
+- 🎯 Ready to Start: WP4 (Output Module Pipeline)
 - ⏸️ Blocked: WP4-WP6, WP8-WP10 (waiting on dependencies)
 
 ## Remaining Work Packages
 
-### WP3: Fancy Renderer Implementation
-
-**Status**: Ready to Start
-**Size**: M
-**Description**: Implement the fancy renderer with colors, symbols, and Owl formatting.
-
-**Tasks**:
-
-- [ ] Create `lib/arca_cli/output/fancy_renderer.ex`
-- [ ] Implement colored message renderers (success, error, warning, info)
-- [ ] Implement Owl.Table integration for `{:table, rows, opts}`
-- [ ] Implement formatted lists with colored bullets
-- [ ] Implement spinner support for `{:spinner, label, func}`
-- [ ] Handle non-TTY fallback to plain renderer
-- [ ] Add tests with Owl output verification
-- [ ] Document color scheme and symbols used
-
----
-
 ### WP4: Output Module Pipeline
 
-**Status**: Blocked (requires WP3)
+**Status**: Ready to Start
 **Size**: M
 **Description**: Create the main `Arca.Cli.Output` module that orchestrates the rendering pipeline.
 
@@ -160,18 +141,18 @@
 ## Dependencies Graph
 
 ```
-WP1 ✅ ──┬──> WP3 🎯 ──> WP4 ──┬──> WP5
+WP1 ✅ ──┬──> WP3 ✅ ──> WP4 🎯 ──┬──> WP5
         │                      ├──> WP6 ──┬──> WP8
 WP2 ✅ ──┘                      │          └──> WP9
                                └──> WP10
-WP7 🎯 (independent)
+WP7 ✅ (completed)
 ```
 
 ## Next Steps
 
-1. **Start WP3 (Fancy Renderer)** - Build on PlainRenderer pattern with colors and formatting
-2. **Start WP7 (Global Options)** - Can be done in parallel, no dependencies
-3. **Then WP4 (Output Pipeline)** - Once WP3 is complete, create the orchestration layer
+1. **Start WP4 (Output Module Pipeline)** - Create the main orchestration layer that uses the renderers
+2. **Then WP5 (Callback Integration)** - Register the new callback points
+3. **Then WP6 (Command Execution Integration)** - Update execute_command to handle Ctx returns
 
 ## Success Metrics
 
