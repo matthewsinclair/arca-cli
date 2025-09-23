@@ -1248,8 +1248,8 @@ defmodule Arca.Cli do
         _ -> true
       end
 
-    # Format the command list
-    command_list =
+    # Get command names and descriptions
+    commands_with_descriptions =
       visible_commands
       |> Enum.map(fn module ->
         {cmd_atom, opts} = apply(module, :config, []) |> List.first()
@@ -1259,8 +1259,21 @@ defmodule Arca.Cli do
       end)
       # Sort by name (alphabetically) if sorting is enabled
       |> maybe_sort_commands(should_sort)
+
+    # Calculate the maximum command name length to ensure proper alignment
+    max_name_length =
+      commands_with_descriptions
+      |> Enum.map(fn {name, _} -> String.length(name) end)
+      |> Enum.max(fn -> 0 end)
+
+    # Add 2 spaces of padding after the longest command name
+    padding_width = max_name_length + 2
+
+    # Format the command list with dynamic padding
+    command_list =
+      commands_with_descriptions
       |> Enum.map(fn {name, about} ->
-        padding = String.duplicate(" ", max(0, 20 - String.length(name)))
+        padding = String.duplicate(" ", max(0, padding_width - String.length(name)))
         "    #{name}#{padding}#{about}"
       end)
 
