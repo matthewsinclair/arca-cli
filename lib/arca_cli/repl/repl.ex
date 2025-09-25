@@ -17,6 +17,7 @@ defmodule Arca.Cli.Repl do
 
   alias Arca.Cli
   alias Arca.Cli.Callbacks
+  alias Arca.Cli.CommandMatcher
   alias Arca.Cli.ErrorHandler
   alias Arca.Cli.History
   alias Arca.Cli.Utils
@@ -586,10 +587,16 @@ defmodule Arca.Cli.Repl do
     update_history(args)
 
     # Split arguments while preserving quoted strings
-    with {:ok, args_list} <- split_args(args) do
-      Optimus.parse(optimus, args_list)
+    with {:ok, args_list} <- split_args(args),
+         {:ok, processed_args} <- try_fuzzy_match(args_list, settings) do
+      Optimus.parse(optimus, processed_args)
       |> Cli.handle_args(settings, optimus)
     else
+      # Special handling for fuzzy match ambiguity - no error message needed
+      {:error, :fuzzy_match_ambiguous, _reason} ->
+        # Return :ok to suppress any output
+        :ok
+
       {:error, _error_type, reason} ->
         "Error: #{reason}"
     end
@@ -625,6 +632,55 @@ defmodule Arca.Cli.Repl do
     end
 
     :ok
+  end
+
+  @doc """
+  Try to apply fuzzy matching to the command.
+
+  ## Parameters
+    - args_list: The tokenized command arguments
+    - settings: Application settings (kept for compatibility)
+
+  ## Returns
+    - {:ok, args_list} with potentially rewritten command
+    - {:error, error_type, reason} on error
+  """
+  @spec try_fuzzy_match([String.t()], map()) :: result([String.t()]) | ErrorHandler.enhanced_error()
+  def try_fuzzy_match(args_list, _settings) do
+    if length(args_list) > 0 do
+      [command | rest_args] = args_list
+
+      # Get available commands
+      commands = available_commands()
+
+      # Check if the command needs fuzzy matching
+      if command in commands do
+        # Exact match, no fuzzy matching needed
+        {:ok, args_list}
+      else
+        # Try fuzzy matching
+        case CommandMatcher.fuzzy_match(command, commands) do
+          {:single, matched_cmd} ->
+            # Single match found, rewrite the command
+            Logger.debug("Fuzzy matched '#{command}' to '#{matched_cmd}'")
+            {:ok, [matched_cmd | rest_args]}
+
+          {:multiple, matches} ->
+            # Multiple matches, show disambiguation
+            IO.puts(CommandMatcher.format_multiple_matches(matches))
+
+            # Return an error that will be handled gracefully without additional output
+            {:error, :fuzzy_match_ambiguous, "Multiple commands matched"}
+
+          :no_match ->
+            # No matches found, let it proceed to normal error handling
+            {:ok, args_list}
+        end
+      end
+    else
+      # No command provided
+      {:ok, args_list}
+    end
   end
 
   @doc """
