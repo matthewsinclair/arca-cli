@@ -645,7 +645,8 @@ defmodule Arca.Cli.Repl do
     - {:ok, args_list} with potentially rewritten command
     - {:error, error_type, reason} on error
   """
-  @spec try_fuzzy_match([String.t()], map()) :: result([String.t()]) | ErrorHandler.enhanced_error()
+  @spec try_fuzzy_match([String.t()], map()) ::
+          result([String.t()]) | ErrorHandler.enhanced_error()
   def try_fuzzy_match(args_list, _settings) do
     if length(args_list) > 0 do
       [command | rest_args] = args_list

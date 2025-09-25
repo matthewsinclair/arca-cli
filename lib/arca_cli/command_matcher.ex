@@ -244,7 +244,7 @@ defmodule Arca.Cli.CommandMatcher do
 
     if distance <= 3 and max_len > 0 do
       # Convert distance to a score (lower distance = higher score)
-      similarity = 1.0 - (distance / max_len)
+      similarity = 1.0 - distance / max_len
       # Cap at 0.5 for edit distance matches
       min(similarity * 0.5, 0.5)
     else
@@ -263,9 +263,15 @@ defmodule Arca.Cli.CommandMatcher do
 
     # Early exit for empty strings
     cond do
-      len1 == 0 -> len2
-      len2 == 0 -> len1
-      s1 == s2 -> 0
+      len1 == 0 ->
+        len2
+
+      len2 == 0 ->
+        len1
+
+      s1 == s2 ->
+        0
+
       true ->
         # Use dynamic programming with a simple list accumulation
         # to avoid the exponential recursion
@@ -290,13 +296,17 @@ defmodule Arca.Cli.CommandMatcher do
                 left_val = hd(acc)
                 diag_val = Enum.at(prev_row, j - 1)
 
-                val = min(
-                  left_val + 1,           # Deletion
+                val =
                   min(
-                    prev_val + 1,        # Insertion
-                    diag_val + cost      # Substitution
+                    # Deletion
+                    left_val + 1,
+                    min(
+                      # Insertion
+                      prev_val + 1,
+                      # Substitution
+                      diag_val + cost
+                    )
                   )
-                )
 
                 [val | acc]
               end)

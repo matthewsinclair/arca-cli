@@ -51,8 +51,11 @@ defmodule Arca.Cli.CommandMatcherTest do
     end
 
     test "returns single match for partial namespace" do
-      assert {:single, "ll.world.load"} = CommandMatcher.fuzzy_match("world.load", @sample_commands)
-      assert {:single, "ll.agent.engage"} = CommandMatcher.fuzzy_match("agent.engage", @sample_commands)
+      assert {:single, "ll.world.load"} =
+               CommandMatcher.fuzzy_match("world.load", @sample_commands)
+
+      assert {:single, "ll.agent.engage"} =
+               CommandMatcher.fuzzy_match("agent.engage", @sample_commands)
     end
 
     test "returns multiple matches when ambiguous" do
@@ -160,8 +163,10 @@ defmodule Arca.Cli.CommandMatcherTest do
       assert 0 = CommandMatcher.edit_distance("hello", "hello")
       assert 1 = CommandMatcher.edit_distance("hello", "helo")
       assert 1 = CommandMatcher.edit_distance("hello", "hell")
-      assert 1 = CommandMatcher.edit_distance("hello", "hllo")  # One deletion of 'e'
-      assert 5 = CommandMatcher.edit_distance("hello", "bye")   # All characters need to change
+      # One deletion of 'e'
+      assert 1 = CommandMatcher.edit_distance("hello", "hllo")
+      # All characters need to change
+      assert 5 = CommandMatcher.edit_distance("hello", "bye")
     end
   end
 
