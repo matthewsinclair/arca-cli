@@ -604,8 +604,9 @@ defmodule Arca.Cli.Repl do
 
   # Handle list input (from command line)
   defp do_eval(args, settings, optimus) when is_list(args) do
-    # Add to history if appropriate
-    update_history(args)
+    # Note: CLI commands are not added to history
+    # History is a REPL feature for interactive sessions only
+    # CLI commands use shell history instead
 
     Optimus.parse(optimus, args)
     |> Cli.handle_args(settings, optimus)

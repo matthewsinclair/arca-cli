@@ -138,6 +138,25 @@ defmodule Arca.Cli.History do
     end
   end
 
+  @spec push_cmd([String.t()]) :: result(history_list())
+  def push_cmd(cmd) when is_list(cmd) do
+    # Convert list of arguments back to command string
+    # This handles CLI mode where args come in as a list
+    cmd_string =
+      cmd
+      |> Enum.map(fn arg ->
+        # Quote arguments that contain spaces
+        if String.contains?(arg, " ") do
+          "\"#{arg}\""
+        else
+          arg
+        end
+      end)
+      |> Enum.join(" ")
+
+    push_cmd(cmd_string)
+  end
+
   @spec push_cmd(term()) :: result(history_list())
   def push_cmd(cmd) do
     push_cmd(inspect(cmd))

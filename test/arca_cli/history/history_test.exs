@@ -74,5 +74,38 @@ defmodule Arca.Cli.History.Test do
       :timer.sleep(100)
       assert length(History.history()) == 3
     end
+
+    test "push_cmd with list of arguments (CLI mode)" do
+      History.flush_history()
+      History.push_cmd(["st", "new", "Test Title"])
+      assert History.history() == [{0, "st new \"Test Title\""}]
+    end
+
+    test "push_cmd with list containing options" do
+      History.flush_history()
+      History.push_cmd(["st", "new", "Test Title", "--priority=high"])
+      assert History.history() == [{0, "st new \"Test Title\" --priority=high"}]
+    end
+
+    test "push_cmd with list containing multiple quoted arguments" do
+      History.flush_history()
+      History.push_cmd(["st", "new", "First Title", "--desc", "Long description here"])
+
+      assert History.history() == [
+               {0, "st new \"First Title\" --desc \"Long description here\""}
+             ]
+    end
+
+    test "push_cmd with list containing arguments without spaces" do
+      History.flush_history()
+      History.push_cmd(["st", "list", "--status=active"])
+      assert History.history() == [{0, "st list --status=active"}]
+    end
+
+    test "push_cmd with empty list" do
+      History.flush_history()
+      History.push_cmd([])
+      assert History.history() == [{0, ""}]
+    end
   end
 end
