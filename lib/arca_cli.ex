@@ -19,6 +19,17 @@ defmodule Arca.Cli do
   - Configurators: Setup modules in `Arca.Cli.Configurator.*`
   - History: Command history tracking in `Arca.Cli.History`
   - Utils: Utility functions in `Arca.Cli.Utils`
+  - Testing: Test utilities in `Arca.Cli.Testing.*`
+
+  ## Testing Utilities
+
+  Arca.Cli provides powerful testing utilities for CLI commands:
+
+  - `Arca.Cli.Testing.CliFixturesTest` - Declarative, file-based testing framework
+  - `Arca.Cli.Testing.CliCommandHelper` - Helper functions for running commands in tests
+
+  See `Arca.Cli.Testing.CliFixturesTest` for detailed documentation on creating
+  CLI fixture tests.
 
   ## Configuration
 

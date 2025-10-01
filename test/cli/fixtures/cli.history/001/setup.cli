@@ -1,0 +1,3 @@
+# Setup: Clear history and add some test commands
+flush
+# Note: These commands run but their output is ignored in setup
