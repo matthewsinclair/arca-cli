@@ -523,4 +523,149 @@ defmodule Arca.Cli.Output.PlainRendererTest do
       assert result =~ "true"
     end
   end
+
+  describe "render_item/1 - JSON output" do
+    test "renders pretty-printed JSON without ANSI codes" do
+      data = %{foo: "bar", count: 42, active: true}
+
+      result =
+        {:json, data}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Should contain the actual data
+      assert result =~ "foo"
+      assert result =~ "bar"
+      assert result =~ "count"
+      assert result =~ "42"
+      assert result =~ "active"
+      assert result =~ "true"
+
+      # Should have proper JSON formatting (newlines and indentation)
+      assert result =~ "\n"
+
+      # Should NOT have any ANSI escape codes
+      refute result =~ ~r/\x1b\[/
+    end
+
+    test "renders compact JSON when pretty: false" do
+      data = %{foo: "bar", count: 42}
+
+      result =
+        {:json, data, [pretty: false]}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Should not have newlines or indentation
+      refute result =~ "\n  "
+
+      # Should still have the data
+      assert result =~ "foo"
+      assert result =~ "bar"
+      assert result =~ "42"
+
+      # Should be compact - verify it's valid JSON and compact
+      assert {:ok, decoded} = Jason.decode(result)
+      assert decoded["foo"] == "bar"
+      assert decoded["count"] == 42
+    end
+
+    test "handles nested JSON structures" do
+      data = %{
+        user: %{
+          name: "Alice",
+          settings: %{
+            theme: "dark"
+          }
+        },
+        tags: ["admin", "editor"]
+      }
+
+      result =
+        {:json, data}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Should contain nested data
+      assert result =~ "user"
+      assert result =~ "name"
+      assert result =~ "Alice"
+      assert result =~ "settings"
+      assert result =~ "theme"
+      assert result =~ "dark"
+      assert result =~ "tags"
+      assert result =~ "admin"
+      assert result =~ "editor"
+    end
+
+    test "handles various data types in JSON" do
+      data = %{
+        string: "text",
+        number: 123,
+        float: 45.67,
+        boolean: false,
+        null: nil,
+        array: [1, 2, 3]
+      }
+
+      result =
+        {:json, data}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Verify all types are present
+      assert result =~ "text"
+      assert result =~ "123"
+      assert result =~ "45.67"
+      assert result =~ "false"
+      assert result =~ "null"
+
+      # Verify array is present - format varies (compact vs pretty)
+      assert result =~ "1"
+      assert result =~ "2"
+      assert result =~ "3"
+      assert {:ok, decoded} = Jason.decode(result)
+      assert decoded["array"] == [1, 2, 3]
+    end
+
+    test "JSON output contains no ANSI escape codes" do
+      data = %{
+        success: "completed",
+        error: "failed",
+        warning: "caution",
+        info: "notice"
+      }
+
+      result =
+        {:json, data}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Verify data is present
+      assert result =~ "success"
+      assert result =~ "completed"
+
+      # Verify no ANSI codes
+      refute result =~ ~r/\x1b\[/
+      refute result =~ ~r/\x1b\[[0-9;]*m/
+    end
+
+    test "renders JSON in context output" do
+      ctx =
+        Ctx.new(%{}, %{})
+        |> Ctx.add_output({:info, "Response data:"})
+        |> Ctx.add_output({:json, %{status: "ok", count: 5}})
+
+      result =
+        ctx
+        |> PlainRenderer.render()
+        |> IO.iodata_to_binary()
+
+      assert result =~ "Response data:"
+      assert result =~ "status"
+      assert result =~ "ok"
+      assert result =~ "count"
+      assert result =~ "5"
+    end
+  end
 end

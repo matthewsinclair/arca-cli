@@ -218,6 +218,20 @@ defmodule Arca.Cli.Output.AnsiRenderer do
     |> format_execution_result()
   end
 
+  # JSON renderer with syntax highlighting
+
+  defp render_item({:json, data}) do
+    render_item({:json, data, []})
+  end
+
+  defp render_item({:json, data, opts}) do
+    pretty = Keyword.get(opts, :pretty, true)
+
+    data
+    |> Jason.encode!(pretty: pretty)
+    |> colorize_json()
+  end
+
   # Fallback for unknown items
   defp render_item(item) do
     IO.ANSI.faint() <> safe_to_string(item) <> IO.ANSI.reset()
@@ -356,4 +370,29 @@ defmodule Arca.Cli.Output.AnsiRenderer do
   defp apply_cell_color(:error, cell), do: Owl.Data.tag(cell, :red)
   defp apply_cell_color(:warning, cell), do: Owl.Data.tag(cell, :yellow)
   defp apply_cell_color(:default, cell), do: cell
+
+  # JSON syntax highlighting
+  defp colorize_json(json_string) when is_binary(json_string) do
+    json_string
+    # Colorize property keys (e.g., "key":)
+    |> String.replace(~r/"([^"]+)"\s*:/, fn match ->
+      [_, key] = Regex.run(~r/"([^"]+)"\s*:/, match)
+      IO.ANSI.cyan() <> "\"#{key}\"" <> IO.ANSI.reset() <> ":"
+    end)
+    # Colorize string values (e.g., : "value")
+    |> String.replace(~r/:\s*"([^"]*)"/, fn match ->
+      [_, value] = Regex.run(~r/:\s*"([^"]*)"/, match)
+      ": " <> IO.ANSI.green() <> "\"#{value}\"" <> IO.ANSI.reset()
+    end)
+    # Colorize numbers
+    |> String.replace(~r/:\s*(-?\d+\.?\d*)([,\s\n\}])/, fn match ->
+      [_, number, trailing] = Regex.run(~r/:\s*(-?\d+\.?\d*)([,\s\n\}])/, match)
+      ": " <> IO.ANSI.yellow() <> number <> IO.ANSI.reset() <> trailing
+    end)
+    # Colorize booleans and null
+    |> String.replace(~r/:\s*(true|false|null)([,\s\n\}])/, fn match ->
+      [_, value, trailing] = Regex.run(~r/:\s*(true|false|null)([,\s\n\}])/, match)
+      ": " <> IO.ANSI.magenta() <> value <> IO.ANSI.reset() <> trailing
+    end)
+  end
 end

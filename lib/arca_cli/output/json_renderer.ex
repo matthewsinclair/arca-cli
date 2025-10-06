@@ -100,6 +100,14 @@ defmodule Arca.Cli.Output.JsonRenderer do
     %{type: "progress", label: label}
   end
 
+  defp format_output_item({:json, data}) do
+    %{type: "json", data: data}
+  end
+
+  defp format_output_item({:json, data, _opts}) do
+    %{type: "json", data: data}
+  end
+
   defp format_output_item(other) do
     %{type: "unknown", data: inspect(other)}
   end

@@ -161,6 +161,16 @@ defmodule Arca.Cli.Output.PlainRenderer do
     ["◈ ", label]
   end
 
+  # JSON rendering
+  def render_item({:json, data}) do
+    render_item({:json, data, []})
+  end
+
+  def render_item({:json, data, opts}) do
+    pretty = Keyword.get(opts, :pretty, true)
+    Jason.encode!(data, pretty: pretty)
+  end
+
   # Catch-all for unknown types
   def render_item(_unknown) do
     nil

@@ -405,4 +405,117 @@ defmodule Arca.Cli.Output.AnsiRendererTest do
       assert result =~ "✗ End"
     end
   end
+
+  describe "render/1 with JSON output" do
+    test "renders pretty-printed JSON with syntax highlighting" do
+      data = %{foo: "bar", count: 42, active: true}
+      result = AnsiRenderer.render([{:json, data}])
+
+      # Should contain the actual data
+      assert result =~ "foo"
+      assert result =~ "bar"
+      assert result =~ "count"
+      assert result =~ "42"
+      assert result =~ "active"
+      assert result =~ "true"
+
+      # Should have ANSI color codes
+      assert result =~ IO.ANSI.cyan()
+      assert result =~ IO.ANSI.green()
+      assert result =~ IO.ANSI.yellow()
+      assert result =~ IO.ANSI.magenta()
+      assert result =~ IO.ANSI.reset()
+    end
+
+    test "renders compact JSON when pretty: false" do
+      data = %{foo: "bar", count: 42}
+      result = AnsiRenderer.render([{:json, data, [pretty: false]}])
+
+      # Should not have newlines or indentation
+      refute result =~ "\n  "
+      # Should still have the data
+      assert result =~ "foo"
+      assert result =~ "bar"
+      assert result =~ "42"
+    end
+
+    test "handles nested JSON structures" do
+      data = %{
+        user: %{
+          name: "Alice",
+          settings: %{
+            theme: "dark"
+          }
+        },
+        tags: ["admin", "editor"]
+      }
+
+      result = AnsiRenderer.render([{:json, data}])
+
+      # Should contain nested data
+      assert result =~ "user"
+      assert result =~ "name"
+      assert result =~ "Alice"
+      assert result =~ "settings"
+      assert result =~ "theme"
+      assert result =~ "dark"
+      assert result =~ "tags"
+      assert result =~ "admin"
+      assert result =~ "editor"
+    end
+
+    test "handles various data types in JSON" do
+      data = %{
+        string: "text",
+        number: 123,
+        float: 45.67,
+        boolean: false,
+        null: nil,
+        array: [1, 2, 3]
+      }
+
+      result = AnsiRenderer.render([{:json, data}])
+
+      # Verify all types are present
+      assert result =~ "text"
+      assert result =~ "123"
+      assert result =~ "45.67"
+      assert result =~ "false"
+      assert result =~ "null"
+    end
+
+    test "applies cyan color to property keys" do
+      data = %{myKey: "value"}
+      result = AnsiRenderer.render([{:json, data}])
+
+      # The key should be colored cyan
+      assert result =~ IO.ANSI.cyan()
+      assert result =~ "myKey"
+    end
+
+    test "applies green color to string values" do
+      data = %{key: "stringValue"}
+      result = AnsiRenderer.render([{:json, data}])
+
+      # String values should be colored green
+      assert result =~ IO.ANSI.green()
+      assert result =~ "stringValue"
+    end
+
+    test "applies yellow color to numbers" do
+      data = %{age: 30, score: 95.5}
+      result = AnsiRenderer.render([{:json, data}])
+
+      # Numbers should be colored yellow
+      assert result =~ IO.ANSI.yellow()
+    end
+
+    test "applies magenta color to booleans and null" do
+      data = %{active: true, deleted: false, optional: nil}
+      result = AnsiRenderer.render([{:json, data}])
+
+      # Booleans and null should be colored magenta
+      assert result =~ IO.ANSI.magenta()
+    end
+  end
 end
