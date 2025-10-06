@@ -202,11 +202,27 @@ defmodule Arca.Cli.Output.PlainRenderer do
 
     # Build Owl table with solid border style (closest to ASCII)
     # Note: Owl doesn't have pure ASCII borders, but :solid uses simple box-drawing chars
-    table_opts = [
+    # Merge incoming opts with defaults to support column_order and other OwlHelper options
+    default_table_opts = [
       border_style: :solid,
       divide_body_rows: false,
       padding_x: 1
     ]
+
+    # Auto-use headers as column_order if headers provided but column_order is not
+    # This handles both explicit :headers option and :has_headers where first row contains headers
+    opts =
+      case {headers, Keyword.get(opts, :column_order)} do
+        {headers_list, nil} when is_list(headers_list) ->
+          Keyword.put(opts, :column_order, headers_list)
+
+        _ ->
+          opts
+      end
+
+    # Extract relevant OwlHelper options from incoming opts
+    # OwlHelper supports: column_order, max_width, and all Owl.Table options
+    table_opts = Keyword.merge(default_table_opts, opts)
 
     table =
       if map_size(column_prefs) > 0 do

@@ -117,6 +117,24 @@ defmodule Arca.Cli.Output.AnsiRenderer do
         ""
 
       [_ | _] ->
+        # Auto-use headers as column_order if headers provided but column_order is not
+        # This handles both explicit :headers option and :has_headers where first row contains headers
+        opts =
+          case {Keyword.get(opts, :headers), Keyword.get(opts, :has_headers), rows,
+                Keyword.get(opts, :column_order)} do
+            # Explicit headers provided, no column_order
+            {headers_list, _, _, nil} when is_list(headers_list) ->
+              Keyword.put(opts, :column_order, headers_list)
+
+            # has_headers: true and first row is a list (contains headers), no column_order
+            {nil, true, [first_row | _], nil} when is_list(first_row) ->
+              Keyword.put(opts, :column_order, Enum.map(first_row, &to_string/1))
+
+            # Otherwise, keep opts as-is
+            _ ->
+              opts
+          end
+
         table_opts =
           Keyword.merge(
             [
@@ -127,6 +145,31 @@ defmodule Arca.Cli.Output.AnsiRenderer do
             ],
             opts
           )
+
+        # Add column_order support by converting to sort_columns
+        table_opts =
+          case Keyword.get(table_opts, :column_order) do
+            nil ->
+              table_opts
+
+            columns when is_list(columns) ->
+              # Create a sort function that orders columns based on their position in the list
+              sort_fn = fn a, b ->
+                a_index = Enum.find_index(columns, &(&1 == a)) || length(columns)
+                b_index = Enum.find_index(columns, &(&1 == b)) || length(columns)
+                a_index <= b_index
+              end
+
+              table_opts
+              |> Keyword.delete(:column_order)
+              |> Keyword.put(:sort_columns, sort_fn)
+
+            other ->
+              # If it's not a list (e.g., :asc, :desc, or a function), pass it through as sort_columns
+              table_opts
+              |> Keyword.delete(:column_order)
+              |> Keyword.put(:sort_columns, other)
+          end
 
         rows
         |> prepare_table_data(opts)
@@ -232,6 +275,8 @@ defmodule Arca.Cli.Output.AnsiRenderer do
         # First row is headers
         headers_list = Enum.map(headers, &safe_to_string/1)
 
+        # Auto-set column_order from headers if not explicitly provided
+        # This is handled in render_item, but we return headers_list for that function to use
         Enum.map(data, fn row ->
           row
           |> Enum.map(&safe_to_string/1)

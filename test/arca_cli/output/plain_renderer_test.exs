@@ -176,6 +176,129 @@ defmodule Arca.Cli.Output.PlainRendererTest do
 
       assert result == "(empty table)"
     end
+
+    test "renders table with headers automatically used as column order" do
+      rows = [
+        %{"subdomain" => "api", "name" => "Service A", "status" => "active", "theme" => "light"},
+        %{"subdomain" => "web", "name" => "Service B", "status" => "inactive", "theme" => "dark"}
+      ]
+
+      result =
+        {:table, rows, headers: ["subdomain", "name", "status", "theme"]}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Extract the header line (first line with column names)
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "subdomain" end)
+
+      # Verify columns appear in the specified order from headers
+      # subdomain should appear before name, name before status, etc.
+      subdomain_pos = :binary.match(header_line, "subdomain") |> elem(0)
+      name_pos = :binary.match(header_line, "name") |> elem(0)
+      status_pos = :binary.match(header_line, "status") |> elem(0)
+      theme_pos = :binary.match(header_line, "theme") |> elem(0)
+
+      assert subdomain_pos < name_pos
+      assert name_pos < status_pos
+      assert status_pos < theme_pos
+    end
+
+    test "renders table with explicit column_order overriding headers" do
+      rows = [
+        %{"subdomain" => "api", "name" => "Service A", "status" => "active"}
+      ]
+
+      result =
+        {:table, rows,
+         headers: ["subdomain", "name", "status"], column_order: ["status", "name", "subdomain"]}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Extract the header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "subdomain" end)
+
+      # Verify columns appear in the column_order, not headers order
+      status_pos = :binary.match(header_line, "status") |> elem(0)
+      name_pos = :binary.match(header_line, "name") |> elem(0)
+      subdomain_pos = :binary.match(header_line, "subdomain") |> elem(0)
+
+      assert status_pos < name_pos
+      assert name_pos < subdomain_pos
+    end
+
+    test "renders table without column_order defaults to alphabetical" do
+      rows = [
+        %{"zebra" => "Z", "apple" => "A", "banana" => "B"}
+      ]
+
+      result =
+        {:table, rows, []}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Extract the header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "apple" end)
+
+      # Verify columns appear in alphabetical order
+      apple_pos = :binary.match(header_line, "apple") |> elem(0)
+      banana_pos = :binary.match(header_line, "banana") |> elem(0)
+      zebra_pos = :binary.match(header_line, "zebra") |> elem(0)
+
+      assert apple_pos < banana_pos
+      assert banana_pos < zebra_pos
+    end
+
+    test "renders table with column_order :desc" do
+      rows = [
+        %{"alpha" => "A", "beta" => "B", "gamma" => "G"}
+      ]
+
+      result =
+        {:table, rows, column_order: :desc}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Extract the header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "alpha" end)
+
+      # Verify columns appear in descending alphabetical order
+      alpha_pos = :binary.match(header_line, "alpha") |> elem(0)
+      beta_pos = :binary.match(header_line, "beta") |> elem(0)
+      gamma_pos = :binary.match(header_line, "gamma") |> elem(0)
+
+      assert gamma_pos < beta_pos
+      assert beta_pos < alpha_pos
+    end
+
+    test "renders table with has_headers using first row order" do
+      rows = [
+        ["Index", "Command", "Arguments"],
+        ["0", "first", ""],
+        ["1", "second", ""]
+      ]
+
+      result =
+        {:table, rows, has_headers: true}
+        |> PlainRenderer.render_item()
+        |> IO.iodata_to_binary()
+
+      # Extract the header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "Index" end)
+
+      # Verify columns appear in the order from first row (Index, Command, Arguments)
+      # NOT alphabetically (Arguments, Command, Index)
+      index_pos = :binary.match(header_line, "Index") |> elem(0)
+      command_pos = :binary.match(header_line, "Command") |> elem(0)
+      arguments_pos = :binary.match(header_line, "Arguments") |> elem(0)
+
+      assert index_pos < command_pos
+      assert command_pos < arguments_pos
+    end
   end
 
   describe "render_item/1 - lists" do

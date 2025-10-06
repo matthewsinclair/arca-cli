@@ -206,6 +206,95 @@ defmodule Arca.Cli.Output.AnsiRendererTest do
       # The colorization is applied internally by Owl when rendering tables,
       # but doesn't appear as escape sequences in the final string.
     end
+
+    test "renders table with custom column order" do
+      rows = [
+        %{"subdomain" => "api", "name" => "Service A", "status" => "active", "theme" => "light"},
+        %{"subdomain" => "web", "name" => "Service B", "status" => "inactive", "theme" => "dark"}
+      ]
+
+      result =
+        AnsiRenderer.render([
+          {:table, rows, column_order: ["subdomain", "name", "status", "theme"]}
+        ])
+
+      # Extract lines to find header
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "subdomain" end)
+
+      # Verify columns appear in the specified order
+      subdomain_pos = :binary.match(header_line, "subdomain") |> elem(0)
+      name_pos = :binary.match(header_line, "name") |> elem(0)
+      status_pos = :binary.match(header_line, "status") |> elem(0)
+      theme_pos = :binary.match(header_line, "theme") |> elem(0)
+
+      assert subdomain_pos < name_pos
+      assert name_pos < status_pos
+      assert status_pos < theme_pos
+    end
+
+    test "renders table without column_order defaults to alphabetical" do
+      rows = [
+        %{"zebra" => "Z", "apple" => "A", "banana" => "B"}
+      ]
+
+      result = AnsiRenderer.render([{:table, rows, []}])
+
+      # Extract header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "apple" end)
+
+      # Verify columns appear in alphabetical order
+      apple_pos = :binary.match(header_line, "apple") |> elem(0)
+      banana_pos = :binary.match(header_line, "banana") |> elem(0)
+      zebra_pos = :binary.match(header_line, "zebra") |> elem(0)
+
+      assert apple_pos < banana_pos
+      assert banana_pos < zebra_pos
+    end
+
+    test "renders table with column_order :desc" do
+      rows = [
+        %{"alpha" => "A", "beta" => "B", "gamma" => "G"}
+      ]
+
+      result = AnsiRenderer.render([{:table, rows, column_order: :desc}])
+
+      # Extract header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "alpha" end)
+
+      # Verify columns appear in descending alphabetical order
+      alpha_pos = :binary.match(header_line, "alpha") |> elem(0)
+      beta_pos = :binary.match(header_line, "beta") |> elem(0)
+      gamma_pos = :binary.match(header_line, "gamma") |> elem(0)
+
+      assert gamma_pos < beta_pos
+      assert beta_pos < alpha_pos
+    end
+
+    test "renders table with has_headers using first row order" do
+      rows = [
+        ["Index", "Command", "Arguments"],
+        ["0", "first", ""],
+        ["1", "second", ""]
+      ]
+
+      result = AnsiRenderer.render([{:table, rows, has_headers: true}])
+
+      # Extract header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "Index" end)
+
+      # Verify columns appear in the order from first row (Index, Command, Arguments)
+      # NOT alphabetically (Arguments, Command, Index)
+      index_pos = :binary.match(header_line, "Index") |> elem(0)
+      command_pos = :binary.match(header_line, "Command") |> elem(0)
+      arguments_pos = :binary.match(header_line, "Arguments") |> elem(0)
+
+      assert index_pos < command_pos
+      assert command_pos < arguments_pos
+    end
   end
 
   describe "render/1 with interactive elements" do
