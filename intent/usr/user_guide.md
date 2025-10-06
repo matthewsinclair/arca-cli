@@ -263,6 +263,7 @@ $ arca_cli dev.deps      # List project dependencies
 By default, commands are displayed in alphabetical order to make them easier to find, especially in applications with a large number of commands. This behavior can be customized:
 
 1. **Alphabetical Sorting (Default)**: Commands are sorted alphabetically in help output using case-insensitive comparison
+
    ```bash
    $ arca_cli --help
    SUBCOMMANDS:
@@ -276,6 +277,7 @@ By default, commands are displayed in alphabetical order to make them easier to 
    ```
 
 2. **Defined Order**: For applications that need to preserve a specific ordering of commands (e.g., for workflow or logical grouping), the `sorted` configuration option can be set to `false`:
+
    ```elixir
    defmodule YourApp.Cli.Configurator do
      use Arca.Cli.Configurator.BaseConfigurator
@@ -460,12 +462,14 @@ This approach reduces boilerplate code and ensures consistent error handling acr
 For more complex issues, you can enable debug mode to see detailed error information:
 
 1. **Check debug mode status**:
+
    ```bash
    $ arca_cli cli.debug
    Debug mode is currently OFF
    ```
 
 2. **Enable debug mode**:
+
    ```bash
    $ arca_cli cli.debug on
    Debug mode is now ON
@@ -473,6 +477,7 @@ For more complex issues, you can enable debug mode to see detailed error informa
 
 3. **Run commands with enhanced error details**:
    When debug mode is enabled, errors include additional information such as stack traces, error locations, and timestamps:
+
    ```
    Error (command_failed): Error executing command example
    Debug Information:
@@ -486,6 +491,7 @@ For more complex issues, you can enable debug mode to see detailed error informa
    ```
 
 4. **Disable debug mode when done**:
+
    ```bash
    $ arca_cli cli.debug off
    Debug mode is now OFF
