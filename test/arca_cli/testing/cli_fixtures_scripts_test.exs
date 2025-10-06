@@ -142,9 +142,12 @@ defmodule Arca.Cli.Testing.CliFixturesScriptsTest do
       setup_exs = Path.join(path, "setup.exs")
       File.write!(setup_exs, "%{value: undefined_variable}")
 
-      assert_raise CompileError, fn ->
-        run_setup_script(path)
-      end
+      # Capture stderr to avoid noisy test output
+      capture_io(:stderr, fn ->
+        assert_raise CompileError, fn ->
+          run_setup_script(path)
+        end
+      end)
     end
   end
 
