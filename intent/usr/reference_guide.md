@@ -189,6 +189,191 @@ arca_cli dev.deps
 
 ## API Reference
 
+### Context Module (`Arca.Cli.Ctx`)
+
+The Context module provides a structured way to build command output.
+
+#### Context Structure
+
+```elixir
+%Arca.Cli.Ctx{
+  command: atom(),      # Command being executed
+  args: map(),          # Parsed arguments
+  options: map(),       # Command options
+  output: list(),       # Structured output items
+  errors: list(),       # Error messages
+  status: atom(),       # :ok | :error | :warning | :pending
+  cargo: map(),         # Command-specific data
+  meta: map()           # Style, format, and other metadata
+}
+```
+
+#### Core Functions
+
+**`Ctx.new(command, settings)`**
+
+Creates a new context for a command.
+
+```elixir
+ctx = Ctx.new(:my_command, settings)
+```
+
+**`Ctx.add_output(ctx, output_item)`**
+
+Adds an output item to the context.
+
+```elixir
+ctx = Ctx.add_output(ctx, {:success, "Operation completed"})
+```
+
+**`Ctx.add_error(ctx, error_message)`**
+
+Adds an error message to the context.
+
+```elixir
+ctx = Ctx.add_error(ctx, "File not found")
+```
+
+**`Ctx.complete(ctx, status)`**
+
+Marks the context as complete with a final status.
+
+```elixir
+ctx = Ctx.complete(ctx, :ok)  # or :error, :warning
+```
+
+**`Ctx.put_cargo(ctx, key, value)`** / **`Ctx.get_cargo(ctx, key)`**
+
+Stores and retrieves command-specific data.
+
+```elixir
+ctx = Ctx.put_cargo(ctx, :user_count, 42)
+count = Ctx.get_cargo(ctx, :user_count)
+```
+
+#### Output Item Types
+
+**Messages**
+
+```elixir
+{:success, message}  # Green checkmark in ANSI mode
+{:error, message}    # Red X in ANSI mode
+{:warning, message}  # Yellow warning symbol in ANSI mode
+{:info, message}     # Cyan info symbol in ANSI mode
+{:text, content}     # Plain text
+```
+
+**Tables**
+
+```elixir
+# With explicit headers (columns in header order)
+{:table, rows, headers: ["Name", "Age", "City"]}
+
+# Override column order
+{:table, rows,
+  headers: ["Name", "Age", "City"],
+  column_order: ["City", "Age", "Name"]
+}
+
+# First row as headers (preserves row order)
+{:table, [headers_row | data_rows], has_headers: true}
+
+# Alphabetical column order (default when no headers/column_order)
+{:table, rows, []}
+
+# Descending alphabetical
+{:table, rows, column_order: :desc}
+```
+
+**Table Options:**
+
+- `headers`: List of column header names (also sets column order)
+- `column_order`: Explicit column ordering (list, `:asc`, `:desc`, or custom function)
+- `has_headers`: Boolean, treats first row as headers
+- `border_style`: `:solid`, `:solid_rounded`, etc.
+- `divide_body_rows`: Boolean, add lines between rows
+- `padding_x`: Integer, horizontal padding in cells
+
+**Lists**
+
+```elixir
+# Simple list
+{:list, ["Item 1", "Item 2", "Item 3"]}
+
+# List with title
+{:list, items, title: "Available Options"}
+
+# List with custom bullet color (ANSI mode)
+{:list, items, bullet_color: :green}
+```
+
+**Interactive Elements (ANSI mode only)**
+
+```elixir
+# Spinner
+{:spinner, "Loading data", fn ->
+  result = perform_operation()
+  {:ok, result}
+end}
+
+# Progress indicator
+{:progress, "Processing files", fn ->
+  result = process_files()
+  {:ok, result}
+end}
+```
+
+### Output Module (`Arca.Cli.Output`)
+
+The Output module handles rendering of contexts to different formats.
+
+**`Output.render(ctx)`**
+
+Renders a context to a string using the appropriate style.
+
+```elixir
+output = Arca.Cli.Output.render(ctx)
+IO.puts(output)
+```
+
+**Style Detection**
+
+The output style is automatically determined:
+
+1. Plain style if `MIX_ENV=test`
+2. Plain style if `NO_COLOR=1`
+3. Style from `ARCA_STYLE` environment variable (ansi, plain, json, dump)
+4. Plain style if not a TTY
+5. ANSI style otherwise (default for interactive terminals)
+
+### Renderers
+
+**AnsiRenderer** - Colored output with formatting
+
+- Green checkmarks for success
+- Red X for errors
+- Yellow warnings
+- Cyan info messages
+- Rounded borders for tables
+- Colored bullet points for lists
+
+**PlainRenderer** - No ANSI codes
+
+- Simple symbols (✓, ✗, ⚠)
+- Box-drawing characters for tables
+- Plain bullet points for lists
+- Suitable for tests and non-TTY environments
+
+**JsonRenderer** - JSON structured output
+
+- Outputs context as JSON
+- Useful for programmatic consumption
+
+**DumpRenderer** - Raw data inspection
+
+- Shows internal structure
+- Useful for debugging
+
 ### Command Definition
 
 Commands are defined using the `Arca.Cli.Command.BaseCommand` module:
@@ -212,6 +397,58 @@ defmodule YourApp.Cli.Commands.GreetCommand do
   @impl true
   def handle(args, _settings, _optimus) do
     "Hello, #{args.args.name}!"
+  end
+end
+```
+
+### Context-Based Command Definition
+
+Commands can return structured output using the Context system:
+
+```elixir
+defmodule YourApp.Cli.Commands.UserCommand do
+  use Arca.Cli.Command.BaseCommand
+  alias Arca.Cli.Ctx
+
+  config :user,
+    name: "user",
+    about: "Display user information",
+    args: [
+      username: [
+        value_name: "USERNAME",
+        help: "Username to lookup",
+        required: true,
+        parser: :string
+      ]
+    ]
+
+  @impl true
+  def handle(args, settings, _optimus) do
+    username = args.args.username
+
+    Ctx.new(:user, settings)
+    |> fetch_user_data(username)
+    |> format_output()
+    |> Ctx.complete(:ok)
+  end
+
+  defp fetch_user_data(ctx, username) do
+    case Database.get_user(username) do
+      {:ok, user} ->
+        Ctx.put_cargo(ctx, :user, user)
+
+      {:error, reason} ->
+        ctx
+        |> Ctx.add_error("User not found: #{reason}")
+        |> Ctx.complete(:error)
+    end
+  end
+
+  defp format_output(%Ctx{status: :error} = ctx), do: ctx
+  defp format_output(%Ctx{cargo: %{user: user}} = ctx) do
+    ctx
+    |> Ctx.add_output({:success, "User found: #{user.name}"})
+    |> Ctx.add_output({:table, [user], headers: ["id", "name", "email", "created_at"]})
   end
 end
 ```

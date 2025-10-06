@@ -309,12 +309,78 @@ $ arca_cli example_command --count 5
 $ arca_cli example_command --verbose
 ```
 
+### Working with Structured Output
+
+Arca.Cli provides a Context-based output system that cleanly separates data from presentation. Commands can return structured output using the `Arca.Cli.Ctx` module, which automatically adapts to different environments (TTY, tests, etc.).
+
+#### Output Styles
+
+The output system supports multiple rendering styles:
+
+- **ANSI** (default for terminals): Colored output with symbols and formatting
+- **Plain**: No ANSI codes, suitable for non-TTY environments and tests
+- **JSON**: Structured JSON output
+- **Dump**: Raw data inspection
+
+Style is automatically detected based on the environment, but can be controlled:
+
+```bash
+# Force plain style
+ARCA_STYLE=plain arca_cli command
+NO_COLOR=1 arca_cli command
+
+# Use JSON output
+ARCA_STYLE=json arca_cli command
+
+# Test environment uses plain automatically
+MIX_ENV=test arca_cli command
+```
+
+#### Output Types
+
+Commands using the Context system can output various types of content:
+
+1. **Messages with Semantic Meaning**:
+   - Success messages (green checkmark in ANSI mode)
+   - Error messages (red X in ANSI mode)
+   - Warning messages (yellow warning symbol in ANSI mode)
+   - Info messages (cyan info symbol in ANSI mode)
+
+2. **Structured Data**:
+   - Tables with headers and column ordering
+   - Lists with optional titles
+   - Plain text content
+
+3. **Interactive Elements** (ANSI mode only):
+   - Spinners for loading operations
+   - Progress indicators
+
+#### Working with Tables
+
+Tables automatically format data with proper alignment and borders:
+
+```elixir
+# Simple table with headers - columns appear in header order
+Ctx.add_output({:table, rows, headers: ["Name", "Age", "City"]})
+
+# Table with custom column order
+Ctx.add_output({:table, rows,
+  headers: ["Name", "Age", "City"],
+  column_order: ["City", "Name", "Age"]  # Override header order
+})
+
+# Table with first row as headers
+Ctx.add_output({:table, [["Name", "Age"] | data_rows], has_headers: true})
+```
+
+By default, when you provide headers, columns appear in the order you specify. You can override this with an explicit `column_order` option if needed.
+
 ### Customizing Output Formatting
 
-If you are developing an application that integrates with Arca.Cli, you can customize how output is formatted in the REPL using the callback system:
+If you are developing an application that integrates with Arca.Cli, you can customize how output is formatted using the callback system:
 
 1. Check if the Callbacks module is available
-2. Register a function for the `:format_output` event
+2. Register a function for the `:format_output` or `:format_command_result` event
 3. Implement your custom formatting logic
 
 This allows you to maintain separation of concerns without creating circular dependencies between your application and Arca.Cli.

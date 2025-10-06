@@ -550,6 +550,18 @@ defmodule Arca.Cli.Testing.CliCommandHelper do
         :ok
     end
 
+    # Ensure History GenServer is ready and flushed for clean test state
+    case Process.whereis(Arca.Cli.History) do
+      nil ->
+        {:ok, _} = Arca.Cli.History.start_link()
+        :ok
+
+      _pid ->
+        # History exists, flush it for clean test state
+        Arca.Cli.History.flush_history()
+        :ok
+    end
+
     :ok
   end
 end

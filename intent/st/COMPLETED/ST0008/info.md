@@ -1,9 +1,9 @@
 ---
 verblock: "22 Sep 2025:v0.1: Matthew Sinclair - Initial version"
 intent_version: 2.2.0
-status: WIP
+status: Completed
 created: 20250922
-completed: 
+completed: 20251006
 ---
 # ST0008: Orthogonalised formatting and outputting
 

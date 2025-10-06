@@ -39,6 +39,6 @@ This document provides an overview of all steel threads in the project. It helps
 4. Use this document to quickly locate specific steel thread documents
 
 The detailed information for each steel thread is contained in its individual document (e.g., ST0001.md).
-| ST0008 | Orthogonalised formatting and outputting | WIP | 2025-09-22 |  |
+| ST0008 | Orthogonalised formatting and outputting | Completed |  | 2025-10-06 |
 | ST0009 | 8 | Not Started | 2025-09-22 |  |
 | ST0003 | REPL Output Callback System | Completed |  | 2025-09-22 |

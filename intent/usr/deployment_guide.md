@@ -91,12 +91,55 @@ arca_cli --help
 
 Configure Arca.Cli behavior using these environment variables:
 
+#### Configuration Variables
+
 | Variable                     | Purpose                           | Default                           |
 |------------------------------|-----------------------------------|-----------------------------------|
 | APP_NAME_CONFIG_PATH         | Configuration directory path      | .app_name/ (e.g., .arca_cli/)     |
 | APP_NAME_CONFIG_FILE         | Configuration filename            | config.json                       |
 
 Note: The actual environment variable names are derived from the application name (in UPPERCASE). For example, for the `arca_cli` application, the environment variables would be `ARCA_CLI_CONFIG_PATH` and `ARCA_CLI_CONFIG_FILE`.
+
+#### Output Style Variables
+
+| Variable                     | Purpose                           | Values                            | Default    |
+|------------------------------|-----------------------------------|-----------------------------------|------------|
+| ARCA_STYLE                   | Force specific output style       | ansi, plain, json, dump           | auto       |
+| NO_COLOR                     | Disable colored output            | 1 (to disable), unset (to enable) | unset      |
+| MIX_ENV                      | Elixir environment                | test, dev, prod                   | dev        |
+
+**Output Style Behavior:**
+
+- `ARCA_STYLE=ansi`: Force colored ANSI output with symbols and formatting
+- `ARCA_STYLE=plain`: Force plain text output without ANSI codes
+- `ARCA_STYLE=json`: Output structured JSON for programmatic consumption
+- `ARCA_STYLE=dump`: Output raw data structures for debugging
+- `NO_COLOR=1`: Disable colors (equivalent to `ARCA_STYLE=plain`)
+- `MIX_ENV=test`: Automatically uses plain style for test output
+
+**Style Detection Priority:**
+
+1. Test environment (`MIX_ENV=test`) → Plain style
+2. `NO_COLOR=1` → Plain style
+3. `ARCA_STYLE` value → Specified style
+4. Non-TTY environment → Plain style
+5. Interactive TTY → ANSI style (default)
+
+**Usage Examples:**
+
+```bash
+# Force plain output for scripting
+ARCA_STYLE=plain arca_cli command > output.txt
+
+# Disable colors for CI/CD pipelines
+NO_COLOR=1 arca_cli command
+
+# Get JSON for parsing
+ARCA_STYLE=json arca_cli command | jq '.output'
+
+# Debug with raw data structures
+ARCA_STYLE=dump arca_cli command
+```
 
 Example configuration in `.bashrc` or `.zshrc` for an application named `arca_cli`:
 
