@@ -647,4 +647,110 @@ defmodule Arca.Cli.Testing.CliFixturesTest do
       String.replace(text, placeholder, original)
     end)
   end
+
+  @doc """
+  Run setup.exs script and return bindings for interpolation.
+
+  This function evaluates a setup.exs file in the fixture directory and returns
+  a map of bindings that can be used for interpolation in CLI commands and expected output.
+
+  ## Parameters
+
+  - `fixture_path` - Path to fixture directory
+
+  ## Returns
+
+  - `{:ok, %{}}` - Map of bindings (empty if no setup.exs exists)
+
+  ## Raises
+
+  - Raises if setup.exs returns a non-map value
+  - Raises if setup.exs has syntax or runtime errors
+  - Raises if not running in test environment
+
+  ## Examples
+
+      # No setup.exs file
+      {:ok, bindings} = run_setup_script("/path/to/fixture")
+      #=> {:ok, %{}}
+
+      # With setup.exs returning bindings
+      {:ok, bindings} = run_setup_script("/path/to/fixture")
+      #=> {:ok, %{user_id: 42, api_key: "laksa_abc"}}
+
+  """
+  def run_setup_script(fixture_path) do
+    setup_exs = Path.join(fixture_path, "setup.exs")
+
+    if File.exists?(setup_exs) do
+      # Verify we're in test environment for safety
+      unless Mix.env() == :test do
+        raise "setup.exs can only run in test environment, current environment: #{Mix.env()}"
+      end
+
+      code = File.read!(setup_exs)
+
+      # Evaluate the script
+      {result, _bindings} = Code.eval_string(code, [], file: setup_exs)
+
+      # Validate result is a map
+      unless is_map(result) do
+        raise """
+        setup.exs must return a map, got: #{inspect(result)}
+
+        Example:
+        %{user_id: 123, api_key: "laksa_abc"}
+        """
+      end
+
+      {:ok, result}
+    else
+      {:ok, %{}}
+    end
+  end
+
+  @doc """
+  Run teardown.exs script with bindings from setup.
+
+  This function evaluates a teardown.exs file with access to bindings from setup.exs.
+  Errors are logged but do not fail the test (best-effort cleanup).
+
+  ## Parameters
+
+  - `fixture_path` - Path to fixture directory
+  - `bindings` - Map of bindings from setup.exs
+
+  ## Returns
+
+  - `:ok` - Always succeeds (logs errors instead of raising)
+
+  ## Examples
+
+      run_teardown_script("/path/to/fixture", %{user_id: 42})
+      #=> :ok
+
+  """
+  def run_teardown_script(fixture_path, bindings) do
+    teardown_exs = Path.join(fixture_path, "teardown.exs")
+
+    if File.exists?(teardown_exs) do
+      code = File.read!(teardown_exs)
+
+      try do
+        Code.eval_string(code, [bindings: bindings], file: teardown_exs)
+        :ok
+      rescue
+        e ->
+          # Log but don't fail - teardown is best-effort
+          IO.warn("""
+          Teardown script failed: #{Exception.message(e)}
+          File: #{teardown_exs}
+          """)
+
+          :ok
+      end
+    else
+      :ok
+    end
+  end
 end
