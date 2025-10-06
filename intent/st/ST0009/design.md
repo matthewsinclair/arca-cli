@@ -23,6 +23,7 @@ Extend the existing `Arca.Cli.Testing.CliFixturesTest` module to support optiona
 ### 1. File Format and Requirements
 
 **`setup.exs`:**
+
 - Must return a map: `%{atom_key: value}`
 - Has access to all application modules and repos
 - Runs in test environment with test database
@@ -30,6 +31,7 @@ Extend the existing `Arca.Cli.Testing.CliFixturesTest` module to support optiona
 - Example return: `%{user_id: 123, api_key: "laksa_abc123"}`
 
 **`teardown.exs`:**
+
 - Receives `bindings` variable from `setup.exs`
 - No return value required (any return ignored)
 - Always runs, even if test fails
@@ -52,6 +54,7 @@ Site count: {{site_count}}
 ```
 
 **Interpolation Rules:**
+
 - `{{identifier}}` where identifier matches `[a-z_][a-z0-9_]*` (atom-compatible)
 - Values converted to strings via `to_string/1`
 - Non-matching keys left as literal `{{key}}` (graceful degradation)
@@ -68,6 +71,7 @@ Use `Code.eval_string/3` to execute `.exs` files:
 ```
 
 **Security considerations:**
+
 - Only runs in test environment
 - Code is from project's own test fixtures (not user input)
 - Same trust model as regular ExUnit tests
@@ -78,16 +82,19 @@ Use `Code.eval_string/3` to execute `.exs` files:
 ### 4. Error Handling
 
 **`setup.exs` failures:**
+
 - Raise with clear error message showing file and line
 - Test marked as failed (standard ExUnit behavior)
 - Teardown still runs (via `try/after`)
 
 **`teardown.exs` failures:**
+
 - Log warning but don't fail test
 - Cleanup is best-effort
 - Prevent one test's teardown from breaking others
 
 **Invalid return from `setup.exs`:**
+
 - Raise immediately with descriptive error
 - Show received value and expected format
 
@@ -98,12 +105,14 @@ Use `Code.eval_string/3` to execute `.exs` files:
 When interpolating into `expected.out`, pattern matchers must take precedence:
 
 **Processing order:**
+
 1. First, identify pattern matchers: `{{*}}`, `{{??}}`, `{{\d+}}`, `{{\w+}}`, `{{.*}}`
 2. Replace them with placeholders before interpolation
 3. Then interpolate variable bindings: `{{user_id}}`, `{{api_key}}`
 4. Finally restore pattern matchers
 
 **Example:**
+
 ```
 # expected.out
 User: {{user_email}}        # Variable interpolation
@@ -238,17 +247,20 @@ context = Map.put(context, :user_id, user.id)
 ## Migration Path
 
 ### Phase 1: Core Implementation (This Steel Thread)
+
 - Implement `setup.exs` / `teardown.exs` support
 - Add interpolation for `.cli` and `.out` files
 - Add comprehensive tests
 - Update documentation
 
 ### Phase 2: Example Fixtures (Future)
+
 - Create example fixtures demonstrating `.exs` usage
 - Document common patterns
 - Identify which existing Laksa fixtures would benefit from migration
 
 ### Phase 3: Best Practices Guide (Future)
+
 - When to use `.exs` vs `.cli`
 - Performance guidelines
 - Debugging techniques
@@ -275,6 +287,7 @@ context = Map.put(context, :user_id, user.id)
 ### Q5: Missing interpolation keys - error or leave literal?
 
 **Decision**: Leave as literal `{{key}}`. This allows:
+
 - Graceful degradation
 - Clear visual indication in test output
 - Easier debugging (see what's missing)
@@ -287,6 +300,7 @@ context = Map.put(context, :user_id, user.id)
 ### Q7: Security implications of Code.eval_string?
 
 **Decision**: Acceptable for test code. `.exs` files are:
+
 - Part of the project's own codebase
 - Not user input or external data
 - Same trust level as regular test files

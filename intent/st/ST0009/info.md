@@ -16,6 +16,7 @@ Add support for `setup.exs` and `teardown.exs` files to the CLI fixtures testing
 The current CLI fixtures framework (`Arca.Cli.Testing.CliFixturesTest`) uses `setup.cli` and `teardown.cli` files containing CLI commands for test setup and teardown. While this works, it has several limitations:
 
 **Current Limitations:**
+
 1. **Performance**: Creating test data via CLI requires full command parsing, validation, and execution
 2. **Verbosity**: Complex setup requires many sequential CLI commands
 3. **Data isolation**: Cannot easily return computed values (IDs, tokens) for use in tests
@@ -24,12 +25,14 @@ The current CLI fixtures framework (`Arca.Cli.Testing.CliFixturesTest`) uses `se
 
 **Proposed Enhancement:**
 Add optional `setup.exs` and `teardown.exs` files that:
+
 - Run native Elixir code for fast, direct database/API access
 - Return bindings map (`%{key: value}`) for interpolation into `.cli` and `.out` files
 - Coexist with existing `.cli` files (backward compatible)
 - Enable complex test scenarios with dynamic data
 
 **Example Use Case:**
+
 ```elixir
 # setup.exs - Fast database setup
 {:ok, user} = create_user("test@example.com")
@@ -50,6 +53,7 @@ User ID: {{user_id}}
 ## Context for LLM
 
 This steel thread extends the existing CLI fixtures testing framework. The implementation requires:
+
 - Understanding of ExUnit test lifecycle and macros
 - Familiarity with Elixir's `Code.eval_string/3` for dynamic code execution
 - String interpolation and pattern matching integration

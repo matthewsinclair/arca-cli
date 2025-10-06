@@ -458,6 +458,7 @@ Note: Teardown should handle missing bindings gracefully:
 **Problem**: A binding `%{*: "value"}` would conflict with `{{*}}` pattern matcher.
 
 **Solution**:
+
 - Restrict variable names to `[a-z_][a-z0-9_]*` (valid atom identifiers)
 - Process pattern matchers first, use placeholders
 - Document that reserved pattern names should not be used as bindings
@@ -520,6 +521,7 @@ This makes errors show the actual file path and line numbers.
 **Problem**: If setup.exs creates database records, they might leak between tests.
 
 **Solution**:
+
 - Document that `teardown.exs` should clean up everything created
 - Consider adding test helpers for common cleanup patterns
 - Rely on database sandbox/transactions if available (ExUnit's Ecto.SQL.Sandbox)

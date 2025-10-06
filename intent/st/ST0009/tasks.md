@@ -171,13 +171,16 @@
 ## Dependencies
 
 ### External Dependencies
+
 None - uses only Elixir standard library (`Code`, `Regex`, `File`)
 
 ### Internal Dependencies
+
 - Existing `Arca.Cli.Testing.CliFixturesTest` module
 - Existing `Arca.Cli.Testing.CliCommandHelper` module
 
 ### Test Environment Dependencies
+
 - ExUnit (already present)
 - Test fixtures directory structure
 
@@ -186,6 +189,7 @@ None - uses only Elixir standard library (`Code`, `Regex`, `File`)
 ### Risk: Breaking existing fixtures
 
 **Mitigation**:
+
 - Make all changes backward compatible
 - Default bindings to `%{}` when not provided
 - Test with existing fixtures before release
@@ -193,6 +197,7 @@ None - uses only Elixir standard library (`Code`, `Regex`, `File`)
 ### Risk: Pattern matcher collision
 
 **Mitigation**:
+
 - Process pattern matchers first with placeholder technique
 - Document reserved names
 - Add tests for edge cases
@@ -200,6 +205,7 @@ None - uses only Elixir standard library (`Code`, `Regex`, `File`)
 ### Risk: Security concerns with Code.eval_string
 
 **Mitigation**:
+
 - Only evaluate in test environment
 - Add explicit environment check
 - Document that .exs files are trusted code
@@ -208,6 +214,7 @@ None - uses only Elixir standard library (`Code`, `Regex`, `File`)
 ### Risk: Poor error messages for evaluation failures
 
 **Mitigation**:
+
 - Use `file:` option in `Code.eval_string/3`
 - Catch and re-raise with context
 - Add examples to error messages
