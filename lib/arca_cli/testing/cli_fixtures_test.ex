@@ -575,4 +575,76 @@ defmodule Arca.Cli.Testing.CliFixturesTest do
     # Only collapse spaces and tabs, not newlines
     |> String.replace(~r/[ \t]+/, " ")
   end
+
+  @doc """
+  Interpolate bindings into content containing {{key}} placeholders.
+
+  Preserves pattern matchers like {{*}}, {{??}}, {{\d+}}, etc.
+
+  ## Parameters
+
+  - `content` - String with {{key}} placeholders
+  - `bindings` - Map of values to interpolate
+
+  ## Returns
+
+  String with placeholders replaced
+
+  ## Examples
+
+      iex> interpolate_bindings("User: {{name}}", %{name: "Alice"})
+      "User: Alice"
+
+      iex> interpolate_bindings("ID: {{id}}", %{id: 42})
+      "ID: 42"
+
+      iex> interpolate_bindings("Status: {{*}}", %{})
+      "Status: {{*}}"  # Pattern preserved
+
+  """
+  def interpolate_bindings(content, bindings) when bindings == %{} do
+    # No bindings, return as-is (optimization)
+    content
+  end
+
+  def interpolate_bindings(content, bindings) do
+    # Pattern matchers to preserve (don't interpolate these)
+    # These are literal strings that should be preserved exactly
+    pattern_matchers = ["{{*}}", "{{??}}", "{{.*}}", "{{\\d+}}", "{{\\w+}}"]
+
+    # Replace pattern matchers with placeholders
+    {content_with_placeholders, replacements} = preserve_patterns(content, pattern_matchers)
+
+    # Now interpolate variable bindings
+    interpolated =
+      Regex.replace(~r/\{\{([a-z_][a-z0-9_]*)\}\}/i, content_with_placeholders, fn _match, key ->
+        atom_key = String.to_atom(key)
+
+        case Map.fetch(bindings, atom_key) do
+          {:ok, value} -> to_string(value)
+          # Leave as-is if not found
+          :error -> "{{#{key}}}"
+        end
+      end)
+
+    # Restore pattern matchers
+    restore_patterns(interpolated, replacements)
+  end
+
+  # Helper to preserve pattern matchers during interpolation
+  defp preserve_patterns(content, patterns) do
+    patterns
+    |> Enum.with_index()
+    |> Enum.reduce({content, %{}}, fn {pattern, idx}, {text, map} ->
+      placeholder = "<<<PATTERN_#{idx}>>>"
+      replaced = String.replace(text, pattern, placeholder)
+      {replaced, Map.put(map, placeholder, pattern)}
+    end)
+  end
+
+  defp restore_patterns(content, replacements) do
+    Enum.reduce(replacements, content, fn {placeholder, original}, text ->
+      String.replace(text, placeholder, original)
+    end)
+  end
 end
