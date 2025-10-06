@@ -1,5 +1,38 @@
 # Implementation - ST0009: Elixir-based setup and teardown for CLI fixtures
 
+## Implementation Status
+
+**Status**: ✅ Complete and tested
+**Date Completed**: 2025-10-06
+**Test Coverage**: 397 tests passing (393 existing + 4 new integration tests + 25 script tests + 40 interpolation tests)
+
+## As-Built Summary
+
+The implementation successfully adds `setup.exs` and `teardown.exs` support to the CLI fixtures testing framework. The feature is fully backward compatible, with all existing fixtures continuing to work unchanged.
+
+### What Was Built
+
+**Core Functions:**
+
+1. `interpolate_bindings/2` - Replaces `{{variable}}` placeholders while preserving pattern matchers
+2. `preserve_patterns/2` & `restore_patterns/2` - Helper functions for pattern preservation
+3. `run_setup_script/1` - Evaluates setup.exs and returns bindings map
+4. `run_teardown_script/2` - Evaluates teardown.exs with bindings from setup
+
+**Updated Functions:**
+
+1. `run_cli_file/2` - Now accepts optional bindings parameter for interpolation
+2. `compare_output/4` - Now accepts optional bindings parameter for expected output interpolation
+3. `run_fixture/3` - Orchestrates full lifecycle including .exs files
+
+### File Locations
+
+- **Implementation**: `lib/arca_cli/testing/cli_fixtures_test.ex`
+- **Tests**:
+  - `test/arca_cli/testing/cli_fixtures_interpolation_test.exs` (40 tests)
+  - `test/arca_cli/testing/cli_fixtures_scripts_test.exs` (25 tests)
+  - `test/cli/fixtures/_test_exs_*/001/` (4 integration fixtures)
+
 ## Implementation
 
 ### 1. Core Functions to Add

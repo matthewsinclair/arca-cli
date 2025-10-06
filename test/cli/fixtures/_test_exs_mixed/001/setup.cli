@@ -1,0 +1,3 @@
+# Setup CLI can use bindings from setup.exs
+# (output will be included in final test output)
+cli.status

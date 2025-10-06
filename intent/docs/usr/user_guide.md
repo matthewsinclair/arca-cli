@@ -1,5 +1,6 @@
 ---
-verblock: "17 Apr 2025:v0.9: Claude - Added error handling and debug mode documentation
+verblock: "06 Oct 2025:v1.0: Claude - Added CLI Fixtures Testing section
+17 Apr 2025:v0.9: Claude - Added error handling and debug mode documentation
 25 Mar 2025:v0.8: Claude - Fixed command sorting implementation"
 ---
 # Arca.Cli User Guide
@@ -403,6 +404,78 @@ end
 ```
 
 This is particularly useful for applications that need to react to configuration changes at runtime without polling or manual reload commands.
+
+### Testing CLI Commands
+
+Arca.Cli includes a declarative testing framework for CLI commands that makes it easy to create integration tests using file-based fixtures.
+
+#### Quick Start
+
+Create a test file that uses the fixtures framework:
+
+```elixir
+defmodule MyApp.CliFixturesTest do
+  use ExUnit.Case, async: false
+  use Arca.Cli.Testing.CliFixturesTest
+
+  # Tests are automatically discovered from test/cli/fixtures/
+end
+```
+
+#### Basic Fixture Structure
+
+Create fixtures under `test/cli/fixtures/`:
+
+```
+test/cli/fixtures/
+  my.command/
+    001/
+      cmd.cli        # The command to test
+      expected.out   # Expected output
+```
+
+#### Advanced Setup with Elixir Scripts
+
+For complex test data setup, use `setup.exs` to create data programmatically:
+
+```elixir
+# test/cli/fixtures/auth.login/001/setup.exs
+{:ok, user} = create_test_user("test@example.com")
+{:ok, api_key} = generate_api_key(user.id)
+
+# Return bindings for use in commands and assertions
+%{
+  user_id: user.id,
+  api_key: api_key.plaintext
+}
+```
+
+```bash
+# test/cli/fixtures/auth.login/001/cmd.cli
+auth.login --api-key "{{api_key}}"
+```
+
+```
+# test/cli/fixtures/auth.login/001/expected.out
+Authenticated successfully
+User ID: {{user_id}}
+```
+
+```elixir
+# test/cli/fixtures/auth.login/001/teardown.exs
+# Clean up test data
+if user_id = bindings[:user_id] do
+  delete_user(user_id)
+end
+```
+
+**Benefits of `.exs` files:**
+- Fast database access (10-100x faster than CLI)
+- Return computed values for assertions
+- Full access to application modules
+- Standard Elixir debugging tools
+
+For complete documentation, see the [CLI Fixtures Testing](#cli-fixtures-testing) section in the Reference Guide.
 
 ## Troubleshooting
 

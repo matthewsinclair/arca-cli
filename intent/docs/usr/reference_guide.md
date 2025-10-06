@@ -1,5 +1,6 @@
 ---
-verblock: "17 Apr 2025:v0.9: Claude - Added error handling system documentation"
+verblock: "06 Oct 2025:v1.0: Claude - Added CLI Fixtures Testing documentation
+17 Apr 2025:v0.9: Claude - Added error handling system documentation"
 ---
 # Arca.Cli Reference Guide
 
@@ -13,7 +14,8 @@ This reference guide provides comprehensive information about the Arca.Cli syste
 4. [Configuration Options](#configuration-options)
 5. [Extension Points](#extension-points)
 6. [Error Handling System](#error-handling-system)
-7. [Concepts and Terminology](#concepts-and-terminology)
+7. [CLI Fixtures Testing](#cli-fixtures-testing)
+8. [Concepts and Terminology](#concepts-and-terminology)
 
 ## Command Reference
 
@@ -1100,28 +1102,345 @@ Future versions of the error handling system may include:
 4. Clickable file paths in terminal output
 5. Additional error handling macros for specialized use cases
 
+## CLI Fixtures Testing
+
+Arca.Cli includes a powerful declarative testing framework for CLI commands using file-based fixtures. This system makes it easy to create integration tests without writing verbose test code.
+
+### Overview
+
+The `Arca.Cli.Testing.CliFixturesTest` module provides:
+
+- **Declarative testing**: Define tests using simple file structures
+- **Auto-discovery**: Tests are automatically discovered and generated from fixture directories
+- **Pattern matching**: Flexible output validation with wildcards and patterns
+- **Setup/teardown**: Both CLI-based (`.cli`) and Elixir-based (`.exs`) setup and teardown
+- **Variable interpolation**: Share data between setup, commands, and assertions using `{{variable}}` syntax
+- **Test isolation**: Each fixture runs in a clean environment
+
+### Basic Usage
+
+Add the testing module to your test file:
+
+```elixir
+defmodule MyApp.CliFixturesTest do
+  use ExUnit.Case, async: false
+  use Arca.Cli.Testing.CliFixturesTest
+
+  # Tests are automatically discovered and generated!
+end
+```
+
+### Fixture Directory Structure
+
+Fixtures are organized hierarchically:
+
+```
+test/cli/fixtures/
+  <command.name>/              # e.g., "about", "config.set"
+    001/                       # Test variation (001-999)
+      setup.exs                # OPTIONAL: Elixir setup (returns bindings)
+      setup.cli                # OPTIONAL: CLI setup commands
+      cmd.cli                  # REQUIRED: Command to test
+      expected.out             # OPTIONAL: Expected output
+      teardown.cli             # OPTIONAL: CLI cleanup commands
+      teardown.exs             # OPTIONAL: Elixir cleanup (receives bindings)
+      skip                     # OPTIONAL: Mark test as skipped
+```
+
+### File Types
+
+#### `cmd.cli` (REQUIRED)
+
+The command to test. Only this command's output is validated.
+
+```bash
+# test/cli/fixtures/about/001/cmd.cli
+about
+```
+
+#### `expected.out` (OPTIONAL)
+
+Expected output from `cmd.cli`. Supports pattern matching and variable interpolation.
+
+```
+# Exact match
+📦 Arca CLI
+A declarative CLI for Elixir apps
+
+# With patterns
+Status: {{*}}
+Count: {{\\d+}}
+
+# With variable interpolation
+User: {{user_name}}
+ID: {{user_id}}
+```
+
+#### `setup.cli` (OPTIONAL)
+
+Commands to run before `cmd.cli`. Output is ignored. Supports variable interpolation.
+
+```bash
+# test/cli/fixtures/example/001/setup.cli
+config.reset
+config.set theme {{theme_name}}
+```
+
+#### `teardown.cli` (OPTIONAL)
+
+Commands to run after `cmd.cli` (always runs, even on failure). Supports variable interpolation.
+
+```bash
+# test/cli/fixtures/example/001/teardown.cli
+config.reset
+```
+
+#### `setup.exs` (OPTIONAL - Advanced)
+
+Elixir script for programmatic setup. Must return a map of bindings.
+
+```elixir
+# test/cli/fixtures/auth.login/001/setup.exs
+alias MyApp.Accounts.{User, ApiKey}
+
+# Create test user
+{:ok, user} =
+  User
+  |> Ash.Changeset.for_create(:create, %{
+    email: "test@example.com",
+    password: "testpass123"
+  }, authorize?: false)
+  |> Ash.create()
+
+# Generate API key
+{:ok, api_key_record} =
+  ApiKey
+  |> Ash.Changeset.for_create(:create, %{
+    user_id: user.id,
+    expires_at: DateTime.add(DateTime.utc_now(), 3600, :second)
+  }, authorize?: false)
+  |> Ash.create()
+
+# Return bindings for interpolation
+%{
+  user_email: user.email,
+  user_id: user.id,
+  api_key: api_key_record.__metadata__.plaintext_api_key
+}
+```
+
+**Requirements:**
+- Must return a map: `%{atom_key: value}`
+- Has access to all application modules
+- Runs in test environment only
+- Should use `authorize?: false` to bypass authorization
+
+#### `teardown.exs` (OPTIONAL - Advanced)
+
+Elixir script for cleanup. Receives bindings from `setup.exs`.
+
+```elixir
+# test/cli/fixtures/auth.login/001/teardown.exs
+alias MyApp.Accounts.User
+
+user_id = bindings[:user_id]
+
+if user_id do
+  User
+  |> Ash.get!(user_id, authorize?: false)
+  |> Ash.destroy!(authorize?: false)
+end
+```
+
+**Best Practice:** Always check if bindings exist before using them.
+
+### Variable Interpolation
+
+Variables from `setup.exs` can be interpolated into all `.cli` and `.out` files using `{{variable}}` syntax.
+
+**Execution flow:**
+1. `setup.exs` → returns `%{user_id: 123, api_key: "abc"}`
+2. `setup.cli` → can use `{{user_id}}` and `{{api_key}}`
+3. `cmd.cli` → can use `{{user_id}}` and `{{api_key}}`
+4. `expected.out` → can use `{{user_id}}` and `{{api_key}}`
+5. `teardown.cli` → can use `{{user_id}}` and `{{api_key}}`
+6. `teardown.exs` → receives `bindings[:user_id]` and `bindings[:api_key]`
+
+**Type conversion:** All values are converted to strings using `to_string/1`.
+
+**Missing bindings:** Unknown variables are left as literal `{{key}}` (graceful degradation).
+
+### Pattern Matching
+
+Pattern matchers are preserved during variable interpolation:
+
+| Pattern | Description | Example Match |
+|---------|-------------|---------------|
+| `{{*}}` | Non-greedy wildcard | Matches any text (minimal) |
+| `{{.*}}` | Greedy wildcard | Matches any text (maximal) |
+| `{{??}}` or `{{\\d+}}` | Digits | `123`, `42` |
+| `{{\\w+}}` | Word characters | `user_name`, `abc123` |
+
+**Example combining variables and patterns:**
+
+```
+# expected.out
+User: {{user_email}}      # Variable interpolation
+Created: {{*}}            # Pattern matcher
+ID: {{\\d+}}              # Pattern matcher
+```
+
+### Complete Example
+
+```elixir
+# test/cli/fixtures/site.show/001/setup.exs
+{:ok, site} = create_test_site("mysite", "My Site")
+{:ok, api_key} = generate_api_key()
+
+%{
+  site_subdomain: site.subdomain,
+  site_name: site.name,
+  site_id: site.id,
+  api_key: api_key.plaintext
+}
+```
+
+```bash
+# test/cli/fixtures/site.show/001/setup.cli
+laksa.auth.login --api-key "{{api_key}}"
+```
+
+```bash
+# test/cli/fixtures/site.show/001/cmd.cli
+laksa.site.show {{site_subdomain}}
+```
+
+```
+# test/cli/fixtures/site.show/001/expected.out
+Site: {{site_subdomain}}
+subdomain | {{site_subdomain}}
+name      | {{site_name}}
+status    | {{*}}
+```
+
+```elixir
+# test/cli/fixtures/site.show/001/teardown.exs
+site_id = bindings[:site_id]
+
+if site_id do
+  Site
+  |> Ash.get!(site_id, authorize?: false)
+  |> Ash.destroy!(authorize?: false)
+end
+```
+
+### When to Use `.exs` vs `.cli`
+
+**Use `.exs` files when:**
+- Creating database records directly (faster than CLI)
+- Generating tokens or computed values
+- Complex setup requiring Elixir logic
+- Need to return data for interpolation
+
+**Use `.cli` files when:**
+- Testing CLI workflow end-to-end
+- Setup is simple and command-based
+- Want to test the full command stack
+
+**Best Practice:** Mix both - use `.exs` for data setup, `.cli` for command-based setup.
+
+### Test Isolation
+
+Each fixture test runs in complete isolation:
+- Unique temporary config directory
+- Clean state (no shared data between tests)
+- Automatic cleanup after test completes
+- Teardown always runs (even on test failure)
+
+### API Reference
+
+#### `discover_fixtures/0`
+
+Discovers all fixtures in `test/cli/fixtures/`. Called at compile time.
+
+#### `run_fixture/3`
+
+Orchestrates the full test lifecycle:
+1. Run `setup.exs` → get bindings
+2. Run `setup.cli` with interpolation
+3. Run `cmd.cli` with interpolation
+4. Compare output with `expected.out` (with interpolation)
+5. Run `teardown.cli` with interpolation
+6. Run `teardown.exs` with bindings
+
+#### `interpolate_bindings/2`
+
+```elixir
+interpolate_bindings(content, bindings)
+```
+
+Replaces `{{variable}}` placeholders while preserving pattern matchers.
+
+#### `run_setup_script/1`
+
+```elixir
+run_setup_script(fixture_path) :: {:ok, map()}
+```
+
+Evaluates `setup.exs` and returns bindings map. Returns `{:ok, %{}}` if file doesn't exist.
+
+#### `run_teardown_script/2`
+
+```elixir
+run_teardown_script(fixture_path, bindings) :: :ok
+```
+
+Evaluates `teardown.exs` with bindings. Logs errors but always returns `:ok`.
+
+### Troubleshooting
+
+**"Missing cmd.cli"**
+- Every fixture variation requires a `cmd.cli` file
+
+**"Output mismatch"**
+- Compare expected vs actual in error message
+- Check for whitespace differences
+- Try pattern matching for dynamic content
+
+**"setup.exs must return a map"**
+- Ensure `setup.exs` returns `%{key: value}`, not `{:ok, %{}}` or other tuples
+
+**Variables not interpolating**
+- Check variable name is valid: `[a-z_][a-z0-9_]*`
+- Ensure `setup.exs` returns the variable in its map
+- Verify syntax is `{{variable}}` not `{variable}`
+
+**Teardown errors**
+- Use defensive patterns: `if bindings[:key], do: cleanup()`
+- Check for `nil` before using bindings
+
 ## Concepts and Terminology
 
-| Term                     | Definition                                                                                  |
-|--------------------------|---------------------------------------------------------------------------------------------|
-| Command                  | A self-contained unit of functionality that can be executed from the CLI                    |
-| Configurator             | A module that registers commands and defines CLI configuration                              |
-| REPL                     | Read-Eval-Print Loop, an interactive shell for running commands                             |
-| Dot Notation             | A naming convention for organizing commands hierarchically (e.g., `sys.info`)               |
-| NamespaceCommandHelper   | A helper module for defining multiple commands in the same namespace                        |
-| BaseCommand              | The base module for defining commands                                                       |
-| BaseSubCommand           | The base module for defining subcommands                                                    |
-| Callbacks                | Extension system allowing external applications to customize behavior                       |
-| Callback Chain           | Multiple callbacks executed in reverse registration order (last registered, first executed) |
-| Registry                 | Elixir's built-in process registry, used by Arca.Config for process management              |
-| File Watching            | Mechanism to detect and automatically reload configuration file changes                     |
-| Application-based Config | The system of deriving configuration paths from the application name                        |
-| Command Sorting          | Feature that determines whether commands are displayed in alphabetical order                |
-|                          | (case-insensitive, default) or in the order they were defined                               |
-| ErrorHandler             | Central module for standardized error handling, formatting, and normalization               |
-| Enhanced Error Tuple     | Four-element error tuple with debug information: `{:error, error_type, reason, debug_info}` |
-| Debug Mode               | Optional mode that displays detailed error information including stack traces               |
-| create_error_with_location | Macro that creates errors with automatic location tracking                            |
-| create_and_format_error_with_location | Macro that creates and formats errors with automatic location tracking              |
-| err_cloc                 | Shorthand alias for create_error_with_location                                        |
-| err_cfloc                | Shorthand alias for create_and_format_error_with_location                             |
+| Term                                  | Definition                                                                                  |
+|---------------------------------------|---------------------------------------------------------------------------------------------|
+| Command                               | A self-contained unit of functionality that can be executed from the CLI                    |
+| Configurator                          | A module that registers commands and defines CLI configuration                              |
+| REPL                                  | Read-Eval-Print Loop, an interactive shell for running commands                             |
+| Dot Notation                          | A naming convention for organizing commands hierarchically (e.g., `sys.info`)               |
+| NamespaceCommandHelper                | A helper module for defining multiple commands in the same namespace                        |
+| BaseCommand                           | The base module for defining commands                                                       |
+| BaseSubCommand                        | The base module for defining subcommands                                                    |
+| Callbacks                             | Extension system allowing external applications to customize behavior                       |
+| Callback Chain                        | Multiple callbacks executed in reverse registration order (last registered, first executed) |
+| Registry                              | Elixir's built-in process registry, used by Arca.Config for process management              |
+| File Watching                         | Mechanism to detect and automatically reload configuration file changes                     |
+| Application-based Config              | The system of deriving configuration paths from the application name                        |
+| Command Sorting                       | Feature that determines whether commands are displayed in alphabetical order                |
+|                                       | (case-insensitive, default) or in the order they were defined                               |
+| ErrorHandler                          | Central module for standardized error handling, formatting, and normalization               |
+| Enhanced Error Tuple                  | Four-element error tuple with debug information: `{:error, error_type, reason, debug_info}` |
+| Debug Mode                            | Optional mode that displays detailed error information including stack traces               |
+| create_error_with_location            | Macro that creates errors with automatic location tracking                                  |
+| create_and_format_error_with_location | Macro that creates and formats errors with automatic location tracking                      |
+| err_cloc                              | Shorthand alias for create_error_with_location                                              |
+| err_cfloc                             | Shorthand alias for create_and_format_error_with_location                                   |

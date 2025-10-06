@@ -367,10 +367,12 @@ defmodule Arca.Cli.Testing.CliFixturesTest do
   Run a single fixture test.
 
   This function orchestrates the test lifecycle:
-  1. Run setup.cli (if exists, output ignored)
-  2. Run cmd.cli (output captured)
-  3. Compare output with expected.out (if exists)
-  4. Run teardown.cli (always, even on failure, output ignored)
+  1. Run setup.exs (if exists) → returns bindings
+  2. Run setup.cli (if exists, with interpolation, output ignored)
+  3. Run cmd.cli (with interpolation, output captured)
+  4. Compare output with expected.out (with interpolation, if exists)
+  5. Run teardown.cli (always, with interpolation, even on failure, output ignored)
+  6. Run teardown.exs (always, with bindings, even on failure)
 
   ## Parameters
 
@@ -384,33 +386,39 @@ defmodule Arca.Cli.Testing.CliFixturesTest do
     expected_file = Path.join(fixture_path, "expected.out")
     teardown_file = Path.join(fixture_path, "teardown.cli")
 
-    # Run setup if exists (output ignored)
-    if File.exists?(setup_file) do
-      run_cli_file(setup_file)
-    end
+    # 1. Run setup.exs if exists → get bindings
+    {:ok, bindings} = run_setup_script(fixture_path)
 
     try do
-      # Check that cmd.cli exists
+      # 2. Run setup.cli with interpolation (output ignored)
+      if File.exists?(setup_file) do
+        run_cli_file(setup_file, bindings)
+      end
+
+      # 3. Check that cmd.cli exists
       assert File.exists?(cmd_file),
              "Missing cmd.cli for #{command}/#{variation}"
 
-      # Run the actual command - only this output is tested
-      cmd_output = run_cli_file(cmd_file)
+      # 4. Run the actual command with interpolation - only this output is tested
+      cmd_output = run_cli_file(cmd_file, bindings)
 
-      # Check expected output if file exists
+      # 5. Check expected output if file exists (with interpolation)
       if File.exists?(expected_file) do
         expected = File.read!(expected_file)
-        compare_output(cmd_output, expected, "#{command}/#{variation}")
+        compare_output(cmd_output, expected, "#{command}/#{variation}", bindings)
       else
         # If no expected.out, just ensure command runs without error
         assert is_binary(cmd_output),
                "Command should produce output for #{command}/#{variation}"
       end
     after
-      # Always run teardown if it exists (output ignored)
+      # 6. Always run teardown.cli with interpolation (output ignored)
       if File.exists?(teardown_file) do
-        run_cli_file(teardown_file)
+        run_cli_file(teardown_file, bindings)
       end
+
+      # 7. Always run teardown.exs with bindings
+      run_teardown_script(fixture_path, bindings)
     end
   end
 
@@ -422,27 +430,34 @@ defmodule Arca.Cli.Testing.CliFixturesTest do
   - One command per line
   - Blank lines ignored
   - Lines starting with `#` are comments
+  - Supports `{{variable}}` interpolation from bindings
   - Example:
 
         # Setup config
         config.reset
         config.set theme dark
 
-        # Load data
-        data.load test.json
+        # Load data with interpolation
+        data.load {{filename}}
 
   ## Parameters
 
   - `file_path` - Path to .cli file
+  - `bindings` - Optional map of bindings for interpolation (default: `%{}`)
 
   ## Returns
 
   Combined output from all commands, joined with newlines.
   """
-  def run_cli_file(file_path) do
+  def run_cli_file(file_path, bindings \\ %{}) do
+    content = File.read!(file_path)
+
+    # Interpolate bindings before parsing commands
+    interpolated = interpolate_bindings(content, bindings)
+
+    # Parse and run commands
     commands =
-      file_path
-      |> File.read!()
+      interpolated
       |> String.split("\n")
       |> Enum.map(&String.trim/1)
       |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "#")))
@@ -461,8 +476,9 @@ defmodule Arca.Cli.Testing.CliFixturesTest do
   ## Parameters
 
   - `actual` - Actual output from command
-  - `expected` - Expected output (may contain patterns)
+  - `expected` - Expected output (may contain patterns and variables)
   - `test_name` - Name for error messages
+  - `bindings` - Optional map of bindings for variable interpolation (default: `%{}`)
 
   ## Normalization
 
@@ -472,21 +488,24 @@ defmodule Arca.Cli.Testing.CliFixturesTest do
   - Multiple spaces/tabs collapsed to single space
   - Newlines preserved
   """
-  def compare_output(actual, expected, test_name) do
-    # Check if expected contains patterns
-    if String.contains?(expected, "{{") do
-      compare_with_patterns(actual, expected, test_name)
+  def compare_output(actual, expected, test_name, bindings \\ %{}) do
+    # Interpolate bindings in expected output
+    interpolated_expected = interpolate_bindings(expected, bindings)
+
+    # Check if expected contains patterns (after interpolation)
+    if String.contains?(interpolated_expected, "{{") do
+      compare_with_patterns(actual, interpolated_expected, test_name)
     else
       # Exact match (with normalization)
       actual_normalized = normalize_output(actual)
-      expected_normalized = normalize_output(expected)
+      expected_normalized = normalize_output(interpolated_expected)
 
       if actual_normalized != expected_normalized do
         flunk("""
         Output mismatch for #{test_name}
 
         Expected:
-        #{expected}
+        #{interpolated_expected}
 
         Actual:
         #{actual}
