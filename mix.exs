@@ -9,6 +9,8 @@ defmodule Arca.Cli.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env()),
+      test_paths: ["test"],
+      test_pattern: "*_test.exs",
       escript: [main_module: Arca.Cli, path: "_build/escript/arca_cli", name: "arca_cli"],
       mix_tasks: [
         arca_cli: Mix.Tasks.Arca.Cli,
