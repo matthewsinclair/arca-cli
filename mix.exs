@@ -45,6 +45,7 @@ defmodule Arca.Cli.MixProject do
       {:elixir_uuid, "~> 1.2"},
       {:ex_prompt, "~> 0.2"},
       {:logger_file_backend, "~> 0.0.14"},
+      {:logger_backends, "~> 1.0"},
 
       # Dev/test tools
       {:dotenv, "~> 3.0", only: [:dev, :test], runtime: false},

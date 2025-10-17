@@ -98,9 +98,21 @@ defmodule Arca.Cli do
   def start(_type, _args) do
     # Logger.info("#{__MODULE__}.start: #{inspect(args)}")
 
+    # Configure logger backends for REPL mode
+    configure_logger_backends()
+
     children = build_child_specs()
     opts = [strategy: :one_for_one, name: Arca.Cli]
     Supervisor.start_link(children, opts)
+  end
+
+  # Configure logger backends when in REPL mode
+  defp configure_logger_backends do
+    env = Application.get_env(:arca_cli, :env)
+
+    if System.get_env("REPL_MODE") == "true" && env != :prod do
+      LoggerBackends.add(LoggerFileBackend)
+    end
   end
 
   # Builds the appropriate child specifications based on the environment and runtime state.

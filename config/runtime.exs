@@ -6,11 +6,8 @@ if System.get_env("REPL_MODE") == "true" && config_env() != :prod do
   log_dir = ".arca_cli/logs"
   File.mkdir_p!(log_dir)
 
-  # Configure ONLY file backend for REPL/CLI mode (removes console backend)
-  config :logger,
-    backends: [{LoggerFileBackend, :file_log}],
-    level: :debug
-
+  # Configure file backend for REPL/CLI mode
+  # Note: Backend is added via LoggerBackends.add() in application start callback
   config :logger, :file_log,
     path: Path.join(log_dir, "#{Date.utc_today()}.log"),
     level: :debug,
