@@ -177,7 +177,12 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
     :ok
   end
 
-  defp handle_parse_result({:error, {:unclosed_heredoc, marker, start_line}}, _settings, _optimus, _echo) do
+  defp handle_parse_result(
+         {:error, {:unclosed_heredoc, marker, start_line}},
+         _settings,
+         _optimus,
+         _echo
+       ) do
     raise "Unclosed heredoc starting at line #{start_line}: expected '#{marker}' but reached end of file"
   end
 

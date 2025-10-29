@@ -86,7 +86,10 @@ defmodule Arca.Cli.Commands.InputProvider do
 
   # IO Protocol Implementation - put_chars (forward to original leader)
 
-  defp handle_io_request({:put_chars, encoding, chars}, {_lines, _index, original_leader, _echo} = state) do
+  defp handle_io_request(
+         {:put_chars, encoding, chars},
+         {_lines, _index, original_leader, _echo} = state
+       ) do
     send(original_leader, {:io_request, self(), make_ref(), {:put_chars, encoding, chars}})
     {:ok, state}
   end
@@ -135,11 +138,13 @@ defmodule Arca.Cli.Commands.InputProvider do
     |> then(&{&1, {lines, index + 1, original_leader, echo}})
   end
 
-  defp get_next_line({lines, index, original_leader, echo}), do: {:eof, {lines, index, original_leader, echo}}
+  defp get_next_line({lines, index, original_leader, echo}),
+    do: {:eof, {lines, index, original_leader, echo}}
 
   # Get next N characters
 
-  defp get_next_chars(_count, {lines, index, original_leader, echo}) when index >= length(lines) do
+  defp get_next_chars(_count, {lines, index, original_leader, echo})
+       when index >= length(lines) do
     {:eof, {lines, index, original_leader, echo}}
   end
 
