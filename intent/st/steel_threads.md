@@ -42,3 +42,4 @@ The detailed information for each steel thread is contained in its individual do
 | ST0008 | Orthogonalised formatting and outputting | Completed |  | 2025-10-06 |
 | ST0009 | Elixir-based setup and teardown for CLI fixtures | Completed |  | 2025-10-06 |
 | ST0003 | REPL Output Callback System | Completed |  | 2025-09-22 |
+| ST0010 | HEREDOC injection for cli.script | WIP | 2025-10-29 |  |
