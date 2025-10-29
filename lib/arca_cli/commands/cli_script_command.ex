@@ -33,6 +33,14 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
         required: true,
         parser: :string
       ]
+    ],
+    flags: [
+      echo: [
+        short: "-e",
+        long: "--echo",
+        help: "Echo each input line as it is consumed",
+        multiple: false
+      ]
     ]
 
   @doc """
@@ -54,11 +62,12 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
   @impl Arca.Cli.Command.CommandBehaviour
   def handle(args, settings, optimus) do
     file_path = args.args.file
+    echo = if Map.has_key?(args, :flags), do: Map.get(args.flags, :echo, false), else: false
 
     case File.read(file_path) do
       {:ok, file_contents} ->
         # Process the script and return without any additional output
-        process_script_commands(file_contents, settings, optimus)
+        process_script_commands(file_contents, settings, optimus, echo)
         # Return with no output - commands have already produced their output
         {:nooutput, :ok}
 
@@ -76,15 +85,16 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
   - `file_contents`: Contents of the script file
   - `settings`: Application settings
   - `optimus`: Command line parser configuration
+  - `echo`: Whether to echo input lines as they are consumed
 
   ## Returns
   - :ok or raises on parse error
   """
-  @spec process_script_commands(String.t(), map(), term()) :: :ok
-  def process_script_commands(file_contents, settings, optimus) do
+  @spec process_script_commands(String.t(), map(), term(), boolean()) :: :ok
+  def process_script_commands(file_contents, settings, optimus, echo) do
     file_contents
     |> parse_script()
-    |> handle_parse_result(settings, optimus)
+    |> handle_parse_result(settings, optimus, echo)
   end
 
   # Parser - extract commands with optional heredoc stdin
@@ -162,17 +172,17 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
 
   # Execute parsed commands
 
-  defp handle_parse_result({:ok, commands}, settings, optimus) do
-    Enum.each(commands, &execute_command(&1, settings, optimus))
+  defp handle_parse_result({:ok, commands}, settings, optimus, echo) do
+    Enum.each(commands, &execute_command(&1, settings, optimus, echo))
     :ok
   end
 
-  defp handle_parse_result({:error, {:unclosed_heredoc, marker, start_line}}, _settings, _optimus) do
+  defp handle_parse_result({:error, {:unclosed_heredoc, marker, start_line}}, _settings, _optimus, _echo) do
     raise "Unclosed heredoc starting at line #{start_line}: expected '#{marker}' but reached end of file"
   end
 
   # Execute regular command
-  defp execute_command({:command, cmd}, settings, optimus) do
+  defp execute_command({:command, cmd}, settings, optimus, _echo) do
     IO.puts("\nscript> #{cmd}")
 
     cmd
@@ -181,12 +191,15 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
   end
 
   # Execute command with heredoc stdin
-  defp execute_command({:command_with_stdin, cmd, marker, stdin_lines}, settings, optimus) do
+  defp execute_command({:command_with_stdin, cmd, marker, stdin_lines}, settings, optimus, echo) do
     IO.puts("\nscript> #{cmd} <<#{marker}")
-    Enum.each(stdin_lines, &IO.puts("  #{&1}"))
-    IO.puts(marker)
 
-    with_stdin_provider(stdin_lines, fn ->
+    unless echo do
+      Enum.each(stdin_lines, &IO.puts("  #{&1}"))
+      IO.puts(marker)
+    end
+
+    with_stdin_provider(stdin_lines, echo, fn ->
       cmd
       |> then(&Repl.eval_for_redo({0, &1}, settings, optimus))
       |> Repl.print_result()
@@ -194,9 +207,9 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
   end
 
   # Redirect stdin via group leader
-  defp with_stdin_provider(lines, fun) do
+  defp with_stdin_provider(lines, echo, fun) do
     original_leader = Process.group_leader()
-    {:ok, provider} = InputProvider.start_link(lines, original_leader)
+    {:ok, provider} = InputProvider.start_link(lines, original_leader, echo)
 
     try do
       Process.group_leader(self(), provider)
