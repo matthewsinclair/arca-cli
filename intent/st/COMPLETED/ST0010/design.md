@@ -1,5 +1,9 @@
 # Design - ST0010: HEREDOC injection for cli.script
 
+**Status**: AS-BUILT (Implementation Complete - 2025-10-29)
+
+This document describes the design as implemented. All components built and tested successfully.
+
 ## Approach
 
 Implement heredoc stdin injection using Elixir's Group Leader redirection pattern. This leverages the standard Erlang IO protocol to intercept `IO.gets/1` calls and provide scripted responses without modifying command implementations.

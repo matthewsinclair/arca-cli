@@ -1,17 +1,33 @@
 ---
-verblock: "25 March 2025:v0.4.2: Claude - Fixed command alphabetical sorting implementation"
+verblock: "29 Oct 2025:v0.5: Matthew Sinclair - Completed ST0010 heredoc implementation"
 ---
 # Work In Progress
 
-## TODO
+## Current Status
 
-{{TODO}}
+### Recently Completed
+
+**ST0010: HEREDOC injection for cli.script** - COMPLETE (2025-10-29)
+- Implemented bash-style heredoc syntax for .cli scripts
+- Enables stdin injection into interactive commands
+- Pure functional Elixir with pattern matching throughout
+- 456 tests passing, 0 failures, 0 warnings
+- Files: `lib/arca_cli/commands/input_provider.ex`, enhanced `cli_script_command.ex`
+- Time: 3-4 hours (under 9-14 hour estimate)
+
+### Current Focus
+
+No active work in progress.
+
+### Pending Work
+
+None identified at this time.
 
 ## Notes
 
-The Arca.Cli project is focused on providing a robust command-line interface framework for Elixir applications. Recent work has focused on improving the organization of commands using dot notation, enhancing the REPL experience, and improving documentation. The migration to the STP framework will help better organize project documentation and development process.
+The Arca.Cli project provides a robust command-line interface framework for Elixir applications. The project uses the Intent framework (v2.2.0) for managing steel threads and development work.
 
-The new help subsystem work (ST004) will address fundamental issues with the current implementation, providing a more consistent and reliable approach to displaying help in both CLI and REPL modes. Rather than using help tuples, the revised approach uses a centralized help module with pre-execution checks, which provides a cleaner and more maintainable solution.
+Recent completion of ST0010 adds heredoc functionality to cli.script, allowing automated testing and scripting of interactive commands. The implementation uses Elixir's Group Leader pattern to redirect stdin without modifying commands.
 
 ## Context for LLM
 

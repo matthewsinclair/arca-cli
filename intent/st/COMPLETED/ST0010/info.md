@@ -1,9 +1,9 @@
 ---
-verblock: "29 Oct 2025:v0.1: Matthew Sinclair - Initial version"
+verblock: "29 Oct 2025:v0.2: Matthew Sinclair - Completed implementation"
 intent_version: 2.2.0
-status: WIP
+status: Completed
 created: 20251029
-completed: 
+completed: 20251029
 ---
 # ST0010: HEREDOC injection for cli.script
 
@@ -173,13 +173,15 @@ EOF
 
 ## Success Criteria
 
-- [ ] Can script multi-turn `ll.play` sessions
-- [ ] Can script `ll.agent.engage` dialogs
-- [ ] Can script `ll.llm.chat` conversations
-- [ ] Existing `.cli` scripts continue working unchanged
-- [ ] Clear error message for unclosed heredocs
-- [ ] Documentation with examples
-- [ ] Test coverage for heredoc parsing and execution
+**All criteria met - 2025-10-29**
+
+- [x] Can script multi-turn `ll.play` sessions
+- [x] Can script `ll.agent.engage` dialogs
+- [x] Can script `ll.llm.chat` conversations
+- [x] Existing `.cli` scripts continue working unchanged
+- [x] Clear error message for unclosed heredocs
+- [x] Documentation with examples
+- [x] Test coverage for heredoc parsing and execution
 
 ## Context for LLM
 
