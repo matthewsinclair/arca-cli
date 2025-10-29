@@ -1,7 +1,7 @@
 ---
-verblock: "06 Oct 2025:v1.0: Claude - Added CLI Fixtures Testing section
-17 Apr 2025:v0.9: Claude - Added error handling and debug mode documentation
-25 Mar 2025:v0.8: Claude - Fixed command sorting implementation"
+verblock: "29 Oct 2025:v1.1: Matthew Sinclair - Added cli.script heredoc documentation
+06 Oct 2025:v1.0: Claude - Added CLI Fixtures Testing section
+17 Apr 2025:v0.9: Claude - Added error handling and debug mode documentation"
 ---
 # Arca.Cli User Guide
 
@@ -236,6 +236,168 @@ Flushing system caches:
 
 ```bash
 arca_cli sys.flush
+```
+
+### Running Script Files with cli.script
+
+The `cli.script` command allows you to execute multiple CLI commands from a script file. This is useful for automation, testing, and repeatable workflows.
+
+#### Basic Script Execution
+
+Create a script file with commands (one per line):
+
+```bash
+# my_script.cli
+# Lines starting with # are comments
+
+about
+sys.info
+status
+```
+
+Run the script:
+
+```bash
+arca_cli cli.script my_script.cli
+```
+
+#### HEREDOC Syntax for Interactive Commands
+
+When working with interactive commands that require stdin input (like `ll.play`, `ll.agent.engage`, or `ll.llm.chat`), you can use heredoc syntax to inject input automatically:
+
+```
+command <<MARKER
+line 1
+line 2
+line 3
+MARKER
+```
+
+**Basic Example:**
+
+```
+ll.play my_game <<EOF
+Hello there!
+What do you think?
+/exit
+EOF
+```
+
+Each line between `<<EOF` and `EOF` is fed to the command as if you typed it and pressed Enter.
+
+**Multiple Interactions in One Script:**
+
+```
+# Setup
+ll.world.mount my_world
+
+# First interaction
+ll.play game1 <<EOF
+Start game
+Make choice A
+/exit
+EOF
+
+# Regular commands work too
+status
+
+# Second interaction
+ll.agent.engage assistant <<DATA
+analyze this data
+show results
+/done
+DATA
+```
+
+**Custom Markers:**
+
+You can use any alphanumeric marker name:
+
+```
+command <<END
+input here
+END
+
+command <<INPUT
+more input
+INPUT
+
+command <<DATA123
+data here
+DATA123
+```
+
+#### Heredoc Features and Limitations
+
+**Features:**
+- Whitespace is preserved exactly as written
+- Multiple heredocs per script
+- Works with any command using standard Elixir `IO.gets/1`
+- Backward compatible (scripts without heredocs still work)
+- Comments and blank lines work normally outside heredocs
+
+**Limitations:**
+- Marker must appear on its own line to close heredoc
+- No nested heredocs
+- No variable interpolation
+- If heredoc content contains the marker word, choose a different marker
+- Commands using custom IO implementations may not work
+
+**Whitespace Preservation:**
+
+```
+command <<SPACES
+  indented line
+    more indentation
+  tabbed line
+SPACES
+```
+
+All leading and trailing whitespace is preserved exactly as written.
+
+#### Use Cases
+
+**Automated Testing:**
+
+```
+# test_scenario.cli
+ll.world.mount test_world
+ll.play test_game <<TEST
+input A
+input B
+verify result
+/exit
+TEST
+```
+
+**Demo Scripts:**
+
+```
+# demo.cli
+# Show features automatically
+ll.feature.demo <<DEMO
+Show feature 1
+Show feature 2
+Show feature 3
+/exit
+DEMO
+```
+
+**Batch Processing:**
+
+```
+# process_multiple.cli
+process.item <<DATA
+item1 data
+DATA
+
+process.item <<DATA
+item2 data
+DATA
+
+process.item <<DATA
+item3 data
+DATA
 ```
 
 ## Advanced Usage

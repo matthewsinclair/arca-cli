@@ -195,8 +195,8 @@ defmodule Arca.Cli.Commands.CliScriptCommand do
 
   # Redirect stdin via group leader
   defp with_stdin_provider(lines, fun) do
-    {:ok, provider} = InputProvider.start_link(lines)
     original_leader = Process.group_leader()
+    {:ok, provider} = InputProvider.start_link(lines, original_leader)
 
     try do
       Process.group_leader(self(), provider)

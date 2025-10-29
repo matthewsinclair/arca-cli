@@ -1,5 +1,6 @@
 ---
-verblock: "06 Oct 2025:v1.0: Claude - Added CLI Fixtures Testing documentation
+verblock: "29 Oct 2025:v1.1: Matthew Sinclair - Added cli.script heredoc documentation
+06 Oct 2025:v1.0: Claude - Added CLI Fixtures Testing documentation
 17 Apr 2025:v0.9: Claude - Added error handling system documentation"
 ---
 # Arca.Cli Reference Guide
@@ -166,6 +167,75 @@ arca_cli sys.cmd <command>
 ```bash
 arca_cli sys.cmd "ls -la"
 ```
+
+#### `cli.script <file>`
+
+Executes commands from a script file.
+
+**Usage:**
+
+```bash
+arca_cli cli.script <file>
+```
+
+**Parameters:**
+
+- `file`: Path to script file containing CLI commands (required)
+
+**Script File Format:**
+
+Script files contain one command per line. Lines starting with `#` are comments and are ignored. Blank lines are also ignored.
+
+**Basic Example:**
+
+```bash
+# my_script.cli
+# This is a comment
+about
+sys.info
+status
+```
+
+**HEREDOC Support:**
+
+Commands can include heredoc-style stdin injection for interactive commands:
+
+```
+command <<MARKER
+input line 1
+input line 2
+MARKER
+```
+
+**HEREDOC Example:**
+
+```bash
+# interactive_script.cli
+ll.play my_game <<EOF
+Hello there!
+What do you think?
+/exit
+EOF
+```
+
+**Features:**
+
+- Execute multiple commands sequentially
+- Comments with `#`
+- Blank lines ignored
+- HEREDOC syntax for stdin injection
+- Multiple heredocs per script
+- Whitespace preservation in heredocs
+- Custom marker names (any alphanumeric string)
+
+**Limitations:**
+
+- Heredoc markers must be on their own line
+- No nested heredocs
+- No variable interpolation in v1
+- Works with commands using standard Elixir `IO.gets/1`
+
+**See Also:** Script Files and HEREDOC Syntax section for complete syntax reference.
 
 ### Development Commands
 
@@ -1418,6 +1488,321 @@ Evaluates `teardown.exs` with bindings. Logs errors but always returns `:ok`.
 **Teardown errors**
 - Use defensive patterns: `if bindings[:key], do: cleanup()`
 - Check for `nil` before using bindings
+
+## Script Files and HEREDOC Syntax
+
+The `cli.script` command supports executing multiple CLI commands from script files, including heredoc-style stdin injection for interactive commands.
+
+### Script File Format
+
+Script files use a simple line-based format:
+
+```
+# Comment lines start with #
+command1
+command2 arg1 arg2
+
+# Blank lines are ignored
+
+command3
+```
+
+**Rules:**
+
+- One command per line
+- Lines starting with `#` are comments (ignored)
+- Blank lines are ignored
+- Commands are executed sequentially
+- Each command's output is displayed before next command runs
+
+### HEREDOC Syntax Specification
+
+HEREDOC allows injecting multiple lines of stdin input into commands that read user input.
+
+**Basic Syntax:**
+
+```
+command <<MARKER
+line 1
+line 2
+line 3
+MARKER
+```
+
+**Components:**
+
+1. **Start Marker**: `<<MARKER` at end of command line (must have space before `<<`)
+2. **Content Lines**: Lines between markers (preserved verbatim)
+3. **End Marker**: `MARKER` on its own line (must match start marker exactly)
+
+**Processing:**
+
+1. Each content line is sent to command's stdin as if user typed it + Enter
+2. After last line, EOF is automatically sent (like Ctrl-D)
+3. Command receives input via standard `IO.gets/1` calls
+
+### Marker Names
+
+**Valid Markers:**
+
+- Must be alphanumeric plus underscore: `[a-zA-Z0-9_]+`
+- Case-sensitive (EOF != eof)
+- No length limit
+- Convention: uppercase (EOF, END, DATA, INPUT)
+
+**Examples:**
+
+```
+command <<EOF
+command <<END
+command <<DATA
+command <<INPUT
+command <<TEST123
+command <<my_marker
+```
+
+**Invalid:**
+
+```
+command <<EOF!       # Special characters not allowed
+command <<"EOF"      # Quotes not supported
+command <<123        # Cannot start with digit
+```
+
+### Content Handling
+
+**Whitespace Preservation:**
+
+All whitespace in content lines is preserved exactly:
+
+```
+command <<SPACES
+  two spaces
+    four spaces
+		tab character
+trailing spaces
+SPACES
+```
+
+Output includes all indentation and trailing whitespace.
+
+**Empty Lines:**
+
+Empty lines within heredoc are preserved:
+
+```
+command <<EMPTY
+line 1
+
+line 3
+EMPTY
+```
+
+This sends: "line 1\n", "\n", "line 3\n"
+
+**Special Characters:**
+
+All characters are sent literally (no escaping):
+
+```
+command <<SPECIAL
+$variable
+`backticks`
+"quotes"
+\backslashes\
+SPECIAL
+```
+
+### Multiple HEREDOC in One Script
+
+Scripts can contain multiple heredoc sections:
+
+```
+# First command with stdin
+command1 <<EOF
+input for command1
+EOF
+
+# Regular command (no stdin)
+command2
+
+# Second command with stdin (different marker)
+command3 <<DATA
+input for command3
+DATA
+
+# Another regular command
+command4
+```
+
+### Implementation Details
+
+**Architecture:**
+
+- **Parser**: Two-state machine (normal / in_heredoc)
+- **InputProvider**: GenServer implementing Erlang IO protocol
+- **Group Leader**: Redirects stdin to InputProvider during execution
+
+**How It Works:**
+
+1. Script file is parsed into command list
+2. Heredocs detected and content captured
+3. For commands with heredoc:
+   - InputProvider GenServer started with lines
+   - Process group leader temporarily swapped
+   - Command executes (stdin requests go to provider)
+   - Group leader restored after execution
+
+**IO Protocol Support:**
+
+Works with commands using:
+- `IO.gets/1`, `IO.gets/2` - Get line of input
+- `IO.getn/2`, `IO.getn/3` - Get N characters
+- `IO.read/2` - Read input
+
+May not work with:
+- Custom IO libraries (ExPrompt, etc.)
+- Direct stdin reading bypassing group leader
+- Port-based external command execution
+
+### Limitations and Known Issues
+
+**Current Limitations (v1):**
+
+1. **No Nested HEREDOC**: Cannot have heredoc within heredoc
+2. **No Variable Interpolation**: No `{{variable}}` substitution
+3. **Marker in Content**: If content contains marker word on its own line, heredoc ends early
+4. **Single Marker**: Cannot use multiple markers for one command
+5. **No Tab Stripping**: `-` prefix not supported (like `<<-EOF`)
+6. **No Quote Escaping**: Cannot escape marker (like `<<'EOF'`)
+
+**Workarounds:**
+
+**Issue**: Content contains EOF marker
+```
+# Problem:
+command <<EOF
+This mentions EOF in text
+EOF will close early!
+EOF
+
+# Solution: Use different marker
+command <<ENDOFTEXT
+This mentions EOF in text
+EOF will close early!
+ENDOFTEXT
+```
+
+**Issue**: Command doesn't use standard IO
+```
+# Some commands may not work - test first
+# Check if command uses IO.gets/1
+```
+
+### Comparison with CLI Fixtures Testing
+
+| Feature | cli.script HEREDOC | CLI Fixtures `.cli` files |
+|---------|-------------------|---------------------------|
+| Variable interpolation | No | Yes (`{{var}}`) |
+| Pattern matching | No | Yes (`{{*}}`, `{{\\d+}}`) |
+| Setup/teardown | No | Yes (`.exs` files) |
+| Bindings | No | Yes (from `setup.exs`) |
+| Use case | Script automation | Automated testing |
+| Complexity | Simple | Full test framework |
+
+**When to Use:**
+
+- **cli.script**: Quick automation, demos, manual workflows
+- **CLI Fixtures**: Comprehensive testing with validation
+
+### Examples
+
+**Interactive Game:**
+
+```
+# game_session.cli
+ll.world.mount fantasy_world
+ll.play adventure <<SESSION
+look around
+take sword
+go north
+fight dragon
+use sword
+/exit
+SESSION
+```
+
+**Agent Testing:**
+
+```
+# test_agent.cli
+ll.agent.create test_agent <<CONFIG
+personality: helpful
+model: gpt-4
+EOF
+
+ll.agent.engage test_agent <<CONVERSATION
+What is 2+2?
+Explain photosynthesis
+/done
+CONVERSATION
+```
+
+**Batch Processing:**
+
+```
+# process_data.cli
+data.import file1.csv
+data.process <<OPTIONS
+normalize
+validate
+transform
+export
+OPTIONS
+
+data.import file2.csv
+data.process <<OPTIONS
+normalize
+validate
+transform
+export
+OPTIONS
+```
+
+### Error Handling
+
+**Unclosed HEREDOC:**
+
+```
+command <<EOF
+line 1
+# Missing EOF marker
+
+Error: Unclosed heredoc starting at line 2: expected 'EOF' but reached end of file
+```
+
+**Marker Mismatch:**
+
+```
+command <<EOF
+line 1
+END  # Wrong marker
+
+Error: Unclosed heredoc starting at line 2: expected 'EOF' but reached end of file
+```
+
+**Command Failure:**
+
+If command with heredoc fails, error is reported normally and script execution continues unless command exits with error.
+
+### Best Practices
+
+1. **Choose Descriptive Markers**: Use markers that indicate purpose (TEST, CONFIG, DATA)
+2. **Avoid Common Words**: Don't use EOF if content might contain "EOF"
+3. **Consistent Indentation**: Keep heredoc content flush left for readability
+4. **Comment Your Scripts**: Explain what each heredoc does
+5. **Test Interactive Commands**: Verify command works before scripting
+6. **Keep Scripts Simple**: Use regular commands when heredoc isn't needed
 
 ## Concepts and Terminology
 

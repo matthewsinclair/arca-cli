@@ -8,15 +8,8 @@ This document serves as an index of all steel threads in the project. A steel th
 ## Index
 
 <!-- BEGIN: STEEL_THREAD_INDEX -->
-ID         | Title                                                      | Status           | Created    | Completed 
+ID         | Title                                                      | Status           | Created    | Completed
 -----------|------------------------------------------------------------|------------------|------------|-----------
-ST0007     | Improved CLI and REPL Error Handling                       | COMPLETED        | 2025-04-15 | 2025-04-17
-ST0006     | Upgrading to latest version of Arca.Config                 | Completed        | 2025-03-23 | 2025-03-23
-ST0005     | Functional Elixir Codebase Improvements                    | Completed        | 2025-03-20 | 2025-03-22
-ST0004     | Improved Help Subsystem for CLI                            | Completed        | 2025-03-20 | 2025-03-19
-ST0003     | REPL Output Callback System                                | Completed        | 2025-03-19 | 2025-03-19
-ST0002     | REPL Tab Completion Improvements                           | Completed        | 2025-02-26 | 2025-03-19
-ST0001     | Documentation Migration to STP                             | Completed        | 2025-03-21 | 2025-03-19
 <!-- END: STEEL_THREAD_INDEX -->
 
 ## Steel Thread Status Definitions
@@ -39,7 +32,3 @@ This document provides an overview of all steel threads in the project. It helps
 4. Use this document to quickly locate specific steel thread documents
 
 The detailed information for each steel thread is contained in its individual document (e.g., ST0001.md).
-| ST0008 | Orthogonalised formatting and outputting | Completed |  | 2025-10-06 |
-| ST0009 | Elixir-based setup and teardown for CLI fixtures | Completed |  | 2025-10-06 |
-| ST0003 | REPL Output Callback System | Completed |  | 2025-09-22 |
-| ST0010 | HEREDOC injection for cli.script | Completed |  | 2025-10-29 |

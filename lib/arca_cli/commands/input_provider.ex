@@ -31,9 +31,9 @@ defmodule Arca.Cli.Commands.InputProvider do
 
   # Client API
 
-  @spec start_link([String.t()]) :: GenServer.on_start()
-  def start_link(lines) when is_list(lines) do
-    GenServer.start_link(__MODULE__, {lines, 0})
+  @spec start_link([String.t()], pid()) :: GenServer.on_start()
+  def start_link(lines, original_leader) when is_list(lines) and is_pid(original_leader) do
+    GenServer.start_link(__MODULE__, {lines, 0, original_leader})
   end
 
   # Server Callbacks
@@ -83,13 +83,15 @@ defmodule Arca.Cli.Commands.InputProvider do
     get_next_line(state)
   end
 
-  # IO Protocol Implementation - put_chars (pass through)
+  # IO Protocol Implementation - put_chars (forward to original leader)
 
-  defp handle_io_request({:put_chars, _encoding, _chars}, state) do
+  defp handle_io_request({:put_chars, encoding, chars}, {_lines, _index, original_leader} = state) do
+    send(original_leader, {:io_request, self(), make_ref(), {:put_chars, encoding, chars}})
     {:ok, state}
   end
 
-  defp handle_io_request({:put_chars, _chars}, state) do
+  defp handle_io_request({:put_chars, chars}, {_lines, _index, original_leader} = state) do
+    send(original_leader, {:io_request, self(), make_ref(), {:put_chars, chars}})
     {:ok, state}
   end
 
@@ -120,26 +122,26 @@ defmodule Arca.Cli.Commands.InputProvider do
 
   # Get next line with newline appended
 
-  defp get_next_line({lines, index}) when index < length(lines) do
+  defp get_next_line({lines, index, original_leader}) when index < length(lines) do
     lines
     |> Enum.at(index)
     |> append_newline()
-    |> then(&{&1, {lines, index + 1}})
+    |> then(&{&1, {lines, index + 1, original_leader}})
   end
 
-  defp get_next_line({lines, index}), do: {:eof, {lines, index}}
+  defp get_next_line({lines, index, original_leader}), do: {:eof, {lines, index, original_leader}}
 
   # Get next N characters
 
-  defp get_next_chars(_count, {lines, index}) when index >= length(lines) do
-    {:eof, {lines, index}}
+  defp get_next_chars(_count, {lines, index, original_leader}) when index >= length(lines) do
+    {:eof, {lines, index, original_leader}}
   end
 
-  defp get_next_chars(count, {lines, index}) do
+  defp get_next_chars(count, {lines, index, original_leader}) do
     lines
     |> Enum.at(index)
     |> extract_chars(count)
-    |> build_chars_response(lines, index)
+    |> build_chars_response(lines, index, original_leader)
   end
 
   # Extract requested characters from line
@@ -152,12 +154,12 @@ defmodule Arca.Cli.Commands.InputProvider do
 
   # Build response for get_chars
 
-  defp build_chars_response({chars, ""}, lines, index) do
-    {append_newline(chars), {lines, index + 1}}
+  defp build_chars_response({chars, ""}, lines, index, original_leader) do
+    {append_newline(chars), {lines, index + 1, original_leader}}
   end
 
-  defp build_chars_response({chars, _remaining}, lines, index) do
-    {chars, {lines, index}}
+  defp build_chars_response({chars, _remaining}, lines, index, original_leader) do
+    {chars, {lines, index, original_leader}}
   end
 
   # Helpers

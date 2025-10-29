@@ -3,15 +3,17 @@ defmodule Arca.Cli.Commands.InputProviderTest do
 
   alias Arca.Cli.Commands.InputProvider
 
-  describe "start_link/1" do
+  describe "start_link/2" do
     test "starts with empty list" do
-      assert {:ok, pid} = InputProvider.start_link([])
+      original_leader = Process.group_leader()
+      assert {:ok, pid} = InputProvider.start_link([], original_leader)
       assert Process.alive?(pid)
       GenServer.stop(pid)
     end
 
     test "starts with lines" do
-      assert {:ok, pid} = InputProvider.start_link(["line1", "line2"])
+      original_leader = Process.group_leader()
+      assert {:ok, pid} = InputProvider.start_link(["line1", "line2"], original_leader)
       assert Process.alive?(pid)
       GenServer.stop(pid)
     end
@@ -19,8 +21,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
 
   describe "IO.gets/1 via group leader" do
     test "provides lines in order" do
-      {:ok, provider} = InputProvider.start_link(["first", "second", "third"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["first", "second", "third"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -35,8 +37,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
     end
 
     test "returns EOF when exhausted" do
-      {:ok, provider} = InputProvider.start_link(["only one"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["only one"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -51,8 +53,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
     end
 
     test "returns EOF immediately for empty list" do
-      {:ok, provider} = InputProvider.start_link([])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link([], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -65,8 +67,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
     end
 
     test "appends newline to each line" do
-      {:ok, provider} = InputProvider.start_link(["no newline here"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["no newline here"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -81,8 +83,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
     end
 
     test "preserves whitespace in lines" do
-      {:ok, provider} = InputProvider.start_link(["  spaces  ", "\ttabs\t"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["  spaces  ", "\ttabs\t"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -98,8 +100,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
 
   describe "IO.getn/2 via group leader" do
     test "returns requested number of characters" do
-      {:ok, provider} = InputProvider.start_link(["hello"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["hello"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -114,8 +116,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
     end
 
     test "returns EOF when exhausted" do
-      {:ok, provider} = InputProvider.start_link(["short"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["short"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -131,8 +133,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
 
   describe "multiple IO operations" do
     test "mixes gets and getn calls" do
-      {:ok, provider} = InputProvider.start_link(["line1", "line2", "line3"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["line1", "line2", "line3"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -152,8 +154,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
     test "each process gets its own group leader" do
       task1 =
         Task.async(fn ->
-          {:ok, provider} = InputProvider.start_link(["task1-line1"])
           original_leader = Process.group_leader()
+          {:ok, provider} = InputProvider.start_link(["task1-line1"], original_leader)
 
           try do
             Process.group_leader(self(), provider)
@@ -166,8 +168,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
 
       task2 =
         Task.async(fn ->
-          {:ok, provider} = InputProvider.start_link(["task2-line1"])
           original_leader = Process.group_leader()
+          {:ok, provider} = InputProvider.start_link(["task2-line1"], original_leader)
 
           try do
             Process.group_leader(self(), provider)
@@ -185,8 +187,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
 
   describe "edge cases" do
     test "handles empty strings in list" do
-      {:ok, provider} = InputProvider.start_link(["", "non-empty", ""])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["", "non-empty", ""], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -201,8 +203,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
     end
 
     test "handles unicode content" do
-      {:ok, provider} = InputProvider.start_link(["Hello 世界", "Привет"])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link(["Hello 世界", "Привет"], original_leader)
 
       try do
         Process.group_leader(self(), provider)
@@ -217,8 +219,8 @@ defmodule Arca.Cli.Commands.InputProviderTest do
 
     test "handles very long lines" do
       long_line = String.duplicate("a", 10_000)
-      {:ok, provider} = InputProvider.start_link([long_line])
       original_leader = Process.group_leader()
+      {:ok, provider} = InputProvider.start_link([long_line], original_leader)
 
       try do
         Process.group_leader(self(), provider)
