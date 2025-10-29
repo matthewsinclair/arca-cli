@@ -1,0 +1,61 @@
+# Heredoc Demo Script
+# Demonstrates stdin injection for interactive commands
+
+# This script shows how to use heredoc syntax to automate
+# interactive CLI commands that normally require user input.
+
+# Example 1: Simple heredoc with EOF marker
+# Note: These commands would work with actual interactive commands
+# like ll.play, ll.agent.engage, or ll.llm.chat
+
+# Simulated conversation with an interactive command
+# (In real usage, this would be a command that reads from stdin)
+echo.example <<EOF
+Hello, this is the first line of input
+This is the second line
+And this is the third line
+/exit
+EOF
+
+# Example 2: Different marker name
+test.command <<END
+You can use different markers
+END, DATA, INPUT, etc.
+END
+
+# Example 3: Preserving whitespace
+format.test <<SPACES
+  This line has 2 leading spaces
+    This line has 4 leading spaces
+\tThis line has a tab
+SPACES
+
+# Example 4: Empty heredoc
+empty.test <<EMPTY
+EMPTY
+
+# Example 5: Multiple heredocs in one script
+first.command <<DATA1
+First command input
+DATA1
+
+second.command <<DATA2
+Second command input
+DATA2
+
+# Regular commands still work normally between heredocs
+help
+about
+status
+
+# Example 6: Multi-line conversation simulation
+# conversation.example <<CHAT
+# What is the weather like?
+# Can you tell me more?
+# Thank you!
+# /exit
+# CHAT
+
+# Comments and blank lines work as expected
+
+# End of demo

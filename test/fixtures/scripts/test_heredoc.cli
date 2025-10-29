@@ -1,0 +1,49 @@
+# Test script demonstrating heredoc stdin injection
+# This file tests the heredoc feature for cli.script command
+
+# Regular commands still work
+help
+about
+
+# Simple heredoc example
+# (Note: This will fail in actual execution unless there's a command that reads stdin,
+#  but it demonstrates the syntax and parsing)
+echo.test <<EOF
+This is line 1 of input
+This is line 2 of input
+This is line 3 of input
+EOF
+
+# Heredoc with different marker
+mock.command <<END
+Different marker
+Multiple lines
+END
+
+# Mixed regular and heredoc commands
+status
+
+# Heredoc with preserved whitespace
+test.whitespace <<INPUT
+  indented content
+    more indentation
+\ttabbed content
+INPUT
+
+# Empty heredoc
+test.empty <<EMPTY
+EMPTY
+
+# Multiple heredocs
+test.first <<DATA
+first heredoc content
+DATA
+
+test.second <<INFO
+second heredoc content
+INFO
+
+# Comments and blank lines still work
+
+# Regular command after heredocs
+status
