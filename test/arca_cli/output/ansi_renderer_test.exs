@@ -273,6 +273,49 @@ defmodule Arca.Cli.Output.AnsiRendererTest do
       assert beta_pos < alpha_pos
     end
 
+    test "renders table with column_order :asc" do
+      rows = [
+        %{"zebra" => "Z", "apple" => "A", "banana" => "B"}
+      ]
+
+      result = AnsiRenderer.render([{:table, rows, column_order: :asc}])
+
+      # Extract header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "apple" end)
+
+      # Verify columns appear in ascending alphabetical order
+      apple_pos = :binary.match(header_line, "apple") |> elem(0)
+      banana_pos = :binary.match(header_line, "banana") |> elem(0)
+      zebra_pos = :binary.match(header_line, "zebra") |> elem(0)
+
+      assert apple_pos < banana_pos
+      assert banana_pos < zebra_pos
+    end
+
+    test "renders table with column_order custom function" do
+      rows = [
+        %{"short" => "S", "medium_name" => "M", "x" => "X"}
+      ]
+
+      # Custom sort: by column name length (shortest first)
+      custom_sort = fn a, b -> String.length(a) <= String.length(b) end
+
+      result = AnsiRenderer.render([{:table, rows, column_order: custom_sort}])
+
+      # Extract header line
+      lines = String.split(result, "\n")
+      header_line = Enum.find(lines, fn line -> line =~ "short" end)
+
+      # Verify columns appear ordered by length: "x" < "short" < "medium_name"
+      x_pos = :binary.match(header_line, "x") |> elem(0)
+      short_pos = :binary.match(header_line, "short") |> elem(0)
+      medium_pos = :binary.match(header_line, "medium_name") |> elem(0)
+
+      assert x_pos < short_pos
+      assert short_pos < medium_pos
+    end
+
     test "renders table with has_headers using first row order" do
       rows = [
         ["Index", "Command", "Arguments"],
@@ -294,6 +337,98 @@ defmodule Arca.Cli.Output.AnsiRendererTest do
 
       assert index_pos < command_pos
       assert command_pos < arguments_pos
+    end
+
+    test "renders headerless table with show_headers: false" do
+      rows = [
+        %{"name" => "Alice", "age" => "30"},
+        %{"name" => "Bob", "age" => "25"}
+      ]
+
+      result = AnsiRenderer.render([{:table, rows, show_headers: false}])
+
+      # Should not contain "age" or "name" headers
+      refute result =~ "│age"
+      refute result =~ "│name"
+
+      # Should contain data
+      assert result =~ "Alice"
+      assert result =~ "Bob"
+      assert result =~ "30"
+      assert result =~ "25"
+
+      # Should have fewer lines than normal table (no header row, no separator)
+      lines = String.split(result, "\n")
+      # Headerless bordered table: top border + 2 data rows + bottom border = 4 lines
+      assert length(lines) == 4
+    end
+
+    test "renders headerless table with list rows" do
+      rows = [
+        ["foo", "bar"],
+        ["baz", "qux"]
+      ]
+
+      result = AnsiRenderer.render([{:table, rows, show_headers: false}])
+
+      # Should not contain "Col1" or "Col2" auto-generated headers
+      refute result =~ "Col1"
+      refute result =~ "Col2"
+
+      # Should contain data
+      assert result =~ "foo"
+      assert result =~ "bar"
+      assert result =~ "baz"
+      assert result =~ "qux"
+
+      # Headerless bordered table: 4 lines
+      lines = String.split(result, "\n")
+      assert length(lines) == 4
+    end
+
+    test "renders headerless table with border_style: :none" do
+      rows = [
+        %{"name" => "Alice", "age" => "30"},
+        %{"name" => "Bob", "age" => "25"}
+      ]
+
+      result = AnsiRenderer.render([{:table, rows, show_headers: false, border_style: :none}])
+
+      # Should not contain "age" or "name" headers
+      refute result =~ "age"
+      refute result =~ "name"
+
+      # Should contain data
+      assert result =~ "Alice"
+      assert result =~ "Bob"
+
+      # Should have no borders at all
+      refute result =~ "┌"
+      refute result =~ "│"
+      refute result =~ "─"
+
+      # Borderless headerless table: just 2 data rows
+      lines = String.split(result, "\n")
+      assert length(lines) == 2
+    end
+
+    test "renders normal table when show_headers: true (default)" do
+      rows = [
+        %{"name" => "Alice", "age" => "30"}
+      ]
+
+      # Test that default behavior shows headers
+      ctx = %Ctx{output: [{:table, rows}]}
+      result = AnsiRenderer.render(ctx)
+
+      # Should have headers
+      assert result =~ "age"
+      assert result =~ "name"
+      assert result =~ "Alice"
+      assert result =~ "30"
+
+      # Verify it's a table (has some border or column structure)
+      assert String.length(result) > 20
     end
   end
 

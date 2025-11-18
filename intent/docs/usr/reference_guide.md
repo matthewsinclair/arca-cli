@@ -355,16 +355,39 @@ count = Ctx.get_cargo(ctx, :user_count)
 
 # Descending alphabetical
 {:table, rows, column_order: :desc}
+
+# Ascending alphabetical
+{:table, rows, column_order: :asc}
+
+# Custom sort function (by column name length)
+{:table, rows, column_order: fn a, b -> String.length(a) <= String.length(b) end}
+
+# Headerless table (no header row or auto-generated "Col1", "Col2" labels)
+{:table, rows, show_headers: false}
+
+# Headerless table with no borders
+{:table, rows, show_headers: false, border_style: :none}
 ```
 
 **Table Options:**
 
 - `headers`: List of column header names (also sets column order)
-- `column_order`: Explicit column ordering (list, `:asc`, `:desc`, or custom function)
-- `has_headers`: Boolean, treats first row as headers
-- `border_style`: `:solid`, `:solid_rounded`, etc.
+- `column_order`: Explicit column ordering. Can be:
+  - List of column names in desired order
+  - `:asc` for ascending alphabetical order
+  - `:desc` for descending alphabetical order
+  - Custom comparison function `(column, column -> boolean())`
+- `has_headers`: Boolean, treats first row as headers (default: true for AnsiRenderer, false for PlainRenderer)
+- `show_headers`: Boolean, controls header row visibility (default: true)
+  - When `false`, suppresses header row rendering (no "Col1", "Col2", no empty row)
+  - Automatically sets `has_headers: false` for list rows to prevent first row being treated as headers
+- `border_style`: `:solid`, `:solid_rounded`, `:none`, `:double`
 - `divide_body_rows`: Boolean, add lines between rows
 - `padding_x`: Integer, horizontal padding in cells
+- `max_column_widths`: Function or map for column width limits
+- `word_wrap`: `:break_word` or `:normal`
+- `truncate_lines`: Boolean, truncate lines at max width
+- `filter_columns`: Function to filter which columns to display
 
 **Lists**
 

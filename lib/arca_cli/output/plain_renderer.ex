@@ -192,6 +192,15 @@ defmodule Arca.Cli.Output.PlainRenderer do
   end
 
   def render_table(rows, opts) do
+    # When show_headers is false, ensure has_headers is also false
+    # so that list rows don't treat the first row as headers
+    opts =
+      if Keyword.get(opts, :show_headers, true) == false do
+        Keyword.put_new(opts, :has_headers, false)
+      else
+        opts
+      end
+
     # Check if we should treat first row as headers
     {headers, data_rows} =
       case {rows, Keyword.get(opts, :has_headers, false)} do
@@ -230,9 +239,33 @@ defmodule Arca.Cli.Output.PlainRenderer do
           opts
       end
 
+    # Check if we should show headers (defaults to true for backwards compatibility)
+    show_headers = Keyword.get(opts, :show_headers, true)
+
     # Extract relevant OwlHelper options from incoming opts
     # OwlHelper supports: column_order, max_width, and all Owl.Table options
     table_opts = Keyword.merge(default_table_opts, opts)
+
+    # If show_headers is false, modify render_cell to make headers invisible
+    table_opts =
+      if not show_headers do
+        current_render_cell = Keyword.get(table_opts, :render_cell, &Function.identity/1)
+
+        # If render_cell is already a keyword list, preserve body renderer
+        # Otherwise, use it for both header (empty) and body
+        new_render_cell =
+          case current_render_cell do
+            opts when is_list(opts) ->
+              Keyword.merge([header: fn _ -> "" end], opts)
+
+            func when is_function(func) ->
+              [header: fn _ -> "" end, body: func]
+          end
+
+        Keyword.put(table_opts, :render_cell, new_render_cell)
+      else
+        table_opts
+      end
 
     table =
       if map_size(column_prefs) > 0 do
@@ -243,9 +276,17 @@ defmodule Arca.Cli.Output.PlainRenderer do
       end
 
     # Convert to plain text (no ANSI codes)
-    table
-    |> Owl.Data.to_chardata()
-    |> strip_ansi_codes()
+    result =
+      table
+      |> Owl.Data.to_chardata()
+      |> strip_ansi_codes()
+
+    # If show_headers is false, remove the header lines from the output
+    if not show_headers do
+      remove_header_lines(result, Keyword.get(table_opts, :border_style, :solid))
+    else
+      result
+    end
   end
 
   @doc """
@@ -398,5 +439,32 @@ defmodule Arca.Cli.Output.PlainRenderer do
     # Remove ANSI escape sequences
     # Pattern matches: ESC [ ... m
     String.replace(binary, ~r/\x1b\[[0-9;]*m/, "")
+  end
+
+  # Remove header lines from table output for headerless tables
+  @spec remove_header_lines(String.t(), atom()) :: String.t()
+  defp remove_header_lines(table_string, border_style) do
+    lines = String.split(table_string, "\n")
+
+    case border_style do
+      :none ->
+        # For borderless tables, just remove the first line (header row)
+        case lines do
+          [_header_row | data_rows] -> Enum.join(data_rows, "\n")
+          _ -> table_string
+        end
+
+      _ ->
+        # For bordered tables, remove top border, header row, and separator
+        # Then add back the top border
+        case lines do
+          [top_border, _header_row, _separator | body_and_bottom] ->
+            [top_border | body_and_bottom]
+            |> Enum.join("\n")
+
+          _ ->
+            table_string
+        end
+    end
   end
 end

@@ -135,6 +135,18 @@ defmodule Arca.Cli.Output.AnsiRenderer do
               opts
           end
 
+        # Check if we should show headers (defaults to true for backwards compatibility)
+        show_headers = Keyword.get(opts, :show_headers, true)
+
+        # When show_headers is false, ensure has_headers is also false
+        # so that list rows don't treat the first row as headers
+        opts =
+          if not show_headers do
+            Keyword.put_new(opts, :has_headers, false)
+          else
+            opts
+          end
+
         table_opts =
           Keyword.merge(
             [
@@ -145,6 +157,27 @@ defmodule Arca.Cli.Output.AnsiRenderer do
             ],
             opts
           )
+
+        # If show_headers is false, modify render_cell to make headers invisible
+        table_opts =
+          if not show_headers do
+            current_render_cell = Keyword.get(table_opts, :render_cell, &Function.identity/1)
+
+            # If render_cell is already a keyword list, preserve body renderer
+            # Otherwise, use it for both header (empty) and body
+            new_render_cell =
+              case current_render_cell do
+                opts when is_list(opts) ->
+                  Keyword.merge([header: fn _ -> "" end], opts)
+
+                func when is_function(func) ->
+                  [header: fn _ -> "" end, body: func]
+              end
+
+            Keyword.put(table_opts, :render_cell, new_render_cell)
+          else
+            table_opts
+          end
 
         # Add column_order support by converting to sort_columns
         table_opts =
@@ -171,11 +204,20 @@ defmodule Arca.Cli.Output.AnsiRenderer do
               |> Keyword.put(:sort_columns, other)
           end
 
-        rows
-        |> prepare_table_data(opts)
-        |> Owl.Table.new(table_opts)
-        |> Owl.Data.to_chardata()
-        |> IO.iodata_to_binary()
+        # Render the table
+        result =
+          rows
+          |> prepare_table_data(opts)
+          |> Owl.Table.new(table_opts)
+          |> Owl.Data.to_chardata()
+          |> IO.iodata_to_binary()
+
+        # If show_headers is false, remove the header lines from the output
+        if not show_headers do
+          remove_header_lines(result, Keyword.get(table_opts, :border_style, :solid_rounded))
+        else
+          result
+        end
     end
   end
 
@@ -370,6 +412,33 @@ defmodule Arca.Cli.Output.AnsiRenderer do
   defp apply_cell_color(:error, cell), do: Owl.Data.tag(cell, :red)
   defp apply_cell_color(:warning, cell), do: Owl.Data.tag(cell, :yellow)
   defp apply_cell_color(:default, cell), do: cell
+
+  # Remove header lines from table output for headerless tables
+  @spec remove_header_lines(String.t(), atom()) :: String.t()
+  defp remove_header_lines(table_string, border_style) do
+    lines = String.split(table_string, "\n")
+
+    case border_style do
+      :none ->
+        # For borderless tables, just remove the first line (header row)
+        case lines do
+          [_header_row | data_rows] -> Enum.join(data_rows, "\n")
+          _ -> table_string
+        end
+
+      _ ->
+        # For bordered tables, remove top border, header row, and separator
+        # Then add back the top border
+        case lines do
+          [top_border, _header_row, _separator | body_and_bottom] ->
+            [top_border | body_and_bottom]
+            |> Enum.join("\n")
+
+          _ ->
+            table_string
+        end
+    end
+  end
 
   # JSON syntax highlighting
   defp colorize_json(json_string) when is_binary(json_string) do
